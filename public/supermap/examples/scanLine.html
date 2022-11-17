@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+
+<head>
+	<meta charset="utf-8">
+	<title>泛光扫描线</title>
+	<link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+	<link href="./css/pretty.css" rel="stylesheet">
+	<script type="text/javascript" src="./js/jquery.min.js"></script>
+	<script src="./js/config.js"></script>
+	<script src="./js/tooltip.js"></script>
+	<script src="./js/spectrum.js"></script>
+	<script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+</head>
+
+<body>
+	<div id="cesiumContainer"></div>
+	<div class="params-setting-container">
+		<div class="params-setting-anchor" title="显示/隐藏参数面板"><span class="fui-expand"></span></div>
+		<div class="params-setting">
+			<div class="param-item">
+				<label for="scanShow">开启扫描</label>
+				<input type="checkbox" id="scanShow">
+			</div>
+			<div class="param-item">
+				<label>扫描模式：</label>
+				<label for="line-scan-mode">线状扫描</label>
+				<input type="radio" name="scan-mode" value="line-scan-mode" id="line-scan-mode" checked>
+				<label for="ring-scan-mode">环状扫描</label>
+				<input type="radio" name="scan-mode" value="ring-scan-mode" id="ring-scan-mode">
+			</div>
+			<div class="param-item">
+				<label>扫描颜色</label>
+				<input type="text" id="scan-color" />
+			</div>
+			<div id="circleScanTexture" class="param-item" style="display: none;">
+				<label>扫描纹理</label>
+				<select id="circle-scan-texture" style="width: 170px;height: 30px;">
+					<option value="none-texture">无</option>
+					<option value="./images/环状扫描纹理1.jpg">圆形纹理1</option>
+					<option value="./images/环状扫描纹理2.jpg">圆形纹理2</option>
+					<option value="./images/ring-2.jpg">六边形纹理3</option>
+				</select>
+			</div>
+			<div id="lineScanTexture" class="param-item" >
+				<label>扫描纹理</label>
+				<select id="line-scan-texture" style="width: 170px;height: 30px;">
+					<option value="none-texture">无</option>
+					<option value="./images/线状扫描纹理1.jpg">线状纹理1</option>
+					<option value="./images/线状扫描纹理2.jpg">线状纹理2</option>
+				</select>
+			</div>
+			<div class="param-item">
+				<button type="button" class="button black" id="set-scan-direction">自定义扫描方向</button>
+			</div>
+			<div class="divider"></div>
+			<div class="param-item">
+				<label for="bloomShow">开启泛光</label>
+				<input type="checkbox" id="bloomShow">
+			</div>
+			<div class="param-item">
+				<label>亮度阈值</label>
+				<input type="range" id="bloom-threshold" min="0" max="5" value="1" step="0.01" style="width: 170px">
+				<label id="bloom-threshold-label"></label>
+			</div>
+			<div class="param-item">
+				<label>泛光强度</label>
+				<input type="range" id="bloom-intensity" min="0" max="10" value="1" step="0.1" style="width: 170px">
+				<label id="bloom-intensity-label"></label>
+			</div>
+			<div class="param-item">
+				<label for="hdrShow">开启HDR</label>
+				<input type="checkbox" id="hdrShow">
+			</div>
+		</div>
+	</div>
+	<script>
+		function onload(Cesium) {
+			//初始化三维球
+			var viewer = new Cesium.Viewer('cesiumContainer', {
+				infobox: false
+			});
+			//添加底图
+			viewer.imageryLayers.addImageryProvider(new Cesium.SingleTileImageryProvider({
+				url: './images/BlackMarble_2016.jpg'
+			}));
+			var scene = viewer.scene;
+            scene.lightSource.ambientLightColor = new Cesium.Color(0.4, 0.4, 0.4, 0.4); //设置环境光
+			var promise = scene.open(URL_CONFIG.SCENE_CHONGQING_TX);
+			Cesium.when(promise, function(layers) {
+				//显示提示信息
+				var tooltip = createTooltip(document.body);
+				var tooltipMsg = "";
+				var mouseClickCount = 0;
+				var s3mLayer = layers[0]; //获取模型图层
+				s3mLayer.style3D.emissionColor = new Cesium.Color(1, 1, 1, 1); //设置模型自发光
+				viewer.scene.colorCorrection.show = true;
+				viewer.scene.colorCorrection.saturation = 1;
+				viewer.scene.colorCorrection.brightness = 0.6;
+				viewer.scene.colorCorrection.contrast = 1;
+				viewer.scene.colorCorrection.hue = 0;
+				//设置相机位置，定位至模型
+				scene.camera.setView({
+					destination: new Cesium.Cartesian3(-1578215.006323633, 5319974.660135051, 3148880.1479047216),
+					orientation: {
+						heading: 3.452606245673759,
+						pitch: -0.39978283229794354,
+						roll: 6.283185307175318
+					}
+				});
+
+				// 初始化颜色选择控件
+				var initialScanColor = new Cesium.Color(1.0, 1.0, 1.0, 1.0);
+				viewer.scene.scanEffect.color = initialScanColor;
+				viewer.scene.scanEffect.period = 3.0;
+				$("#scan-color").spectrum({
+					color: initialScanColor,
+					chooseText: "确定",
+					cancelText: "取消",
+					showAlpha: true,
+					change: function(color) {
+						var colorObj = color.toRgb();
+						viewer.scene.scanEffect.color = new Cesium.Color(colorObj.r / 255, colorObj.g / 255, colorObj.b / 255, colorObj.a);
+					}
+				});
+				var handlerActive = false; // true表示正在进行扫描点选设置
+				var handler = new Cesium.ScreenSpaceEventHandler(scene.canvas);
+				//鼠标左击事件
+				handler.setInputAction(function(e) {
+					if(!handlerActive) {
+						return;
+					}
+					mouseClickCount++;
+					var position = e.position; // 获取鼠标屏幕坐标
+					var centerPosition = scene.pickPosition(position);
+					var scanMode = $("input[name='scan-mode']:checked").val(); // 获取当前扫描模式
+					if(scanMode === "line-scan-mode") {
+						if(mouseClickCount == 1) {
+							viewer.scene.scanEffect.centerPostion = centerPosition; // 设置扫描中心点
+							tooltipMsg = "点选设置扫描方向";
+						} else if(mouseClickCount == 2) {
+							var dir = new Cesium.Cartesian3();
+							Cesium.Cartesian3.subtract(centerPosition, viewer.scene.scanEffect.centerPostion, dir); // 获取扫描方向向量
+							viewer.scene.scanEffect.lineMoveDirection = dir;
+							mouseClickCount = 0;
+							handlerActive = false;
+							tooltip.setVisible(false);
+						}
+					} else {
+						viewer.scene.scanEffect.centerPostion = centerPosition;
+						mouseClickCount = 0;
+						handlerActive = false;
+						tooltip.setVisible(false);
+					}
+				}, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+				//鼠标移动事件
+				handler.setInputAction(function(e) {
+					if(!handlerActive) {
+						return;
+					}
+					tooltip.showAt(e.endPosition, tooltipMsg);
+				}, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+				//泛光开关
+				$("#bloomShow").on("input change", function() {
+					var thresholdValue = $("#bloom-threshold").val();
+					var intensity = $("#bloom-intensity").val();
+					viewer.scene.bloomEffect.show = this.checked;
+					viewer.scene.bloomEffect.threshold = thresholdValue;
+					viewer.scene.bloomEffect.bloomIntensity = intensity;
+				});
+				//HDR开关
+				$("#hdrShow").on("input change", function() {
+					viewer.scene.hdrEnabled = this.checked;
+				});
+				//调节泛光阈值
+				$("#bloom-threshold").on("input change", function() {
+					$("#bloom-threshold-label").text(this.value);
+					viewer.scene.bloomEffect.threshold = this.value;
+				});
+				//调节泛光强度
+				$("#bloom-intensity").on("input change", function() {
+					$("#bloom-intensity-label").text(this.value);
+					viewer.scene.bloomEffect.bloomIntensity = this.value;
+				});
+				//扫描线开关
+				$("#scanShow").on("input change", function() {
+					viewer.scene.scanEffect.show = this.checked;
+					var startPosition = new Cesium.Cartesian3.fromDegrees(106.50296584992466, 29.51555839072486, 2.0);
+					viewer.scene.scanEffect.centerPostion = startPosition;
+				});
+
+				$("input[name='scan-mode']").on("input change", function() {
+					viewer.scene.scanEffect.mode = this.value === "line-scan-mode" ? Cesium.ScanEffectMode.LINE : Cesium.ScanEffectMode.CIRCLE;
+					if(this.value === "line-scan-mode") {
+						$("#set-scan-direction").text("自定义扫描方向");
+						$("#lineScanTexture").css("display", "block");
+						$("#circleScanTexture").css("display", "none");
+						var lineScanTexture = $("#line-scan-texture").val();
+						if(lineScanTexture === 'none-texture') {
+							scene.scanEffect.textureUrl = '';
+							return;
+						}
+						scene.scanEffect.textureUrl = lineScanTexture;
+					} else {
+						$("#set-scan-direction").text("自定义扫描中心");
+						$("#lineScanTexture").css("display", "none");
+						$("#circleScanTexture").css("display", "block");
+
+						var ringScanTextureUrl = $("#circle-scan-texture").val();
+						if(ringScanTextureUrl === 'none-texture') {
+							scene.scanEffect.textureUrl = '';
+							return;
+						}
+						scene.scanEffect.textureUrl = ringScanTextureUrl;
+					}
+				});
+				//开启设置扫描中心功能
+				$("#set-scan-direction").click(function() {
+					handlerActive = true;
+					tooltip.setVisible(true);
+					tooltipMsg = "点选设置扫描中心";
+				});
+			});
+
+			//切换圆状纹理
+			$("#circle-scan-texture").on('input propertychange', function() {
+				var ringScanTextureUrl = $(this).val();
+				if(ringScanTextureUrl === 'none-texture') {
+					scene.scanEffect.textureUrl = '';
+					return;
+				}
+				scene.scanEffect.textureUrl = ringScanTextureUrl;
+			});
+			//切换线状纹理
+			$("#line-scan-texture").on('input propertychange', function() {
+				var lineScanTexture = $(this).val();
+				if(lineScanTexture === 'none-texture') {
+					scene.scanEffect.textureUrl = '';
+					return;
+				}
+				scene.scanEffect.textureUrl = lineScanTexture;
+			});
+
+			$(".params-setting-anchor").click(function() {
+				$(".params-setting").toggleClass("params-setting-hide");
+			});
+
+			//加载线数据
+			var roadLine1 = Cesium.GeoJsonDataSource.load('./data/json/lineback_1.json');
+			roadLine1.then(function(dataSource) {
+				viewer.dataSources.add(dataSource);
+				var lines_1 = dataSource.entities.values;
+				for(var i = 0; i < lines_1.length; i++) {
+					var line = lines_1[i];
+					line.polyline.material = new Cesium.PolylineGlowMaterialProperty({ //设置Glow材质
+						glowPower: 0.005,
+						color: Cesium.Color.ORANGERED.withAlpha(0.9)
+					});
+					line.polyline.width = 12;
+				}
+
+			}).otherwise(function(error) {
+				window.alert(error);
+			});
+
+			var roadLine2 = Cesium.GeoJsonDataSource.load('./data/json/lineback2_1.json');
+			roadLine2.then(function(dataSource) {
+				viewer.dataSources.add(dataSource);
+				var lines_2 = dataSource.entities.values;
+				for(var i = 0; i < lines_2.length; i++) {
+					var line = lines_2[i];
+					line.polyline.material = new Cesium.PolylineGlowMaterialProperty({ //设置Glow材质
+						glowPower: 0.005,
+						color: Cesium.Color.ORANGERED.withAlpha(0.9)
+					});
+					line.polyline.width = 12;
+				}
+			}).otherwise(function(error) {
+				window.alert(error);
+			});
+			
+			var roadLine3 = Cesium.GeoJsonDataSource.load('./data/json/lineback3_1.json');
+			roadLine3.then(function(dataSource) {
+				viewer.dataSources.add(dataSource);
+				var lines_3 = dataSource.entities.values;
+				for(var i = 0; i < lines_3.length; i++) {
+					var line = lines_3[i];
+					line.polyline.material = new Cesium.PolylineGlowMaterialProperty({ //设置Glow材质
+						glowPower: 0.005,
+						color: Cesium.Color.ORANGERED.withAlpha(0.9)
+					});
+					line.polyline.width = 12;
+				}
+			}).otherwise(function(error) {
+				window.alert(error);
+			});
+		}
+	</script>
+</body>

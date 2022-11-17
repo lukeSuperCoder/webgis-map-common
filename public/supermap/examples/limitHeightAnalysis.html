@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+		<title>限高分析</title>
+		<link href="css/widgets.css" rel="stylesheet">
+		<link href="./css/font-awesome.min.css" rel="stylesheet">
+		<link href="./css/bootstrap.min.css" rel="stylesheet">
+		<link href="./css/pretty.css" rel="stylesheet">
+		<link href="./css/style.css" rel="stylesheet">
+		<script type="text/javascript" src="./js/jquery.min.js"></script>
+		<script src="./js/bootstrap.min.js"></script>
+		<script src="./js/bootstrap-select.min.js"></script>
+		<script src="./js/slider.js"></script>
+		<script src="./js/config.js"></script>
+		<script src="./js/tooltip.js"></script>
+		<script src="./js/spectrum.js"></script>
+		<script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+	</head>
+
+	<body>
+		<div id="cesiumContainer"></div>
+		<div id='toolbar' class='btn-group' style='position: absolute;left: 5px;top: 5px;display: none;'>
+			<span>
+          <button id="linearExtrude" class="button black">限高分析</button>
+      </span>
+			<span>
+      	    <button id="reset" class="button black">重置</button>
+      </span>
+		</div>
+		<script type="text/javascript">
+			function onload(Cesium) {
+				//初始化viewer部件
+				var viewer = new Cesium.Viewer('cesiumContainer', {
+					imageryProvider: new Cesium.BingMapsImageryProvider({
+						url: 'https://dev.virtualearth.net',
+						mapStyle: Cesium.BingMapsStyle.AERIAL,
+						key: URL_CONFIG.BING_MAP_KEY
+					}),
+				});
+				var scene = viewer.scene;
+				scene.camera.frustum.near = 0.01;
+				var widget = viewer.cesiumWidget;
+				$("#toolbar").show();
+				var entity;
+				var arr = [];
+				var i = 0;
+				while(i < 20000) {
+					arr.push(i);
+					i++;
+				}
+				var promise = [];
+				promise[0] = scene.addS3MTilesLayerByScp(URL_CONFIG.SCENE_GTC_UNIT9, {
+					name: '九号楼@九号楼'
+				});
+				promise[1] = scene.addS3MTilesLayerByScp(URL_CONFIG.SCENE_GTC_UNIT9, {
+					name: '九号楼@九号楼1'
+				});
+				promise[2] = scene.addS3MTilesLayerByScp(URL_CONFIG.SCENE_GTC_BUILDIBG, {
+					name: 'original'
+				});
+				promise[3] = scene.addS3MTilesLayerByScp(URL_CONFIG.SCENE_GTC_UINSIDE, {
+					name: 'origina白膜控制'
+				});
+				promise[4] = scene.addS3MTilesLayerByScp(URL_CONFIG.SCENE_GTC_GROUND, {
+					name: 'ground'
+				});
+				Cesium.when.all(promise, function(layer) {
+					//设置相机位置、方向，定位至模型
+					scene.camera.setView({
+						destination: Cesium.Cartesian3.fromDegrees(115.000225758308630, 39.009956534844858, 500),
+						orientation: {
+							heading: 1.705646,
+							pitch: -0.499956,
+							roll: 0.000000
+						}
+					});
+
+					var original = scene.layers.find("original");
+					var origina2 = scene.layers.find("origina白膜控制");
+					original.setObjsVisible([47], false);
+					origina2.setObjsVisible([47], false);
+				});
+				document.getElementById("linearExtrude").onclick = function() {
+					HighLimit(viewer, scene);
+				};
+				document.getElementById("reset").onclick = function() {
+					viewer.entities.removeAll();
+					var building = scene.layers.find("九号楼@九号楼");
+					var building1 = scene.layers.find("九号楼@九号楼1");
+					building.removeObjsColor(arr);
+					building1.removeObjsColor(arr);
+					scene.camera.setView({
+						destination: Cesium.Cartesian3.fromDegrees(115.000225758308630, 39.009956534844858, 500),
+						orientation: {
+							heading: 1.705646,
+							pitch: -0.499956,
+							roll: 0.000000
+						}
+					});
+
+				};
+
+				function HighLimit(viewer, scene) {
+					viewer.camera.flyTo({
+						destination: new Cesium.Cartesian3.fromDegrees(115.00366140297365, 39.01073839434967, 331.116406992883),
+						orientation: {
+							heading: 1.924510,
+							pitch: -0.403816,
+							roll: 0.000000
+						}
+					});
+					var original = scene.layers.find("original");
+					var origina2 = scene.layers.find("origina白膜控制");
+					var building = scene.layers.find("九号楼@九号楼");
+					var building1 = scene.layers.find("九号楼@九号楼1");
+					original.setObjsVisible([47], false);
+					origina2.setObjsVisible([47], false);
+					var instance = new Cesium.S3MInstanceCollection(scene._context);
+					scene.primitives.add(instance);
+					window.setTimeout(function() {
+						entity = viewer.entities.add({
+							id: 'polygonA',
+							polygon: {
+								hierarchy: Cesium.Cartesian3.fromDegreesArray([
+									115.00769546779887, 39.00948953601627,
+									115.01061031637882, 39.01040583624218,
+									115.01127283211821, 39.00875368295838,
+									115.00837238000206, 39.0079302039017
+								]),
+								height: 105,
+								material: new Cesium.Color(1, 1, 0.20, 0.5),
+								outline: true,
+								outlineColor: Cesium.Color.RED,
+								outlineWidth: 50
+							}
+						});
+						building.clipLineColor = Cesium.Color.WHITE.withAlpha(0.0);
+						building1.setObjsColor(arr, Cesium.Color.DARKORANGE.withAlpha(0.5));
+						original.clipLineColor = Cesium.Color.WHITE.withAlpha(0.0);
+						origina2.clipLineColor = Cesium.Color.WHITE.withAlpha(0.0);
+						origina2.setObjsColor([21, 17, 160, 62, 50, 55, 203, 57, 69, 197, 481, 29, 198, 202, 47], Cesium.Color.DARKORANGE.withAlpha(0.5));
+						var height = 100;
+						var flag = true;
+						var flagA = true;
+						window.setInterval(function() {
+							if(height <= 170 && flagA) {
+								if(flag) {
+									height += 1.0;
+								}
+								if(height == 170) {
+									flagA = false;
+									var tooltip;
+									tooltip = createTooltip(document.body);
+									var cartesian = Cesium.Cartesian3.fromDegrees(115.00781714813387, 39.00939422072619, 172.618)
+									var pick = Cesium.SceneTransforms.wgs84ToWindowCoordinates(viewer.scene, cartesian);
+									tooltip.showAt(pick, '建筑限高97米');
+									window.setTimeout(function() {
+										tooltip.setVisible(false);
+									}, 3000);
+								}
+								entity.polygon.height = height + 2;
+								scene.layers.find("九号楼@九号楼").setCustomClipBox({
+									dimensions: new Cesium.Cartesian3(280, 250, height * 2),
+									position: Cesium.Cartesian3.fromDegrees(115.00942125650806, 39.00903543560274, height / 50 - 1),
+									clipMode: "clip_behind_any_plane"
+								});
+								scene.layers.find("九号楼@九号楼1").setCustomClipBox({
+									dimensions: new Cesium.Cartesian3(280, 250, height * 2),
+									position: Cesium.Cartesian3.fromDegrees(115.00942125650806, 39.00903543560274, height / 50 - 1),
+									clipMode: "clip_behind_all_plane"
+								});
+								scene.layers.find("original").setCustomClipBox({
+									dimensions: new Cesium.Cartesian3(280, 250, height * 2),
+									position: Cesium.Cartesian3.fromDegrees(115.00942125650806, 39.00903543560274, height / 50 - 1),
+									clipMode: "clip_behind_any_plane"
+								});
+								scene.layers.find("origina白膜控制").setCustomClipBox({
+									dimensions: new Cesium.Cartesian3(280, 250, height * 2),
+									position: Cesium.Cartesian3.fromDegrees(115.00942125650806, 39.00903543560274, height / 50 - 1),
+									clipMode: "clip_behind_all_plane"
+								});
+							}
+						}, 220);
+					}, 2000);
+				}
+			}
+		</script>
+	</body>
+
+</html>

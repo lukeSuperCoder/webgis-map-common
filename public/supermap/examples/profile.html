@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+		<title>剖面分析</title>
+		<link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+		<link href="./css/bootstrap-new.min.css" rel="stylesheet">
+		<link href="./css/pretty.css" rel="stylesheet">
+		<script src="./js/tooltip.js"></script>
+		<script type="text/javascript" src="./js/jquery.min.js"></script>
+		<script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+		<script src="./js/config.js"></script>
+	</head>
+
+	<body>
+		<div id="cesiumContainer"></div>
+		<div id='loadingbar' class="spinner">
+			<div class="spinner-container container1">
+				<div class="circle1"></div>
+				<div class="circle2"></div>
+				<div class="circle3"></div>
+				<div class="circle4"></div>
+			</div>
+			<div class="spinner-container container2">
+				<div class="circle1"></div>
+				<div class="circle2"></div>
+				<div class="circle3"></div>
+				<div class="circle4"></div>
+			</div>
+			<div class="spinner-container container3">
+				<div class="circle1"></div>
+				<div class="circle2"></div>
+				<div class="circle3"></div>
+				<div class="circle4"></div>
+			</div>
+		</div>
+		<div id="toolbar" class="param-container tool-bar">
+			<button type="button" id="chooseView" class="button black">剖面分析</button>
+			<button type="button" id="clear" class="button black">清除</button>
+		</div>
+		<canvas style="position : absolute; right : 2%; bottom : 2%;background-color:rgba(65, 65, 65, 0.5)" id="pro" height="0" width="0"></canvas>
+	</body>
+	<script type="text/javascript">
+		function onload(Cesium) {
+			var viewer = new Cesium.Viewer('cesiumContainer');
+			viewer.imageryLayers.addImageryProvider(new Cesium.BingMapsImageryProvider({
+				url: 'https://dev.virtualearth.net',
+				mapStyle: Cesium.BingMapsStyle.AERIAL,
+				key: URL_CONFIG.BING_MAP_KEY
+			}));
+			var scene = viewer.scene;
+            $("#toolbar").show();
+			$('#loadingbar').remove();
+			if(!scene.pickPositionSupported) {
+				alert('不支持深度纹理,剖面分析功能无法使用！');
+			}
+			//创建剖面分析对象
+			var profile = new Cesium.Profile(scene);
+			var tooltip = createTooltip(document.body);
+			var widget = viewer.cesiumWidget;
+			try {
+				//添加S3M图层
+				var ground1Promise = scene.addS3MTilesLayerByScp(URL_CONFIG.SCP_CBD_GROUND1, {
+					name: 'ground1'
+				});
+				var buildPromise = scene.addS3MTilesLayerByScp(URL_CONFIG.SCP_CBD_BUILD, {
+					name: 'build'
+				});
+				var promiseSet = [ground1Promise, buildPromise];
+				Cesium.when.all(promiseSet, function(layer) {
+					scene.camera.setView({ //图层加载完成,设置相机位置
+						destination: Cesium.Cartesian3.fromDegrees(116.4473, 39.9011, 127),
+						orientation: {
+							heading: 0.2732,
+							pitch: -0.1583,
+							roll: 0
+						}
+					});
+					for(var i = 0; i < layer.length; i++) {
+						layer[i].selectEnabled = false;
+					}
+				}, function(e) {
+					if(widget._showRenderLoopErrors) {
+						var title = '加载SCP失败，请检查网络连接状态或者url地址是否正确？';
+						widget.showErrorPanel(title, undefined, e);
+					}
+				});
+				var handlerLine = new Cesium.DrawHandler(viewer, Cesium.DrawMode.Line);
+				handlerLine.activeEvt.addEventListener(function(isActive) {
+					if(isActive == true) {
+						viewer.enableCursorStyle = false;
+						viewer._element.style.cursor = '';
+						$('body').removeClass('drawCur').addClass('drawCur');
+					} else {
+						viewer.enableCursorStyle = true;
+						$('body').removeClass('drawCur');
+					}
+				});
+				handlerLine.movingEvt.addEventListener(function(windowPosition) {
+					if(handlerLine.isDrawing) {
+						tooltip.showAt(windowPosition, '<p>右键单击结束绘制</p>');
+					} else {
+						tooltip.showAt(windowPosition, '<p>点击绘制第一个点</p>');
+					}
+
+				});
+				var handler = new Cesium.ScreenSpaceEventHandler(scene.canvas);
+
+				handlerLine.drawEvt.addEventListener(function(result) {
+					tooltip.setVisible(false);
+					var line = result.object;
+					var startPoint = line._positions[0];
+					var endPoint = line._positions[line._positions.length - 1];
+
+					var scartographic = Cesium.Cartographic.fromCartesian(startPoint);
+					var slongitude = Cesium.Math.toDegrees(scartographic.longitude);
+					var slatitude = Cesium.Math.toDegrees(scartographic.latitude);
+					var sheight = scartographic.height;
+
+					var ecartographic = Cesium.Cartographic.fromCartesian(endPoint);
+					var elongitude = Cesium.Math.toDegrees(ecartographic.longitude);
+					var elatitude = Cesium.Math.toDegrees(ecartographic.latitude);
+					var eheight = ecartographic.height;
+
+					//设置坡面分析的开始和结束位置
+					profile.startPoint = [slongitude, slatitude, sheight];
+					profile.endPoint = [elongitude, elatitude, eheight];
+
+					profile.extendHeight = 40;
+
+					//分析完毕的回调函数
+					profile.getBuffer(function(buffer) {
+
+						var canvas = document.getElementById("pro");
+						canvas.height = profile._textureHeight;
+						canvas.width = profile._textureWidth;
+						var ctx = canvas.getContext("2d");
+						var imgData = ctx.createImageData(profile._textureWidth, profile._textureHeight);
+						imgData.data.set(buffer);
+						//在canvas上绘制图片
+						ctx.putImageData(imgData, 0, 0);
+						$("#pro").width(600);
+						$("#pro").height(450);
+					});
+
+					profile.build();
+				});
+
+				document.getElementById("chooseView").onclick = function() {
+					//先清除之前绘制的线
+					handlerLine.clear();
+					$("#pro").width(0);
+					$("#pro").height(0);
+					if(handlerLine.active) {
+						return;
+					} else {
+						handlerLine.activate();
+						//由于剖面分析只能绘制直线，此处绘制时单击两次就触发结束事件
+						handler.setInputAction(function(e) {
+							if(handlerLine.polyline._actualPositions.length == 2) {
+								var result = {};
+								result.object = handlerLine.polyline;
+								handlerLine.drawEvt.raiseEvent(result);
+								handlerLine.deactivate();
+								handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK);
+							}
+						}, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+					}
+
+				};
+				document.getElementById("clear").onclick = function() {
+					handlerLine.clear();
+					$("#pro").width(0);
+					$("#pro").height(0);
+				}
+
+			} catch(e) {
+				if(scene.context.depthTexture) {
+					swal("剖面分析", "该浏览器不支持深度纹理检测", "warning");
+				}
+			}
+
+		}
+	</script>
+
+</html>

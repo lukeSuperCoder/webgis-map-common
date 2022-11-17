@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>萨尔茨堡倾斜模型水面特效</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link href="./css/pretty.css" rel="stylesheet">
+    <script src="./js/jquery.min.js"></script>
+    <script src="./js/config.js"></script>
+	<script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<div id='loadingbar' class="spinner">
+    <div class="spinner-container container1">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container2">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container3">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+</div>
+<script type="text/javascript">
+    function onload(Cesium) {
+        var viewer = new Cesium.Viewer('cesiumContainer');
+        viewer.imageryLayers.addImageryProvider(new Cesium.BingMapsImageryProvider({
+            url : 'https://dev.virtualearth.net',
+            mapStyle : Cesium.BingMapsStyle.AERIAL,
+            key : URL_CONFIG.BING_MAP_KEY
+        }));
+        var scene = viewer.scene;
+        var widget = viewer.cesiumWidget;
+        $('#loadingbar').remove();
+        try{
+            /*//依次向场景添加S3M图层服务
+            var promise1 = scene.addS3MTilesLayerByScp(URL_CONFIG.SCP_SRSB,{
+                name : 'srsb'
+            });
+            var promise2 = scene.addS3MTilesLayerByScp(URL_CONFIG.SCP_SRSB_WATER,{
+                name : 'srsb_water'
+            });*/
+            var promise = scene.open(URL_CONFIG.SCENE_SRSB);
+            Cesium.when(promise, function(){
+                //查找水面图层
+                var waterLayer =scene.layers.find('水面@vector');
+                var style = new Cesium.Style3D();
+                style.bottomAltitude = 5;
+                //设置水面图层的底部高程，确保水面与模型贴合
+                waterLayer.style3D = style;
+                //设置风格后需刷新
+                waterLayer.refresh();
+                //设置相机位置、视角，便于观察场景
+                var d1 = Cesium.Math.toDegrees(0.8344578907203247);
+                var d2 = Cesium.Math.toDegrees(0.22751343457105547);
+                scene.camera.setView({
+                   destination : Cesium.Cartesian3.fromDegrees(13.0353,47.8084,100.0),
+                    orientation:{
+                        heading:0.7272,
+                        pitch:-0.2672,
+                        roll:0
+                    }
+                })
+            },function(){
+                var title = '加载SCP失败，请检查网络连接状态或者url地址是否正确？';
+                widget.showErrorPanel(title, undefined, e);
+            });
+        }
+        catch(e){
+            if (widget._showRenderLoopErrors) {
+                var title = '渲染时发生错误，已停止渲染。';
+                widget.showErrorPanel(title, undefined, e);
+            }
+        }
+    }
+    </script>
+</body>
+</html>

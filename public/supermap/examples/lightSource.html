@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+		<title>lightSource</title>
+		<link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+		<link href="./css/font-awesome.min.css" rel="stylesheet">
+		<link href="./css/bootstrap.min.css" rel="stylesheet">
+		<link href="./css/pretty.css" rel="stylesheet">
+		<script src="./js/jquery.min.js"></script>
+		<script src="./js/bootstrap.min.js"></script>
+		<script src="./js/bootstrap-select.min.js"></script>
+		<script src="./js/config.js"></script>
+		<script src="./js/spectrum.js"></script>
+		<script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+		<style>
+			label {
+				display: inline-block;
+				margin-right: 1rem;
+			}
+			
+			label>input,
+			label>span {
+				display: inline-block;
+				vertical-align: middle;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div id="cesiumContainer"></div>
+		<div id="toolbar" class="param-container tool-bar">
+			<select id="lightSourceType" class="selectpicker show-tick form-control">
+				<option value="NONE" selected>不添加光源</option>
+				<option value="POINTLIGHT">点光源</option>
+				<option value="SPOTLIGHT">聚光源</option>
+				<option value="DIRECTIONALLIGHT">平行光源</option>
+			</select>
+			<div id="pannel" style="padding: 10px;display: block;">
+				<div id="pointLightPannel" style="display: none;">
+					<div class="param-item">
+						<label>扩散距离：</label>
+						<input type="range" id="p_distance" min="0" max="2000" value="1000" step="10" style="width: 120px">
+					</div>
+					<div class="param-item">
+						<label>衰减因子：</label>
+						<input type="range" id="p_dacay" min="0" max="100" value="1" step="0.1" style="width: 120px">
+					</div>
+					<div class="param-item">
+						<label>光源强度：</label>
+						<input type="range" id="p_intensity" min="0" max="20" value="3" step="0.1" style="width: 120px">
+					</div>
+				</div>
+				<div id="spotLightPannel" style="display: none;">
+					<div class="param-item">
+						<label>光照距离：</label>
+						<input type="range" id="s_distance" min="0" max="400" value="200" step="1" style="width: 120px">
+					</div>
+					<div class="param-item">
+						<label>衰减因子：</label>
+						<input type="range" id="s_dacay" min="0" max="6" value="0.5" step="0.1" style="width: 120px">
+					</div>
+					<div class="param-item">
+						<label>光源强度：</label>
+						<input type="range" id="s_intensity" min="0" max="10" value="5" step="0.1" style="width: 120px">
+					</div>
+				</div>
+				<div id="directionalLightPannel" style="display: none;">
+					<div class="param-item">
+						<label for="directionalLight_v">垂直平行光源</label>
+						<input type="checkbox" id="directionalLight_v" checked>
+					</div>
+					<div class="param-item">
+						<label>光源强度：</label>
+						<input type="range" id="dLight_v" min="0" max="10" value="2" step="0.1" style="width: 120px">
+					</div>
+					<div class="divider"></div>
+					<div class="param-item">
+						<label for="directionalLight_h1">水平平行光源</label>
+						<input type="checkbox" id="directionalLight_h1" checked>
+					</div>
+					<div class="param-item">
+						<label>光源强度：</label>
+						<input type="range" id="dLight_h1" min="0" max="10" value="2" step="0.1" style="width:120px">
+					</div>
+				</div>
+			</div>
+		</div>
+		<script type="text/javascript">
+			function onload(Cesium) {
+				var viewer = new Cesium.Viewer('cesiumContainer');
+				viewer.imageryLayers.addImageryProvider(new Cesium.BingMapsImageryProvider({
+					url: 'https://dev.virtualearth.net',
+					mapStyle: Cesium.BingMapsStyle.AERIAL,
+					key: URL_CONFIG.BING_MAP_KEY
+				}));
+				var scene = viewer.scene;
+				scene.sun.show = false;
+				scene.globe.enableLighting = false;
+				scene.lightSource._ambientLightColor = new Cesium.Color(0.4, 0.4, 0.4, 0.4);
+				var pointLight;
+				var spotLight;
+				var directionalLight_v, directionalLight_h1;
+				var pointEntity, spotEntity;
+
+				try {
+					//场景添加S3M图层服务
+					var promise = scene.open(URL_CONFIG.SCENE_BIMBUILDING);
+					Cesium.when(promise, function(layers) {
+							//设置相机位置、方向，定位至模型
+							scene.camera.setView({
+								destination: new Cesium.Cartesian3(-2180753.065987198, 4379023.266141494, 4092583.575045952),
+								orientation: {
+									heading: 4.0392222751147955,
+									pitch: 0.010279641987852584,
+									roll: 1.240962888005015e-11
+								}
+							});
+							$('#p_distance').bind('input propertychange', function() {
+								var value = Number($(this).val());
+								pointLight.cutoffDistance = value;
+							});
+							$('#p_dacay').bind('input propertychange', function() {
+								var value = Number($(this).val());
+								pointLight.decay = value;
+							});
+							$('#p_intensity').bind('input propertychange', function() {
+								var value = Number($(this).val());
+								pointLight.intensity = value;
+							});
+
+							$('#s_distance').bind('input propertychange', function() {
+								var value = Number($(this).val());
+								spotLight.distance = value;
+							});
+							$('#s_dacay').bind('input propertychange', function() {
+								var value = Number($(this).val());
+								spotLight.decay = value;
+							});
+							$('#s_intensity').bind('input propertychange', function() {
+								var value = Number($(this).val());
+								spotLight.intensity = value;
+							});
+							$('#dLight_v').bind('input propertychange', function() {
+								var value = Number($(this).val());
+								directionalLight_v.intensity = value;
+							});
+							$('#dLight_h1').bind('input propertychange', function() {
+								var value = Number($(this).val());
+								directionalLight_h1.intensity = value;
+							});
+
+							$('#lightSourceType').change(function() {
+								var value = $(this).val();
+								switch(value) {
+									case "NONE":
+										$('#pannel').hide();
+										viewer.entities.remove(pointEntity);
+										viewer.entities.remove(spotEntity);
+										scene.removeLightSource(pointLight);
+										scene.removeLightSource(spotLight);
+										scene.removeLightSource(directionalLight_v);
+										scene.removeLightSource(directionalLight_h1);
+										break;
+									case "POINTLIGHT":
+										var position = new Cesium.Cartesian3(-2180734.470505298, 4379055.704271189, 4092558.53920364);
+										var posDeg = Cesium.Cartographic.fromCartesian(position);
+										var pointPosition = Cesium.Cartesian3.fromRadians(posDeg.longitude, posDeg.latitude, posDeg.height);
+										pointEntity = viewer.entities.add(new Cesium.Entity({
+											point: new Cesium.PointGraphics({
+												color: new Cesium.Color(1, 1, 1),
+												pixelSize: 10,
+												outlineColor: new Cesium.Color(1, 1, 1)
+											}),
+											position: pointPosition
+										}));
+										var options = {
+											color: new Cesium.Color(1, 1, 1, 1),
+											cutoffDistance: 1000,
+											decay: 1,
+											intensity: 3
+										};
+										pointLight = new Cesium.PointLight(position, options);
+										scene.addLightSource(pointLight);
+										scene.removeLightSource(spotLight);
+										scene.removeLightSource(directionalLight_v);
+										scene.removeLightSource(directionalLight_h1);
+										viewer.entities.remove(spotEntity);
+										$('#pannel').show();
+										$('#pointLightPannel').show();
+										$('#directionalLightPannel').hide();
+										$('#spotLightPannel').hide();
+										break;
+									case "SPOTLIGHT":
+										var position = new Cesium.Cartesian3(-2180745.273232958, 4379070.071537397, 4092580.1516873706);
+										var targetPosition = new Cesium.Cartesian3(-2180741.228113831, 4379061.016078637, 4092570.800119596);
+										var posDeg = Cesium.Cartographic.fromCartesian(position);
+										var pointPosition = Cesium.Cartesian3.fromRadians(posDeg.longitude, posDeg.latitude, posDeg.height);
+										spotEntity = viewer.entities.add(new Cesium.Entity({
+											point: new Cesium.PointGraphics({
+												color: new Cesium.Color(1, 1, 1),
+												pixelSize: 10,
+												outlineColor: new Cesium.Color(1, 1, 1)
+											}),
+											position: pointPosition
+										}));
+										var options = {
+											color: new Cesium.Color(1, 1, 1, 1),
+											distance: 200,
+											decay: 0.5,
+											intensity: 5
+										};
+										spotLight = new Cesium.SpotLight(position, targetPosition, options);
+										scene.addLightSource(spotLight);
+										scene.removeLightSource(pointLight);
+										scene.removeLightSource(directionalLight_v);
+										scene.removeLightSource(directionalLight_h1);
+										viewer.entities.remove(pointEntity);
+										$('#pannel').show();
+										$('#pointLightPannel').hide();
+										$('#spotLightPannel').show();
+										$('#directionalLightPannel').hide();
+										break;
+									case "DIRECTIONALLIGHT":
+										//设置点光源
+										var position = new Cesium.Cartesian3(-2180765.1825337997, 4379131.271389126, 4092630.162654784);
+										var position1 = new Cesium.Cartesian3(-2180878.0519406004, 4378948.067730668, 4092609.6775166253);
+										var targetPosition1 = new Cesium.Cartesian3(-2180587.505824384, 4379172.4152414, 4092534.7949573714);
+										var options = {
+											intensity: 2
+										};
+										var options1 = {
+											targetPosition: targetPosition1,
+											intensity: 2
+										};
+										directionalLight_h1 = new Cesium.DirectionalLight(position1, options1);
+										directionalLight_v = new Cesium.DirectionalLight(position, options);
+										scene.addLightSource(directionalLight_v);
+										scene.addLightSource(directionalLight_h1);
+										scene.removeLightSource(pointLight);
+										scene.removeLightSource(spotLight);
+										viewer.entities.remove(pointEntity);
+										viewer.entities.remove(spotEntity);
+										$('#pannel').show();
+										$('#pointLightPannel').hide();
+										$('#spotLightPannel').hide();
+										$('#directionalLightPannel').show();
+										break;
+									default:
+										$('#pannel').show();
+										break;
+								}
+							});
+
+							$("#directionalLight_v").on("input change", function() {
+								if(!this.checked) {
+									scene.removeLightSource(directionalLight_v);
+								} else {
+									scene.addLightSource(directionalLight_v);
+								}
+							});
+							$("#directionalLight_h1").on("input change", function() {
+								if(!this.checked) {
+									scene.removeLightSource(directionalLight_h1);
+								} else {
+									scene.addLightSource(directionalLight_h1);
+								}
+							});
+
+						},
+						function(e) {
+							if(widget._showRenderLoopErrors) {
+								var title = '加载SCP失败，请检查网络连接状态或者url地址是否正确？';
+								widget.showErrorPanel(title, undefined, e);
+							}
+						});
+				} catch(e) {
+					if(widget._showRenderLoopErrors) {
+						var title = '渲染时发生错误，已停止渲染。';
+						widget.showErrorPanel(title, undefined, e);
+					}
+				}
+			}
+		</script>
+	</body>
+
+</html>

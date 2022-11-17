@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en" style="height: 100%">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <meta name="description" content="Test">
+    <meta name="cesium-sandcastle-labels" content="Geometries">
+    <title>SuperMap 态势推演</title>
+
+    <script type="text/javascript" src="../Build/Cesium/ThirdParty/Workers/PlotAlgo/PlotAlgoInclude.js"></script>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link rel="stylesheet" href="./css/sideBar.css">
+    <script src="js/jquery.min.js"></script>
+    <link rel="stylesheet" type="text/css" media="screen,projection" href="css/jquery-sticklr.css"/>
+    <script src="js/plotPanelControl/PlottingUI.Include.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <link href="css/bootstrap-new.min.css" rel="stylesheet">
+    <script type="text/javascript" src="js/require.min.js" data-main="js/main"></script>
+
+</head>
+
+<body class="sandcastle-loading" data-sandcastle-bucket="bucket-requirejs.html"
+      style="margin: 0px; overflow: hidden;background: #fff;height: 100%;">
+<div id="toolbar" class="panel panel-primary"
+     style=" position: absolute;top: 10px;left: 10px;width: 600px;height: 100px; border-width: 1px;solid: #3473b7;text-align: center;z-index: 9999;border-radius: 4px;">
+    <div class='panel-heading'>
+        <h5 class='panel-title text-center'>态势推演</h5></div>
+    <div class='panel-body content'>
+        <input type="button" class="btn btn-default" value="创建动画" onclick="creatAnimation()"/>&nbsp; &nbsp;
+        <input type="button" class="btn btn-default" value="播放" onclick="play()"/>
+        <input type="button" class="btn btn-default" value="暂停" onclick="pause()"/>
+        <input type="button" class="btn btn-default" value="停止" onclick="stop()"/>
+        <input type="button" class="btn btn-default" value="复位" onclick="reset()"/>
+        <input type="button" class="btn btn-default" value="删除动画" onclick="deleteSelectedFeaturesAnimation()"/>
+        <input type="button" class="btn btn-default" value="删除全部动画" onclick="deleteAllAnimation()"/>
+    </div>
+</div>
+<div id="cesiumContainer" class="fullSize" style="position: relative;left: 0%;height: 100%;border: 1px solid #3473b7;">
+    <script id="cesium_sandcastle_script">
+        var cesium, scene, viewer, serverUrl;
+        var plottingLayer;
+        var plotting;
+        var animationManager;
+
+        function onload(Cesium) {
+            'use strict';
+            cesium = Cesium;
+            //若本地没有标绘相关服务则可访问支持中心的iserver
+            // var host = document.location.toString().match('/file:\/\//') ? 'http://localhost:8090' : 'http://' + document.location.host;
+            var host =  'http://support.supermap.com.cn:8090' ;
+            viewer = new Cesium.Viewer('cesiumContainer');
+            scene = viewer.scene;
+            scene.globe.depthTestAgainstTerrain = false;
+            serverUrl = host + '/iserver/services/plot-jingyong/rest/plot';
+            InitPlot(viewer, serverUrl);
+        }
+
+        function InitPlot(viewer, serverUrl) {
+            if (!viewer) {
+                return;
+            }
+            var campos = cesium.Cartesian3.fromDegrees(121.58041176757547, 38.859240850898405, 500);
+            scene.camera.setView({
+                destination: campos,
+                orientation: {
+                    heading: cesium.Math.toRadians(0),
+                    pitch: -0.20917672793046682,
+                    roll: 2.708944180085382e-13
+                }
+            });
+            plottingLayer = new cesium.PlottingLayer(scene, "plottingLayer");
+            scene.layers.add(plottingLayer);
+
+            plotting = cesium.Plotting.getInstance(serverUrl, scene);
+
+            plotEditControl = new cesium.PlotEditControl(scene, plottingLayer);//编辑控件
+            plotEditControl.activate();
+
+            animationManager = plotting.getGOAnimationManager();
+
+            window.setInterval(function execute() {
+                animationManager.execute();
+            }, 100);
+        }
+
+        function creatAnimation() {
+            var geoJGSZ = null;
+            var geoTFXS = null;
+            var geoLJXS = null;
+            var geoTFXS2 = null;
+            var geoZYSS = null;
+            var geoLJZY = null;
+            var geoZYSS2 = null;
+            var geoJC = null;
+            var geoSJ = null;
+            var geoLJJL = null;
+            var geoJGJL = null;
+
+            var pointsJGSZ = [];
+            pointsJGSZ[0] = new cesium.PlotPoint3D(13.0486416724835, 47.827217402435, 0);
+            pointsJGSZ[1] = new cesium.PlotPoint3D(13.0484530291208, 47.8273069046719, 0);
+            pointsJGSZ[2] = new cesium.PlotPoint3D(13.0498576145008, 47.8282734633643, 0);
+            pointsJGSZ[3] = new cesium.PlotPoint3D(13.0513393769035, 47.8287206684327, 0);
+            pointsJGSZ = MoveSymbol(pointsJGSZ);
+            plottingLayer.createSymbol(22, 1004, pointsJGSZ, function (even) {
+                geoJGSZ = even.feature;
+                var goAnimationJGSZ = animationManager.createGOAnimation(cesium.GOAnimationType.ANIMATION_GROW, "JGSZ", geoJGSZ);//进攻警力生长动画
+                goAnimationJGSZ.startTime = 0;//动画开始时间
+                goAnimationJGSZ.duration = 5;//动画播放时长
+            });
+
+            var pointsTFXS = [];
+            pointsTFXS[0] = new cesium.PlotPoint3D(13.0523705219875, 47.828610443775, 0);
+            pointsTFXS[1] = new cesium.PlotPoint3D(13.0528881926318, 47.8282317961645, 0);
+            pointsTFXS = MoveSymbol(pointsTFXS);
+            plottingLayer.createSymbol(22, 1003, pointsTFXS, function (even) {
+                geoTFXS = even.feature;
+                geoTFXS.symbolStyle.lineColor = {red: 1, green: 1, blue: 0, alpha: 1};//"#ffff00"
+                var goAnimationTFXS = animationManager.createGOAnimation(cesium.GOAnimationType.ANIMATION_SHOW, "TFXS1", geoTFXS);//逃犯显隐动画
+                goAnimationTFXS.showEffect = false;//是否有显隐特效
+                goAnimationTFXS.finalDisplay = true; //最终显示状态，默认不显示
+                goAnimationTFXS.startTime = 0;
+                goAnimationTFXS.duration = 6;
+
+                var goAnimationTFXS1 = animationManager.createGOAnimation(cesium.GOAnimationType.ANIMATION_GROW, "TFSZ1", geoTFXS);//逃犯生长动画
+                goAnimationTFXS1.startTime = 5;
+                goAnimationTFXS1.duration = 6;
+                goAnimationTFXS1.startScale = 1;//生长动画开始比例
+                goAnimationTFXS1.endScale = 0;//生长动画结束比例
+            });
+
+            var pointsLJXS = [];
+            pointsLJXS[0] = new cesium.PlotPoint3D(13.0534667673921, 47.8270362098687, 0);
+            pointsLJXS[1] = new cesium.PlotPoint3D(13.0538011154244, 47.827160636473, 0);
+            pointsLJXS[2] = new cesium.PlotPoint3D(13.0536234845445, 47.8277084980454, 0);
+            pointsLJXS[3] = new cesium.PlotPoint3D(13.0527838234958, 47.8283098940719, 0);
+            pointsLJXS = MoveSymbol(pointsLJXS);
+            plottingLayer.createSymbol(421, 311, pointsLJXS, function (even) {
+                geoLJXS = even.feature;
+                var goAnimationLJXZ = animationManager.createGOAnimation(cesium.GOAnimationType.ANIMATION_SHOW, "LJXZ", geoLJXS);//拦截警力显隐动画
+                goAnimationLJXZ.showEffect = false;
+                goAnimationLJXZ.finalDisplay = true;
+                goAnimationLJXZ.startTime = 0;
+                goAnimationLJXZ.duration = 6;
+
+                var goAnimationLJXZ1 = animationManager.createGOAnimation(cesium.GOAnimationType.ANIMATION_GROW, "LJXZ1", geoLJXS);//拦截警力生长动画
+                goAnimationLJXZ1.startTime = 5;
+                goAnimationLJXZ1.duration = 6;
+            });
+
+
+            var pointsTFXS2 = [];
+            pointsTFXS2[0] = new cesium.PlotPoint3D(13.0523210258708, 47.8288491462176, 0);
+            pointsTFXS2[1] = new cesium.PlotPoint3D(13.0529279851615, 47.8293174019239, 0);
+            pointsTFXS2 = MoveSymbol(pointsTFXS2);
+            plottingLayer.createSymbol(22, 1003, pointsTFXS2, function (even) {
+                geoTFXS2 = even.feature;
+                geoTFXS2._symbolStyle._lineColor = {red: 1, green: 1, blue: 0, alpha: 1};//"#ffff00"
+                var goAnimationTFXS2 = animationManager.createGOAnimation(cesium.GOAnimationType.ANIMATION_SHOW, "TFXS2", geoTFXS2);//逃犯显隐动画
+                goAnimationTFXS2.showEffect = false;
+                goAnimationTFXS2.finalDisplay = true;
+                goAnimationTFXS2.startTime = 0;
+                goAnimationTFXS2.duration = 12;
+
+                var goAnimationTFSZ2 = animationManager.createGOAnimation(cesium.GOAnimationType.ANIMATION_GROW, "TFSZ2", geoTFXS2);//逃犯生长动画
+                goAnimationTFSZ2.startTime = 11;
+                goAnimationTFSZ2.duration = 3;
+                goAnimationTFSZ2.startScale = 0;
+                goAnimationTFSZ2.endScale = 1;
+
+            });
+            var pointsZYSS = [];
+            pointsZYSS[0] = new cesium.PlotPoint3D(13.0542650683879, 47.8287131454005, 0);
+            pointsZYSS = MoveSymbol(pointsZYSS);
+            plottingLayer.createSymbol(421, 80101, pointsZYSS, function (even) {
+                geoZYSS = even.feature;
+                geoZYSS.textContent = "支援警力";
+                var goAnimationZYSS = animationManager.createGOAnimation(cesium.GOAnimationType.ANIMATION_BLINK, "ZYSS", geoZYSS);//支援警力闪烁动画
+                goAnimationZYSS.blinkStyle = cesium.BlinkAnimationBlinkStyle.Blink_Frequency;//闪烁类型，频率闪烁
+                goAnimationZYSS.replaceStyle = cesium.BlinkAnimationReplaceStyle.Replace_Color;//颜色交替类型
+                goAnimationZYSS.startColor = {red:0,green:0,blue:1,alpha:1}; //开始颜色，默认为蓝色
+                goAnimationZYSS.endColor =  {red:1,green:0,blue:0,alpha:1}; //结束颜色，默认为红色
+                goAnimationZYSS.startTime = 14;
+                goAnimationZYSS.duration = 3;
+            });
+
+
+            var pointsLJZY = [];
+            pointsLJZY[0] = new cesium.PlotPoint3D(13.0532740180585, 47.829706145191, 0);
+            pointsLJZY = MoveSymbol(pointsLJZY);
+            plottingLayer.createSymbol(421, 80202, pointsLJZY, function (even) {
+                geoLJZY = even.feature;
+                geoLJZY.textContent = "拦截车";
+
+                var goAnimationJGZY = animationManager.createGOAnimation(cesium.GOAnimationType.ANIMATION_BLINK, "JGZY", geoLJZY);//拦截车闪烁动画
+                goAnimationJGZY.blinkStyle = cesium.BlinkAnimationBlinkStyle.Blink_Frequency;
+                goAnimationJGZY.replaceStyle = cesium.BlinkAnimationReplaceStyle.Replace_Color;
+                goAnimationJGZY.startTime = 14;
+                goAnimationJGZY.duration = 3;
+            });
+
+
+            var pointsZYSS2 = [];
+            pointsZYSS2[0] = new cesium.PlotPoint3D(13.0520708307129, 47.8299387619131, 0);
+            pointsZYSS2 = MoveSymbol(pointsZYSS2);
+            plottingLayer.createSymbol(421, 80101, pointsZYSS2, function (even) {
+                geoZYSS2 = even.feature;
+                geoZYSS2.textContent = "支援警力";
+
+                var goAnimationZYSS2 = animationManager.createGOAnimation(cesium.GOAnimationType.ANIMATION_BLINK, "ZYSS2", geoZYSS2);//支援警力闪烁动画
+                goAnimationZYSS2.blinkStyle = cesium.BlinkAnimationBlinkStyle.Blink_Frequency;
+                goAnimationZYSS2.replaceStyle = cesium.BlinkAnimationReplaceStyle.Replace_Color;
+                goAnimationZYSS2.startTime = 14;
+                goAnimationZYSS2.duration = 3;
+            });
+
+
+            var pointsJC = [];
+            pointsJC[0] = new cesium.PlotPoint3D(13.0523196095789, 47.8276819225323, 0);
+            pointsJC = MoveSymbol(pointsJC);
+            plottingLayer.createSymbol(421, 50, pointsJC, function (even) {
+                geoJC = even.feature;
+                geoJC.symbolStyle.surroundLineType = 1;//衬线
+                geoJC.textContent = "路卡";
+
+                var goAnimationJC = animationManager.createGOAnimation(cesium.GOAnimationType.ANIMATION_SCALE, "JC", geoJC);
+                goAnimationJC.startTime = 0;
+                goAnimationJC.duration = 3;
+            });
+
+
+            var pointsSJ = [];
+            pointsSJ[0] = new cesium.PlotPoint3D(13.0522206845731, 47.8287075057692, 0);
+            pointsSJ = MoveSymbol(pointsSJ);
+            plottingLayer.createSymbol(421, 20100, pointsSJ, function (even) {
+                geoSJ = even.feature;
+                geoSJ.symbolStyle.lineColor = {red: 1, green: 1, blue: 0, alpha: 1};//"#ffff00"
+                geoSJ.textContent = "事件";
+            });
+
+
+            var pointsLJJL = [];
+            pointsLJJL[0] = new cesium.PlotPoint3D(13.053414647609, 47.8268751538344, 0);
+            pointsLJJL = MoveSymbol(pointsLJJL);
+            plottingLayer.createSymbol(421, 9, pointsLJJL, function (even) {
+                geoLJJL = even.feature;
+                geoLJJL.textContent = "拦截警力";
+            });
+
+
+            var pointsJGJL = [];
+            pointsJGJL[0] = new cesium.PlotPoint3D(13.0485470948225, 47.8271255667932, 0);
+            pointsJGJL = MoveSymbol(pointsJGJL);
+            plottingLayer.createSymbol(421, 9, pointsJGJL, function (even) {
+                geoJGJL = even.feature;
+                geoJGJL.textContent = "进攻警力";
+            });
+
+
+        }
+
+        function MoveSymbol(pts) {
+            var oldCentre = new cesium.PlotPoint3D(13.0516048702177, 47.8283304498449, 0);
+            var newCentre = new cesium.PlotPoint3D(121.57979595322007, 38.8818637949741, 0);
+            for (var i = 0; i < pts.length; i++) {
+                pts[i].x = newCentre.x + (pts[i].x - oldCentre.x);
+                pts[i].y = newCentre.y + (pts[i].y - oldCentre.y);
+                pts[i].z = 10;
+            }
+            return pts;
+        }
+
+        function play() {
+            animationManager.play();
+        }
+
+        function pause() {
+            animationManager.pause();
+        }
+
+        function stop() {
+            animationManager.stop();
+        }
+
+        function reset() {
+            animationManager.reset();
+        }
+
+        function deleteSelectedFeaturesAnimation() {
+            if (0 === animationManager._goAnimations.length) {
+                return;
+            }
+            var selectGeo = plottingLayer.selectedFeature;
+            animationManager.removeGOAnimationByFeature(selectGeo);
+        }
+
+        function deleteAllAnimation() {
+            if (0 === animationManager._goAnimations.length) {
+                return;
+            }
+            animationManager.reset();
+            animationManager.removeAllGOAnimation();
+        }
+
+        //删除指定标号
+        function deleteSeleGeo() {
+            plottingLayer.removeGeoGraphicObject(plottingLayer._selectedFeature);
+        }
+
+        //“Delete”按键删除选中标号
+        $(document).keydown(function (event) {
+            if (event.keyCode === 46) {
+                deleteSeleGeo();
+            }
+        });
+    </script>
+</div>
+</body>
+</html>

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>地形影像</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link href="./css/pretty.css" rel="stylesheet">
+    <script src="./js/jquery.min.js"></script>
+     <script src="./js/spectrum.js"></script>
+	<script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+    <script src="./js/config.js"></script>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<div id='loadingbar' class="spinner">
+    <div class="spinner-container container1">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container2">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container3">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+</div>
+<div id="toolbar" class="param-container tool-bar">
+    <div class="param-item">
+        <label>颜色透明</label>
+        <input class="colorPicker" size="8" data-bind="value: color,valueUpdate: 'input'" id="colorPicker">
+    </div>
+    <div class="param-item">
+        <label>颜色透明容限</label>
+        <input type="range" min="0" max="1" step="0.02" data-bind="value: tolerance,valueUpdate: 'input'" id="tolerance" style="display: block;width:200px;margin: 5px 0">
+    </div>
+</div>
+    
+<script>
+function onload(Cesium) {
+    var viewer = new Cesium.Viewer('cesiumContainer',{
+        //创建地形服务提供者的实例，url为SuperMap iServer发布的TIN地形服务
+        terrainProvider : new Cesium.CesiumTerrainProvider({
+            url : URL_CONFIG.SiChuan_TERRAIN,
+            isSct : true//地形服务源自SuperMap iServer发布时需设置isSct为true
+        }),
+    });
+    //添加SuperMap iServer发布的影像服务
+    var layer = viewer.imageryLayers.addImageryProvider(new Cesium.SuperMapImageryProvider({
+        url : URL_CONFIG.SiChuan_IMG
+    }));
+
+    viewer.scene.camera.setView({
+        destination : new Cesium.Cartesian3(-1206939.1925299785, 5337998.241228442, 3286279.2424502545),
+        orientation : {
+            heading : 1.4059101895600987,
+            pitch : -0.20917672793046682,
+            roll : 2.708944180085382e-13
+        }
+    });
+    var viewModel = {
+        color : '#ffffff',
+        tolerance : 0
+    };
+    $("#colorPicker").spectrum({
+            color: "rgba(255,255,255)",
+            showPalette: true,
+            showAlpha: true,
+            localStorageKey: "spectrum.demo",
+            palette: palette
+    });
+    Cesium.knockout.track(viewModel);
+    var toolbar = document.getElementById('toolbar');
+    Cesium.knockout.applyBindings(viewModel, toolbar);
+    Cesium.knockout.getObservable(viewModel,'color').subscribe(
+        function(newValue) {
+            var selectedColor = Cesium.Color.fromCssColorString(newValue);
+            layer.transperantBackColor = selectedColor;
+        }
+    );
+    Cesium.knockout.getObservable(viewModel,'tolerance').subscribe(
+        function(newValue) {
+            layer.transperantBackColorTolerance = newValue;
+        }
+    );
+    $('#loadingbar').remove();
+    $('#toolbar').show();
+}
+</script>
+</body>
+</html>

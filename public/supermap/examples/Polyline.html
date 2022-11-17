@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>矢量线</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link href="./css/bootstrap.min.css" rel="stylesheet">
+    <link href="./css/pretty.css" rel="stylesheet">
+    <script src="./js/jquery.min.js"></script>
+    <script src="./js/bootstrap.min.js"></script>
+    <script src="./js/bootstrap-select.min.js"></script>
+    <script src="./js/config.js"></script>
+    <script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<div id='loadingbar' class="spinner">
+    <div class="spinner-container container1">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container2">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container3">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+</div>
+<div id="toolbar" style="position: absolute;left: 5px;top: 5px;display: none;">
+    <select id="selOptions" class="selectpicker show-tick form-control">
+        <option disabled selected value>--选择类型--</option>
+        <option value="1">矢量面（默认）</option>
+        <option value="2">矢量面（贴地）</option>
+        <option value="3">KML矢量面（贴地）</option>
+        <option value="4">KML矢量面（贴对象）</option>
+    </select>
+</div>
+<script>
+	function onload(Cesium) {
+        var viewer = new Cesium.Viewer('cesiumContainer',{
+            sceneModePicker:true,
+            navigation:false
+        });
+
+        var startLon =-10;
+        var endLon = 90;
+
+        var lat = 0;
+
+        var glowingLine = viewer.entities.add({
+            name : 'Glowing blue line on the surface',
+            polyline : {
+                positions : Cesium.Cartesian3.fromDegreesArray([startLon, lat,
+                                                                endLon, lat]),
+                width : 5,
+                //followSurface : true,
+                material : new Cesium.PolylineGlowMaterialProperty({
+                    glowPower : 0.2,
+                    color : Cesium.Color.YELLOW
+                })
+            }
+        });
+
+        var redLine = viewer.entities.add({
+            name : 'Red line on the surface',
+            polyline : {
+                positions : Cesium.Cartesian3.fromDegreesArray([-75, 35,
+                                                                -125, 35]),
+                width : 5,
+                material : Cesium.Color.RED
+            }
+        });
+
+        var glowingLine = viewer.entities.add({
+            name : 'Glowing blue line on the surface',
+            polyline : {
+                positions : Cesium.Cartesian3.fromDegreesArray([-75, 37,
+                                                                -125, 37]),
+                width : 10,
+                material : new Cesium.PolylineGlowMaterialProperty({
+                    glowPower : 0.2,
+                    color : Cesium.Color.BLUE
+                })
+            }
+        });
+
+        var orangeOutlined = viewer.entities.add({
+            name : 'Orange line with black outline at height and following the surface',
+            polyline : {
+                positions : Cesium.Cartesian3.fromDegreesArrayHeights([-75, 39, 250000,
+                                                                    -125, 39, 250000]),
+                width : 10,
+                material : new Cesium.PolylineOutlineMaterialProperty({
+                    color : Cesium.Color.ORANGE,
+                    outlineWidth : 2,
+                    outlineColor : Cesium.Color.BLACK
+                })
+            }
+        });
+
+        var purpleArrow = viewer.entities.add({
+            name : 'Purple straight arrow at height',
+            polyline : {
+                positions : Cesium.Cartesian3.fromDegreesArrayHeights([-75, 43, 500000,
+                                                                    -125, 43, 500000]),
+                width : 10,
+                followSurface : false,
+                material : new Cesium.PolylineArrowMaterialProperty(Cesium.Color.PURPLE)
+            }
+        });
+
+        var dashedLine = viewer.entities.add({
+            name : 'Blue dashed line',
+            polyline : {
+                positions : Cesium.Cartesian3.fromDegreesArrayHeights([-75, 45, 500000,
+                                                                    -125, 45, 500000]),
+                width : 4,
+                material : new Cesium.PolylineDashMaterialProperty({
+                    color: Cesium.Color.CYAN
+                })
+            }
+        });
+
+        var postion = [0, 45,125, 45];
+        var dynamicLine = viewer.entities.add({
+            name : 'RED dynamic line',
+            polyline : {
+                positions : Cesium.Cartesian3.fromDegreesArray(postion),
+                width : 10,
+                hMax:500000,
+                material : new Cesium.PolylineDynamicMaterialProperty({
+                    color : Cesium.Color.RED,
+                    outlineWidth : 0,
+                    outlineColor : Cesium.Color.BLACK
+                })
+            }
+        });
+        var dynamicLine2 = viewer.entities.add({
+            name : 'ORANGE dynamic line',
+            polyline : {
+                positions : Cesium.Cartesian3.fromDegreesArray(postion),
+                width : 5,
+                hMax:550000,
+                material : new Cesium.PolylineDynamicMaterialProperty({
+                    color : Cesium.Color.ORANGE,
+                    outlineWidth : 0,
+                    outlineColor : Cesium.Color.BLACK
+                })
+            }
+        });
+        var dynamicLine3 = viewer.entities.add({
+            name : 'Yellow dynamic line',
+            polyline : {
+                positions : Cesium.Cartesian3.fromDegreesArray(postion),
+                width : 5,
+                hMax:600000,
+                material : new Cesium.PolylineDynamicMaterialProperty({
+                    color : Cesium.Color.YELLOW,
+                    outlineWidth : 0,
+                    outlineColor : Cesium.Color.BLACK
+                })
+            }
+        });
+        var dynamicLine4 = viewer.entities.add({
+            name : 'GREEN dynamic line',
+            polyline : {
+                positions : Cesium.Cartesian3.fromDegreesArray(postion),
+                width : 5,
+                hMax:650000,
+                material : new Cesium.PolylineDynamicMaterialProperty({
+                    color : Cesium.Color.GREEN,
+                    outlineWidth : 0,
+                    outlineColor : Cesium.Color.BLACK
+                })
+            }
+        });
+        var dynamicLine5 = viewer.entities.add({
+            name : 'BLUE dynamic line',
+            polyline : {
+                positions : Cesium.Cartesian3.fromDegreesArray(postion),
+                width : 5,
+                hMax:700000,
+                material : new Cesium.PolylineDynamicMaterialProperty({
+                    color : Cesium.Color.BLUE,
+                    outlineWidth : 0,
+                    outlineColor : Cesium.Color.BLACK
+                })
+            }
+        });
+        var dynamicLine6 = viewer.entities.add({
+            name : 'CYAN dynamic line',
+            polyline : {
+                positions : Cesium.Cartesian3.fromDegreesArray(postion),
+                width : 5,
+                hMax:750000,
+                material : new Cesium.PolylineDynamicMaterialProperty({
+                    color : Cesium.Color.CYAN,
+                    outlineWidth : 0,
+                    outlineColor : Cesium.Color.BLACK
+                })
+            }
+        });
+        var dynamicLine7 = viewer.entities.add({
+            name : 'purple dynamic line',
+            polyline : {
+                positions : Cesium.Cartesian3.fromDegreesArray(postion),
+                width : 5,
+                hMax:800000,
+                material : new Cesium.PolylineDynamicMaterialProperty({
+                    color : Cesium.Color.PURPLE,
+                    outlineWidth : 0,
+                    outlineColor : Cesium.Color.BLACK
+                })
+            }
+        });
+
+        viewer.zoomTo(viewer.entities);
+        $('#loadingbar').remove();
+    }
+</script>
+</body>
+</html>

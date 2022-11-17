@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>叠加二维地图</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link href="./css/bootstrap.min.css" rel="stylesheet">
+    <link href="./css/pretty.css" rel="stylesheet">
+    <script src="./js/jquery.min.js"></script>
+    <script src="./js/bootstrap.min.js"></script>
+    <script src="./js/bootstrap-select.min.js"></script>
+    <script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+    <script src="./js/config.js"></script>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<div id='loadingbar' class="spinner">
+    <div class="spinner-container container1">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container2">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container3">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+</div>
+<div id="toolbar" style="position: absolute;left: 5px;top: 5px;display: none;">
+    <select id="imageryOptions" class="selectpicker show-tick form-control">
+        <option selected value="MEC">墨卡托投影坐标系</option>
+        <option value="WGS">经纬度坐标系</option>
+    </select>
+</div>
+<script>
+    function onload(Cesium) {
+        //初始化viewer部件
+        var viewer = new Cesium.Viewer('cesiumContainer');
+        var imageryLayers = viewer.imageryLayers;
+        //利用服务url创建SuperMapImageryProvider实例
+        var provider_wgs = new Cesium.SuperMapImageryProvider({
+            url : URL_CONFIG.SUPERMAP_IMG_WGS //经纬度地图服务
+        });
+        var provider_mec = new Cesium.SuperMapImageryProvider({
+            url : URL_CONFIG.SUPERMAP_IMG_MEC//墨卡托投影地图服务
+        });
+        var imagery_wgs,imagery_mec;
+        //初始化时添加经纬度投影地图图层
+        imagery_mec = imageryLayers.addImageryProvider(provider_mec);
+        imagery_mec.alpha = 1.0;
+        imagery_wgs = imageryLayers.addImageryProvider(provider_wgs);
+        imagery_wgs.alpha = 0;
+        //添加下拉菜单，点击选项切换地图服务
+        $('#imageryOptions').change(function(){
+            var value = $(this).val();
+            if(value == 'WGS'){
+                if(!imagery_wgs){
+                    imagery_wgs = imageryLayers.addImageryProvider(provider_wgs);
+                }
+                imagery_wgs.alpha = 1.0;
+                if(imagery_mec){
+                    imagery_mec.alpha = 0;
+                }
+            }
+            else if(value == 'MEC'){
+                if(!imagery_mec){
+                    imagery_mec = imageryLayers.addImageryProvider(provider_mec);
+                }
+                imagery_mec.alpha = 1.0;
+                if(imagery_wgs){
+                    imagery_wgs.alpha = 0;
+                }
+            }
+        });
+        $('#toolbar').show();
+        $('#loadingbar').remove();
+    }
+</script>
+</body>
+</html>

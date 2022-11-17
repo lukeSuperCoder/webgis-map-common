@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+	<title>倾斜摄影模型单体化与属性查询操作手册</title>
+	<link rel="shortcut icon" type="image/x-icon" href="../../web/img/favicon.ico"/>
+	<script type="text/javascript" include="jquery,bootstrap,template,admin-lte,jquery.scrollto,lazyload"
+			src="../js/include-web.js" from="doc"></script>
+	<link rel="stylesheet" href="../css/common.css"/>
+	<link rel="stylesheet" href="../css/examples.css"/>
+	<link rel="stylesheet" href="../css/header.css"/>
+	<link rel='stylesheet' href='../css/sm-extend.css'/>
+	<link rel='stylesheet' href='../css/sm-doc.css'/>
+</head>
+	<body class="hold-transition skin-blue sidebar-mini" data-spy="scroll" data-target="#scrollSpy">
+		<!-- ./wrapper -->
+		<div class="wrapper"></div>
+		<div id='container' class='container' style="width: 90%; padding-top: 75px;">
+			<div class='page-header'>
+				<h1>倾斜摄影模型单体化与属性查询操作手册</h1>
+				<hr/>
+				<h2 class="title">概述<a name="Summary"> </a></h2>
+				<p>倾斜摄影模型通常被称作“一张皮”的模型，为发挥倾斜摄影模型应用价值，必须对倾斜摄影模型进行单体化处理。超图三维率先采用了模型叠加矢量面的方式对倾斜摄影模型进行单体化，此方式操作简单，并且在矢量面数据的属性表中存储业务方面的各类属性信息，实现单体化的同时能够在倾斜摄影模型进行属性查询。 </p>
+				<p>目前，SuperMap  iClient3D for WebGL提供了众多示范程序，其中“倾斜摄影属性查询”范例便演示了倾斜摄影模型实现单体化选择和属性查询的效果。 </p>
+				<div class="pageImage"><img src="../images/TopicDOC/AttributeQueryofObliqueModel_Demo.jpg" style="width:80%">
+                    <p>图 1：倾斜摄影属性查询范例效果</p>
+                </div>
+				<p>本文档将依照范例的效果，指导用户如何利用自己的倾斜摄影模型在WebGL客户端上实现属性查询，本操作主要流程如下： </p>
+				<ol>
+					<ol class="list">
+						<li><a href="#01PrepareData">数据准备</a></li>
+						<li><a href="#02Monomer">模型单体化</a></li>
+						<li><a href="#03CreatS3M">生成S3M数据</a></li>
+						<li><a href="#04Publish3DService">发布三维服务和数据服务</a></li>
+						<li><a href="#05BrowseOblique">客户端浏及属性查询</a></li>
+					</ol>
+				</ol>
+				<h2 class="title">操作流程</h2>
+				<h3><a name="01PrepareData"></a>1.数据准备</h3>
+				<p>必备数据包括：</p>
+				<ul>
+					<ul class="disc">
+						<li>①<strong>倾斜摄影模型数据</strong>：如*.osgb格式的倾斜摄影模型及配置文件（*.scp），若无配置文件，请参照“加载倾斜摄影模型操作手册”的第一步生成SCP配置文件。</li>
+						<li>②<strong>二维矢量面数据</strong>：矢量面数据与倾斜摄影模型位置匹配，完善矢量面数据的属性表；矢量面数据存放于文件数据源（*.udb）中。</li>
+					</ul>
+				</ul>
+				<p>为做演示，笔者制作修改了一份矢量面数据，其属性结构如下图，其中“<strong>Name/名称</strong>”和“<strong>Des/描述</strong>”字段是本示例的业务字段，将用于属性查询。</p>
+				<div class="pageImage"><img src="../images/TopicDOC/AttributeQueryofObliqueModel_AttributeStructure.png"><br>
+                    <p>图 2：矢量面属性表的属性结构</p>
+                </div>
+				<p>在“工作空间管理器”中选中数据集并打开其属性表，在功能区“属性表”选项卡“编辑”组中单击“<strong>属性结构</strong>”，即可查看、修改数据的属性结构，并且请根据业务需求为矢量数据添加属性字段、完善属性值。	</p>
+				<p>为了能够像范例一样在选中模型时展示图片，可选地准备了图片资源(*.jpg)，将图片资源存放于“<strong>%WebGL产品包%\examples\images</strong>”文件夹下。图片的名称与矢量面属性表的“<strong>Name/名称</strong>”字段值相同。</p>
+				<h3><a name="02Monomer"></a>2. 模型单体化</h3>
+				<h4>操作说明</h4>
+				<br>
+				<p>通过模型单体化处理，相当于为倾斜摄影模型“绑定”位置匹配的矢量面数据。</p>
+				<h4>操作步骤</h4>
+				<p>(1).	在“工作空间管理器”“数据源”处打开存放有矢量面数据的<strong>文件型数据源（*.udb）</strong>；</p>
+				<p>(2)在SuperMap iDesktop桌面产品的“倾斜摄影”选项卡“WebGL客户端”组单击“<strong>模型单体化</strong>”按钮，如下图所示。</p>
+				<div class="pageImage"><img src="../images/TopicDOC/AttributeQueryofObliqueModel_MonomerPosition.png">
+                    <p>图 3：点击“模型单体化”功能</p>
+                </div>
+				<p>(3).	弹出“模型单体化”对话框，如下图所示。</p>
+				<div class="pageImage"><img src="../images/TopicDOC/AttributeQueryofObliqueModel_MonomerDialog.png">
+                    <p>图 4：“模型单体化”对话框</p>
+                </div>
+
+				<p>(4).	在对话框的“<strong>倾斜摄影数据</strong>”处填入倾斜摄影模型配置文件（*.scp）存放路径，单击右侧图标按钮选择文件路径，或在文本框中直接输入。</p>
+				<p>(5).	在对话框的“<strong>关联设置</strong>”处可设置矢量面数据所在的数据源、数据集和关联字段，具体说明如下：</p>
+				<ul>
+					<ul class="disc">
+						<li><strong>数据源</strong>：与倾斜摄影模型匹配的矢量面数据所在的数据源。选择当前工作空间所打开的数据源。</li>
+						<li><strong>数据集</strong>：与倾斜摄影模型匹配的矢量面数据所在的数据集。</li>
+					</ul>
+				</ul>
+				<p>(6).	在对话框的“<strong>目标路径</strong>”处填入经单体化处理后目标文件存放路径，单击右侧图标按钮选择文件路径，或在文本框中直接输入。</p>
+				<p>(7).	设置完以上参数后，单击“确定”按钮，等待处理完成。</p>
+				<h4>操作结果</h4>
+				<p>操作完成后，目标路径下产生了一个*.scp文件及多个存放有模型的文件夹，其目录结构和文件数量及名称均与原文件一致。为验证单体化效果，在SuperMap iDesktop中以“添加OSGB缓存图层”方式将此单体化处理的模型添加到球面场景，定位到该图层，在场景中鼠标单击某一房屋模型，该模型被高亮显示，由此可见，单体化处理成功。</p>
+				<div class="pageImage"><img src="../images/TopicDOC/AttributeQueryofObliqueModel_MonomerResult.jpg" style="width:90%">
+                    <p>图 5：点击单体化后的倾斜摄影模型高亮</p>
+                </div>
+				<h3><a name="03CreatS3M"></a>3.生成S3M数据</h3>
+				<h4>操作说明</h4>
+				<p>为提升WebGL客户端解析和浏览效率，在此步骤将OSGB格式的倾斜摄影模型转换为S3M格式的三维切片缓存，利用SuperMap iDesktop 桌面产品提供“生成S3M数据“功能按钮实现。</p>
+				<h4>操作步骤</h4>
+				<p>(1).打开SuperMap iDesktop，在“<strong>倾斜摄影</strong>”选项卡“<strong>WebGL客户端</strong>”分组中点击“<strong>生成S3M数据</strong>”按钮。</p>
+				<div class="pageImage"><img src="../images/TopicDOC/ClickCreatS3M.png" width="564" height="141">
+                    <p>图 6：点击“生成S3M数据”工具</p>
+                </div>
+				<p>(2).弹出“<strong>OSGB-&gt;S3M</strong>”对话框，如下图所示。 </p>
+				<div class="pageImage"><img src="../images/TopicDOC/LoadOblique_OSGB2S3MDialog.png" width="396" height="158"><br>
+                    <p>图 7：“OSGB-&gt;S3M”对话框</p>
+                </div>
+				<p>(3).在对话框的“<strong>倾斜摄影数据</strong>”处填入scp配置文件存放路径。 </p>
+				<p>(4).在对话框的“<strong>目标路径</strong>”处填入转换后目标文件的存放路径。 </p>
+				<p>(5).在对话框的“<strong>压缩类型</strong>”处提供了 <strong>普通PC设备、Android系列设备、IOS系列设备</strong>三种选项，请根据使用终端选择。</p>
+				<p>(6).设置完以上参数后，单击“<strong>确定</strong>”按钮，等待转换完成。</p>
+				<h4>操作结果</h4><br>
+				<p>“生成S3M数据”操作结果如下图右方，此步骤生成了与原始文件结构一致的目标文件夹；分别打开任一模型文件夹，可以看到OSGB格式模型与S3M格式模型的一一对应关系，如下图。</p>
+				<p>值得注意的是，生成S3M格式的三维切片缓存后，模型数据量大幅度减小。</p>
+				<div class="pageImage"><img src="../images/TopicDOC/LoadOblique_OSGB2S3MResult.png"><br>
+					<p>图 8：生成S3M数据结果（图右）及模型对应关系</p>
+                </div>
+				<h3><a name="04Publish3DService"></a>4. 发布三维服务和数据服务</h3>
+				<h4>操作说明</h4>
+				<br>
+				<p>在此步骤将S3M格式的倾斜摄影模型以三维服务的形式发布到本地或远程服务器上，实现Web网络资源共享，为实现属性查询，还将发布一个数据服务。</p>
+				<h4>操作步骤</h4><br>
+				<p>(1).在SuperMap iDesktop桌面产品的 “工作空间管理器”中，在“数据源”处右键点击“打开文件型数据源”，打开存有<strong>矢量面数据的数据源（*.udb）</strong>; </p>
+				<p>(2).新建一个球面场景，在“<strong>图层管理器</strong>”下选中“<strong>普通图层</strong>”，右键点击“<strong>添加OSGB缓存图层</strong>”，选择“生成S3M数据”操作生成的*.scp配置文件。 </p>
+				<div class="pageImage"><img src="../images/TopicDOC/AddOSGBLayer.png" width="280" height="247">
+                    <p>图 9：向场景添加OSGB缓存</p>
+                </div>
+				<p>(3).加载数据后，定位到图层并设置合适观察角度，保存场景和工作空间；保存后须关闭当前工作空间，占用可能导致后续服务发布失败。</p>
+				<p>(4).启动SuperMap iServer服务：在 <strong>%SuperMap iServer_HOME%/bin </strong>目录下，点击“<strong>startup.bat</strong>“批处理文件启动服务。</p>
+				<p>(5).打开浏览器，地址栏输入<a href="http://localhost:8090/iserver/manager">http://localhost:8090/iserver/manager</a> 进入“<strong>服务管理“</strong>页面，“<strong>首页</strong>”下点击“<strong>快速发布一个或一组服务</strong>“按钮。 </p>
+				<div class="pageImage"><img src="../images/TopicDOC/PublishQuickly.png">
+                    <p>图 10：快速发布一个或一组服务</p>
+                </div>
+				<p>(6).弹出“<strong>快速发布服务</strong><strong>-选择发布的数据来源</strong>”对话框，在”<strong>数据来源</strong>“处选择”<strong>工作空间</strong>“，点击”<strong>下一步</strong>“。</p>
+				<div class="pageImage"><img src="../images/TopicDOC/DataSource.png" width="509" height="231">
+                    <p>图 11：数据来源选择工作空间</p>
+                </div>
+				<p>(7).弹出“<strong>快速发布服务</strong><strong>-</strong><strong>配置数据</strong>“对话框，点击”<strong>远程浏览</strong>“按钮选择前述所保存的工作空间，点击”<strong>下一步</strong>“。 </p>
+				<div class="pageImage"><img src="../images/TopicDOC/LoadOblique_SelectWorkspace.png" width="723" height="277">
+                    <p>图 12：选择工作空间配置数据</p>
+                </div>
+				<p>(8).弹出“<strong>快速发布服务-选择发布的服务类型</strong>“对话框，勾选”<strong>REST-数据服务</strong>“和”<strong>REST-三维服务</strong>“，点击”<strong>下一步</strong>“。 </p>
+				<div class="pageImage"><img src="../images/TopicDOC/AttributeQueryofObliqueModel_Select3D&DataService.png" width="516" height="269">
+                    <p>图 13：勾选三维服务和数据服务</p>
+                </div>
+				<p>至此，服务发布已配置完成，按照提示点击“完成“和”关闭“按钮。</p>
+				<h4>操作结果</h4><br>
+				<p>服务发布完成后，将在服务列表中显示该三维服务，如下图所示。</p>
+				<div class="pageImage"><img src="../images/TopicDOC/AttributeQueryofObliqueModel_PublishServiceResult.png" width="685" height="343">
+					<p>图 14：服务列表中显示新发布的服务</p>
+                </div>
+				<h3><a name="05BrowseOblique"></a>5. 客户端浏及属性查询</h3>
+				<h4>操作说明</h4><br>
+				<p>发布了三维服务以后，在此步骤中便可通过WebGL客户端浏览地形数据。</p>
+				<p class="STYLE2">提示：在操作前请将WebGL产品包存放在<strong> %SuperMap iServer_HOME%/webapps</strong> 目录下。</p>
+				<h4>操作步骤</h4><br>
+				<p>(1)	获取三维服务url地址，按照如下顺序点击获取：</p>
+				<ul>
+					<ul class="disc">
+						<li>进入服务列表页面（<a target="_blank" href="http://localhost:8090/iserver/services"><u>http://localhost:8090/iserver/services</u></a>），找到并点击上一步骤所发布的<span class="STYLE3">三维服务</span>；</li>
+						<li>在“服务管理”页面“基本信息”处点击“<strong>服务地址</strong>”</li>
+						<li>进入“<strong>根目录</strong>“页面，点击”<strong>realspace</strong>“；</li>
+						<li>进入”<strong>三维服务根节点</strong><strong>(3D)</strong>“页面，点击“<strong>datas</strong>“；</li>
+						<li>进入”<strong>三维数据列表</strong><strong>(datas)</strong>“页面，点击“<strong>Config</strong>“；</li>
+						<li>进入“<strong>三维数据资源</strong><strong>(data)</strong>“页面，点击”<strong>获取三维数据的配置文件</strong>“，出现如下图所示的页面，复制浏览器地址栏的<strong>url</strong><strong>地址</strong>。 </li>
+					</ul>
+				</ul>
+				<div class="pageImage"><img src="../images/TopicDOC/AttributeQueryofObliqueModel_CopyConfig.png">
+                    <p>图 15：复制url地址</p>
+                </div>
+				<p>(2)	进入WebGL产品包存放路径（<strong>%SuperMap iServer_HOME%/webapps</strong>），在“examples”文件夹下，文本方式打开“<strong>S3MTiles.html</strong>“范例，修改如下图的内容。</p>
+
+				<div class="pageImage"><img src="../images/TopicDOC/AttributeQueryofObliqueModel_ModifySample1.png"><br>
+					<p>图 16：修改范例部分参数</p>
+                </div>
+				<ul>
+					<ul class="disc">
+						<li>修改<strong>scene.</strong> <strong>addS3MTilesLayerByScp ()</strong>函数：将地址修改为方才复制的<strong>url</strong><strong>地址</strong>，并更改name。</li>
+						<li>修改<strong>Cesium.Cartesian3.fromDegrees()</strong>函数：它的参数为倾斜摄影模型的中心点位置，分别为经度、纬度和高程。<strong>请更改为</strong><strong>scp</strong><strong>文件中的插入点坐标</strong>，用于飞行定位到倾斜摄影模型位置。</li>
+					</ul>
+				</ul>
+
+				<p>(3) 获取数据服务url地址，按照如下顺序点击获取： </p>
+				<ul>
+					<ul class="disc">
+						<li>进入服务列表页面（<a target="_blank" href="http://localhost:8090/iserver/services"><u>http://localhost:8090/iserver/services</u></a>），找到并点击上一步骤所发布的<span class="STYLE3">数据服务</span>；</li>
+						<li>在“服务管理”页面“基本信息”处点击“<strong>服务地址</strong>”</li>
+						<li>进入“<strong>根目录</strong>“页面，点击”<strong>data</strong>“；</li>
+						<li>进入”<strong>数据服务的根节点(data)</strong>“页面，复制当前页面的url地址，如下图：</li>
+					</ul>
+				</ul>
+				<div class="pageImage"><img src="../images/TopicDOC/AttributeQueryofObliqueModel_CopyDataURL.png">
+                    <p>图 17：复制“数据服务的根节点”页面的url地址</p>
+                </div>
+				<p>(4)在“<strong>S3MTiles.html</strong>“范例中设置属性查询参数，即修改layer.setQueryParameter()部分，如下图： </p>
+				<div class="pageImage"><img src="../images/TopicDOC/AttributeQueryofObliqueModel_ModifySample2.png">
+                    <p>图 18：修改范例属性查询参数</p>
+                </div>
+				<ul>
+					<ul class="disc">
+						<li>其中，url为数据服务的地址，粘贴“数据服务的根节点(data)“页面的url地址；</li>
+						<li>dataSourceName为数据源的名称；</li>
+						<li>dataSetName为矢量面数据集的名称；</li>
+						<li>keyWord为查询关键字，可设置为“SmID”字段。</li>
+					</ul>
+				</ul>
+				<p>(5) 范例修改完毕， 以localhost方式打开“<strong>S3MTiles</strong>.html “网页，浏览器输入地址即为：<u>http://localhost:8090/%WebGL产品包%/examples/S3MTiles.html</u></p>
+				<h4>操作结果</h4><br>
+				<p>打开网页后，相机飞至倾斜摄影模型所在位置，点击任一模型，模型高亮并弹出窗口显示属性，效果如下图： </p>
+				<div class="pageImage"><img src="../images/TopicDOC/AttributeQueryofObliqueModel_BrowseResult.jpg">
+                    <p>图 19: 在倾斜摄影模型上进行属性查询效果图</p>
+                </div>
+				<h2>操作总结</h2>
+				<p>在整个操作流程中，有以下重点供参考和理解：</p>
+				<ul class="disc">
+					<li>在第一步数据准备阶段，根据业务需求完善矢量面数据的属性表内容，以作为属性查询的数据基础；</li>
+					<li>“模型单体化”处理在“生成S3M数据”操作之前；</li>
+					<li>发布服务前制作工作空间时，工作空间中须包含矢量面的数据源，用于发布属性查询的数据服务；</li>
+					<li>发布服务时选择“REST-三维服务”和“REST-数据服务”，其中三维服务用作模型浏览，数据服务用于属性查询；</li>
+					<li>范例“S3MTiles.html“主要修改了以下内容：
+						<ul class="disc">
+							<li><a href="../../Build/Documentation/Scene.html#addS3MTilesLayerByScp">scene.addS3MTilesLayerByScp()</a>函数：即以SCP缓存方式添加S3MTileslayer到场景中，此处复制三维服务的配置文件地址；</li>
+							<li>Cesium.Cartesian3.fromDegrees()函数：分别修改经度、纬度和高程参数，用于飞行定位到倾斜摄影模型所在位置；</li>
+							<li><a href="../../Build/Documentation/S3MTilesLayer.html#setQueryParameter">layer.setQueryParameter()</a>函数：设置属性查询参数，包括数据服务地址、数据源名称、数据集名称、查询关键字段。</li>
+						</ul>
+					</li>
+				</ul>
+			</div>
+			<!--法律申明-->
+			<div class='footer'>
+				<p>版权所有&nbsp;&copy; 2000-2018. &nbsp;北京超图软件股份有限公司</p>
+			</div>
+		</div>
+		<script type="text/javascript" src="../js/utils.js"></script>
+		<script>
+			$('.wrapper').load("../template/example-pure.html", function () {
+				utils.loadTemplate(".icl-header", "../template/header-doc.html", {});
+				//var $body = $('body');
+				//$body.append("<script type='text/javascript' src='../js/common.js'><\/script>");
+			});
+		</script>
+	</body>
+</html>

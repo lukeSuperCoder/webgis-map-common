@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>绘制</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link href="./css/bootstrap.min.css" rel="stylesheet">
+    <link href="./css/pretty.css" rel="stylesheet">
+    <script src="./js/jquery.min.js"></script>
+    <script src="./js/bootstrap.min.js"></script>
+    <script src="./js/bootstrap-select.min.js"></script>
+    <script src="./js/tooltip.js"></script>
+    <script src="./js/config.js"></script>
+    <script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<div id='loadingbar' class="spinner">
+    <div class="spinner-container container1">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container2">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container3">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+</div>
+<div id="toolbar" class="param-container tool-bar">
+    <button type="button" id="point" class="button black">绘制点</button>
+    <button type="button" id="polyline" class="button black">绘制线</button>
+    <button type="button" id="polygon" class="button black">绘制面</button>
+    <button type="button" id="marker" class="button black">添加地标</button>
+    <button type="button" id="clear" class="button black">清除</button>
+</div>
+<script type="text/javascript">
+    function onload(Cesium) {
+        // 初始化viewer部件
+        var viewer = new Cesium.Viewer('cesiumContainer',{
+            infoBox : false,
+            selectionIndicator : false
+        });
+        viewer.imageryLayers.addImageryProvider(new Cesium.BingMapsImageryProvider({
+            url : 'https://dev.virtualearth.net',
+            mapStyle : Cesium.BingMapsStyle.AERIAL,
+            key : URL_CONFIG.BING_MAP_KEY
+        }));
+        var scene = viewer.scene;
+        try {
+            // 打开所发布三维服务下的所有图层
+            var promise = scene.open(URL_CONFIG.SCENE_CBD);
+            Cesium.when(promise,function(layers){
+                // 设置相机位置、视角，便于观察场景
+                scene.camera.setView({
+                    destination : new Cesium.Cartesian3.fromDegrees(116.4563,39.8969,553),
+                    orientation : {
+                        heading : 5.901089214916513,
+                        pitch : -0.40668579780875524,
+                        roll : 6.281842456812987
+                    }
+                });
+                for(var i = 0; i<layers.length;i++){
+                    layers[i].selectEnabled = false;
+                }
+            
+                if(!scene.pickPositionSupported){
+                    alert('不支持深度纹理,无法拾取位置！');
+                }
+            },function(e){
+                if (widget._showRenderLoopErrors) {
+                    var title = '加载SCP失败，请检查网络连接状态或者url地址是否正确？';
+                    widget.showErrorPanel(title, undefined, e);
+                }
+            });
+        }
+        catch(e){
+            if (widget._showRenderLoopErrors) {
+                var title = '渲染时发生错误，已停止渲染。';
+                widget.showErrorPanel(title, undefined, e);
+            }
+        }
+        var clampMode = 0;
+        var tooltip = createTooltip(document.body);
+
+        var handlerPoint = new Cesium.DrawHandler(viewer,Cesium.DrawMode.Point);
+        handlerPoint.activeEvt.addEventListener(function(isActive){
+            if(isActive == true){
+                viewer.enableCursorStyle = false;
+                viewer._element.style.cursor = '';
+                $('body').removeClass('drawCur').addClass('drawCur');
+            }
+            else{
+                viewer.enableCursorStyle = true;
+                $('body').removeClass('drawCur');
+            }
+        });
+        handlerPoint.movingEvt.addEventListener(function(windowPosition){
+            tooltip.showAt(windowPosition,'<p>点击绘制一个点</p>');
+        });
+        handlerPoint.drawEvt.addEventListener(function(result){
+            tooltip.setVisible(false);
+        });
+
+
+        var handlerLine = new Cesium.DrawHandler(viewer,Cesium.DrawMode.Line);
+        handlerLine.activeEvt.addEventListener(function(isActive){
+            if(isActive == true){
+                viewer.enableCursorStyle = false;
+                viewer._element.style.cursor = '';
+                $('body').removeClass('drawCur').addClass('drawCur');
+            }
+            else{
+                viewer.enableCursorStyle = true;
+                $('body').removeClass('drawCur');
+            }
+        });
+        handlerLine.movingEvt.addEventListener(function(windowPosition){
+            if(handlerLine.isDrawing){
+                tooltip.showAt(windowPosition,'<p>左键点击确定折线中间点</p><p>右键单击结束绘制</p>');
+            }
+            else{
+                tooltip.showAt(windowPosition,'<p>点击绘制第一个点</p>');
+            }
+
+        });
+        handlerLine.drawEvt.addEventListener(function(result){
+            tooltip.setVisible(false);
+        });
+
+        var handlerPolygon = new Cesium.DrawHandler(viewer,Cesium.DrawMode.Polygon,clampMode);
+        handlerPolygon.activeEvt.addEventListener(function(isActive){
+            if(isActive == true){
+                viewer.enableCursorStyle = false;
+                viewer._element.style.cursor = '';
+                $('body').removeClass('drawCur').addClass('drawCur');
+            }
+            else{
+                viewer.enableCursorStyle = true;
+                $('body').removeClass('drawCur');
+            }
+        });
+        handlerPolygon.movingEvt.addEventListener(function(windowPosition){
+            if(handlerPolygon.isDrawing){
+                tooltip.showAt(windowPosition,'<p>点击确定多边形中间点</p><p>右键单击结束绘制</p>');
+            }
+            else{
+                tooltip.showAt(windowPosition,'<p>点击绘制第一个点</p>');
+            }
+        });
+        handlerPolygon.drawEvt.addEventListener(function(result){
+            tooltip.setVisible(false);
+        });
+        var handlerMarker = new Cesium.DrawHandler(viewer,Cesium.DrawMode.Marker);
+        handlerMarker.activeEvt.addEventListener(function(isActive){
+            if(isActive == true){
+                viewer.enableCursorStyle = false;
+                viewer._element.style.cursor = '';
+                $('body').removeClass('drawCur').addClass('drawCur');
+            }
+            else{
+                viewer.enableCursorStyle = true;
+                $('body').removeClass('drawCur');
+            }
+        });
+        handlerMarker.movingEvt.addEventListener(function(windowPosition){
+            tooltip.showAt(windowPosition,'<p>点击绘制地标</p>');
+        });
+        handlerMarker.drawEvt.addEventListener(function(result){
+            tooltip.setVisible(false);
+        });
+        $('#point').click(function(){
+            deactiveAll();
+            handlerPoint.activate();
+        });
+        $('#polyline').click(function(){
+            deactiveAll();
+            handlerLine.activate();
+        });
+        $('#polygon').click(function(){
+            deactiveAll();
+            handlerPolygon.activate();
+        });
+        $('#marker').click(function(){
+            deactiveAll();
+            handlerMarker.activate();
+        });
+        $('#clear').click(function(){
+            clearAll();
+        });
+        $('#toolbar').show();
+        $('#loadingbar').remove();
+        function deactiveAll(){
+            handlerLine.deactivate();
+            handlerPoint.deactivate();
+            handlerPolygon.deactivate();
+            handlerMarker.deactivate();
+        }
+        function clearAll(){
+            handlerLine.clear();
+            handlerPoint.clear();
+            handlerPolygon.clear();
+            handlerMarker.clear();
+        }
+        if(!scene.pickPositionSupported){
+            alert('不支持深度拾取,无法进行鼠标交互绘制！');
+        }
+    }
+</script>
+</body>
+</html>

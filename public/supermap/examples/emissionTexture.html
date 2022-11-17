@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="UTF-8">
+		<title>动态自发光纹理</title>
+		<link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+		<link href="./css/pretty.css" rel="stylesheet">
+		<script type="text/javascript" src="./js/jquery.min.js"></script>
+		<script src="./js/config.js"></script>
+		<script src="./js/tooltip.js"></script>
+		<script src="./js/spectrum.js"></script>
+		<script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+	</head>
+
+	<body>
+		<div id="cesiumContainer"></div>
+		<div class="params-setting-container">
+			<div class="params-setting-anchor" title="显示/隐藏参数面板"><span class="fui-expand"></span></div>
+			<div class="params-setting">
+				<div class="param-item">
+					<label for="bloomShow">开启泛光</label>
+					<input type="checkbox" id="bloomShow" checked="checked">
+				</div>
+				<div class="param-item">
+					<label>亮度阈值</label>
+					<input type="range" id="bloom-threshold" min="0" max="1" value="1" step="0.01" style="width: 140px">
+				</div>
+				<div class="param-item">
+					<label>泛光强度</label>
+					<input type="range" id="bloom-intensity" min="0" max="10" value="4" step="0.1" style="width: 140px">
+				</div>
+				<div class="param-item">
+					<label for="hdrShow">开启HDR</label>
+					<input type="checkbox" id="hdrShow" checked="checked">
+				</div>
+
+			</div>
+		</div>
+		<script type="text/javascript">
+			function onload(Cesium) {
+				var viewer = new Cesium.Viewer('cesiumContainer', {
+					timeline: true
+				});
+				viewer.imageryLayers.addImageryProvider(new Cesium.SingleTileImageryProvider({
+					url: './images/BlackMarble_2016.jpg'
+				}));
+				var scene = viewer.scene;
+				//设置环境光
+				scene.lightSource.ambientLightColor = new Cesium.Color(0.4, 0.4, 0.4, 0.4);
+				//开启颜色校正
+				viewer.scene.colorCorrection.show = true;
+				viewer.scene.colorCorrection.saturation = 1;
+				viewer.scene.colorCorrection.brightness = 0.4;
+				viewer.scene.colorCorrection.contrast = 1;
+				viewer.scene.colorCorrection.hue = 0;
+				//开启泛光和HDR
+				viewer.scene.bloomEffect.show = true;
+				viewer.scene.hdrEnabled = true;
+				var promise = scene.open(URL_CONFIG.SCENE_CHONGQING_TX);
+				Cesium.when.all(promise, function(layers) {
+					//设置相机位置，定位至模型
+					scene.camera.setView({
+						destination: new Cesium.Cartesian3(-1582723.045963302, 5317134.832891206, 3147506.8171177055),
+						orientation: {
+							heading: 3.376613944238855,
+							pitch: -0.2719071645433542,
+							roll: 6.283172414416338
+						}
+					});
+
+					var layer = scene.layers.find("CQmodel");
+					var hyp = new Cesium.HypsometricSetting();
+					setHypsometric(layer);
+					//设置自发光纹理
+					function setHypsometric(layer) {
+						hyp.emissionTextureUrl = "./images/speedline.jpg";
+						hyp.emissionTexCoordUSpeed = 0.25;
+						layer.hypsometricSetting = {
+							hypsometricSetting: hyp,
+						}
+
+					};
+					//泛光开关
+					$("#bloomShow").on("input change", function() {
+						viewer.scene.bloomEffect.show = this.checked;
+						viewer.scene.bloomEffect.threshold = $("#bloom-threshold").val();
+						viewer.scene.bloomEffect.bloomIntensity = $("#bloom-intensity").val();
+					});
+
+					//泛光阈值
+					$("#bloom-threshold").on("input change", function() {
+						$("#bloom-threshold-label").text(this.value);
+						viewer.scene.bloomEffect.threshold = this.value;
+					});
+					//泛光强度
+					$("#bloom-intensity").on("input change", function() {
+						$("#bloom-intensity-label").text(this.value);
+						viewer.scene.bloomEffect.bloomIntensity = this.value;
+					});
+					//HDR开关
+					$("#hdrShow").on("input change", function() {
+						viewer.scene.hdrEnabled = this.checked;
+					});
+					$(".params-setting-anchor").click(function() {
+						$(".params-setting").toggleClass("params-setting-hide");
+					});
+
+				});
+
+			};
+		</script>
+	</body>
+
+</html>

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>选中偏移</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link href="./css/pretty.css" rel="stylesheet">
+    <script src="./js/jquery.min.js"></script>
+    <script src="./js/config.js"></script>
+    <script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+    <style>
+        input[type=range] {
+            width: 180px;
+        }
+        input[type=number]{
+            width: 50px;
+        }
+    </style>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<div id="toolbar" class="params-setting-container">
+    <div class="params-setting-anchor" title="显示/隐藏参数面板"><span class="fui-expand"></span></div>
+    <div class="params-setting">
+        <table>
+            <tbody>
+            <tr>
+                <td><label>沿X轴偏移</label></td>
+                <td>
+                    <input type="range" id="offset-x" min="-10" max="10" step="1" data-bind="value:offsetX, valueUpdate: 'input'"/>
+                </td>
+                <td>
+                    <span data-bind="text:offsetX"></span>
+                </td>
+            </tr>
+            <tr>
+                <td><label>沿Y轴偏移</label></td>
+                <td>
+                    <input type="range" id="offset-y" min="-10" max="10" step="1" data-bind="value:offsetY, valueUpdate: 'input'"/>
+                </td>
+                <td>
+                    <span data-bind="text:offsetY"></span>
+                </td>
+            </tr>
+            <tr>
+                <td><label>沿Z轴偏移</label></td>
+                <td>
+                    <input type="range" id="offset-z" min="-10" max="10" step="1" data-bind="value:offsetZ, valueUpdate: 'input'"/>
+                </td>
+                <td>
+                    <span data-bind="text:offsetZ"></span>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        <div class="divider"></div>
+        <p>说明：</p>
+        <span>将选中模型显示在指定偏移量处</span>
+    </div>
+</div>
+<div id='loadingbar' class="spinner">
+    <div class="spinner-container container1">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container2">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container3">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+</div>
+<script type="text/javascript">
+    /*示范代码说明：
+     * 将选中模型显示在指定偏移量处
+     *
+     *主要涉及接口：
+     * S3MTilesLayer   selectedTranslate(X轴偏移量, Y轴偏移量, Z轴偏移量) 设置图层上的偏移量
+     *                  setObjsOffset 指定具体哪些id的图元参与偏移
+     * 示范代码：
+    */
+    function onload(Cesium) {
+        var viewer = new Cesium.Viewer('cesiumContainer');
+        viewer.imageryLayers.addImageryProvider(Cesium.createOpenStreetMapImageryProvider({
+            url : 'https://a.tile.openstreetmap.org/'
+        }));
+        var scene = viewer.scene;
+
+        var viewModel = {
+            offsetX: 5,
+            offsetY: 0,
+            offsetZ: 0
+        };
+        Cesium.knockout.track(viewModel);
+        var toolbar = document.getElementById('toolbar');
+        Cesium.knockout.applyBindings(viewModel, toolbar);
+
+        var promise = scene.addS3MTilesLayerByScp(URL_CONFIG.SCP_FCFH_VECTOR_EXTRUDE,{ // 分层分户矢量图层
+            name : 'fcfh_vector'
+        });
+
+        promise.then(function(vectorLayer){
+            scene.camera.setView({
+                destination: new Cesium.Cartesian3(-1849922.0941717909, 5579380.061900704, 2476448.3635135884),
+                orientation: {
+                    heading: 6.157461328573951,
+                    pitch: -0.38562467789982513,
+                    roll: 8.446576771348191e-13
+                }
+            });
+
+            var screenSpaceEventHandler = new Cesium.ScreenSpaceEventHandler(scene.canvas);
+            screenSpaceEventHandler.setInputAction(function() {
+                vectorLayer.removeAllObjsOffset(); // 移除所有图元的偏移
+                if (vectorLayer.getSelection().length > 0) {
+                    var selectedId = Number(vectorLayer.getSelection()[0]);
+                    vectorLayer.setObjsOffset([selectedId]);
+                }
+            }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+            vectorLayer.cullEnabled =false;
+            vectorLayer.selectionFiltrateByTransparency = 0; // 不过滤透明度为0的物体，当前图层就不会被过滤
+            vectorLayer.selectColorType = 1.0;
+            vectorLayer.selectedColor = Cesium.Color.RED;
+            vectorLayer.selectedTranslate = new Cesium.Cartesian3(viewModel.offsetX, viewModel.offsetY, viewModel.offsetZ);
+            Cesium.knockout.getObservable(viewModel, 'offsetX').subscribe(function(newValue){
+                vectorLayer.selectedTranslate = new Cesium.Cartesian3(viewModel.offsetX, viewModel.offsetY, viewModel.offsetZ);
+            });
+            Cesium.knockout.getObservable(viewModel, 'offsetY').subscribe(function(newValue){
+                vectorLayer.selectedTranslate = new Cesium.Cartesian3(viewModel.offsetX, viewModel.offsetY, viewModel.offsetZ);
+            });
+            Cesium.knockout.getObservable(viewModel, 'offsetZ').subscribe(function(newValue){
+                vectorLayer.selectedTranslate = new Cesium.Cartesian3(viewModel.offsetX, viewModel.offsetY, viewModel.offsetZ);
+            });
+            $('#loadingbar').remove();
+        });
+        $(".params-setting-anchor").click(function(){
+            $(".params-setting").toggleClass("params-setting-hide");
+        });
+    }
+    </script>
+</body>
+</html>

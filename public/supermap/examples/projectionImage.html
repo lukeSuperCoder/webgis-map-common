@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+		<title>视频投放</title>
+		<link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+		<link href="./css/pretty.css" rel="stylesheet">
+		<script src="./js/jquery.min.js"></script>
+		<script src="./js/slider.js"></script>
+		<script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+		<script src="./js/config.js"></script>
+		<style>
+			b {
+				color: #ffffff;
+			}
+			
+			input[type=range] {
+				width: 180px;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div id="cesiumContainer"></div>
+		<div id='loadingbar' class="spinner">
+			<div class="spinner-container container1">
+				<div class="circle1"></div>
+				<div class="circle2"></div>
+				<div class="circle3"></div>
+				<div class="circle4"></div>
+			</div>
+			<div class="spinner-container container2">
+				<div class="circle1"></div>
+				<div class="circle2"></div>
+				<div class="circle3"></div>
+				<div class="circle4"></div>
+			</div>
+			<div class="spinner-container container3">
+				<div class="circle1"></div>
+				<div class="circle2"></div>
+				<div class="circle3"></div>
+				<div class="circle4"></div>
+			</div>
+		</div>
+		<div id="toolbar" class="param-container tool-bar">
+			<button type="button" id="active" class="button black">视频投放</button>
+			<button type="button" id="clear" class="button black">清除</button>
+			<video id="trailer" style="display:none" autoplay loop crossorigin controls>
+				<source src="media/video.mp4" type="video/mp4">
+			</video>
+			<div class="param-item">
+				<b>宽度：</b>
+				<input type="range" id="horizontal" min="1" max="50" step="1" value="20">
+			</div>
+			<div class="param-item">
+				<b>高度：</b>
+				<input type="range" id="vertical" min="1" max="50" step="1" value="10">
+			</div>
+			<div class="param-item">
+				<b>距离：</b>
+				<input type="range" id="distance" min="100" max="1000" step="1" value="200">
+			</div>
+			<div>
+				<label>
+            <input type="checkbox" id="visibleLine" style="display:inline-block; vertical-align: middle;" checked>
+            <span style="display:inline-block; vertical-align: middle;">显示视频投放线</span>
+        </label>
+
+			</div>
+		</div>
+
+		<script type="text/javascript">
+			function onload(Cesium) {
+				var viewer = new Cesium.Viewer('cesiumContainer');
+				viewer.imageryLayers.addImageryProvider(new Cesium.BingMapsImageryProvider({
+					url: 'https://dev.virtualearth.net',
+					mapStyle: Cesium.BingMapsStyle.AERIAL,
+					key: URL_CONFIG.BING_MAP_KEY
+				}));
+
+				var scene = viewer.scene;
+
+                if(!scene.pickPositionSupported) {
+					alert('不支持深度纹理,视频投放功能无法使用！');
+				}
+
+				$('#loadingbar').remove();
+				$('#toolbar').show();
+
+				var groundPromise = scene.addS3MTilesLayerByScp(URL_CONFIG.SCP_CBD_GROUND1, {
+					name: 'ground1'
+				});
+				var buildPromise = scene.addS3MTilesLayerByScp(URL_CONFIG.SCP_CBD_BUILD, {
+					name: 'build'
+				});
+				Cesium.when.all([groundPromise, buildPromise], function(layers) {
+					//图层加载完成,设置相机位置
+					scene.camera.setView({
+						destination: Cesium.Cartesian3.fromDegrees(116.4486, 39.9092, 91.3293),
+						orientation: {
+							heading: 3.179304500963121,
+							pitch: -0.46239072362282485,
+							roll: 6.283185307179583
+						}
+					});
+					for(var i = 0; i < layers.length; i++) {
+						layers[i].selectEnabled = false;
+					}
+					var videoElement = document.getElementById('trailer');
+
+					var projectionImage = new Cesium.ProjectionImage(scene);
+
+					var handler = new Cesium.DrawHandler(viewer, Cesium.DrawMode.Point);
+
+					handler.movingEvt.addEventListener(function(windowPosition) {
+						var last = scene.pickPosition(windowPosition);
+						//计算该点与视口位置点坐标的距离
+						var distance = Cesium.Cartesian3.distance(scene.camera.position, last);
+						if(distance > 0) {
+							//将鼠标当前点坐标转化成经纬度
+							var cartographic = Cesium.Cartographic.fromCartesian(last);
+							var longitude = Cesium.Math.toDegrees(cartographic.longitude);
+							var latitude = Cesium.Math.toDegrees(cartographic.latitude);
+							var height = cartographic.height;
+							//通过该点设置视频投放对象的距离及方向
+							projectionImage.setDistDirByPoint([longitude, latitude, height]);
+							projectionImage.distance = Number($("#distance").val());
+						}
+					});
+
+					function clearAndActive() {
+						projectionImage.distance = 0.1;
+						var wgsPosition = scene.camera.positionCartographic;
+						var longitude = Cesium.Math.toDegrees(wgsPosition.longitude);
+						var latitude = Cesium.Math.toDegrees(wgsPosition.latitude);
+						var height = wgsPosition.height;
+						projectionImage.viewPosition = [longitude, latitude, height];
+						projectionImage.horizontalFov = Number($("#horizontal").val());
+						projectionImage.verticalFov = Number($("#vertical").val());
+						projectionImage.setImage({
+							video: videoElement
+						});
+						projectionImage.build();
+					}
+					$('#active').click(function(evt) {
+						clearAndActive();
+						handler.activate();
+					});
+					$('#clear').click(function(evt) {
+						clearAndActive();
+						handler.clear();
+					});
+					$('#horizontal').bind('input propertychange', function() {
+						var value = Number($(this).val());
+						projectionImage.horizontalFov = value;
+					});
+					$('#vertical').bind('input propertychange', function() {
+						var value = Number($(this).val());
+						projectionImage.verticalFov = value;
+					});
+					$('#distance').bind('input propertychange', function() {
+						var value = Number($(this).val());
+						projectionImage.distance = value;
+					});
+					$('#visibleLine').on("input propertychange", function(evt) {
+						projectionImage.hintLineVisible = $(this).prop("checked");
+					});
+				}, function(e) {
+					if(widget._showRenderLoopErrors) {
+						var title = '加载SCP失败，请检查网络连接状态或者url地址是否正确？';
+						widget.showErrorPanel(title, undefined, e);
+					}
+				});
+			}
+		</script>
+	</body>
+
+</html>

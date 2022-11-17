@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>偏振立体</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link href="./css/pretty.css" rel="stylesheet">
+    <script type="text/javascript" src="./js/sweetalert-dev.js"></script>
+    <link rel="stylesheet" href="./css/sweetalert.css">
+    <script src="./js/config.js"></script>
+    <script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<script>
+function onload(Cesium) {
+    var viewer = new Cesium.Viewer('cesiumContainer');
+    viewer.imageryLayers.addImageryProvider(new Cesium.BingMapsImageryProvider({
+        url : 'https://dev.virtualearth.net',
+        mapStyle : Cesium.BingMapsStyle.AERIAL,
+        key : URL_CONFIG.BING_MAP_KEY
+    }));
+    var scene = viewer.scene;
+    var widget = viewer.cesiumWidget;
+
+    try{
+        //打开所发布三维服务下的所有图层
+        var promise = scene.open(URL_CONFIG.SCENE_CBD);
+		Cesium.when.all(promise,function(layer){
+			scene.camera.setView({
+                destination : new Cesium.Cartesian3.fromDegrees(116.4563,39.8969,553),
+                orientation : {
+                    heading : 5.901089214916513,
+                    pitch : -0.40668579780875524,
+                    roll : 6.281842456812987
+                }
+			});
+			
+			scene.useWebVR = true;
+		},function(e){
+			if (widget._showRenderLoopErrors) {
+				var title = '加载SCP失败，请检查网络连接状态或者url地址是否正确？';
+				widget.showErrorPanel(title, undefined, e);
+			}
+		});
+      }
+    catch(e){
+        if (widget._showRenderLoopErrors) {
+            var title = '渲染时发生错误，已停止渲染。';
+            widget.showErrorPanel(title, undefined, e);
+        }
+    }
+
+    swal("偏振立体","为确保该范例的正常显示效果，请确保您的显示器调整到3D模式并佩戴3D眼镜","warning");
+}
+</script>
+</body>
+</html>

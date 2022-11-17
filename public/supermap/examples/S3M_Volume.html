@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>体渲染</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link href="./css/pretty.css" rel="stylesheet">
+    <script src="./js/config.js"></script>
+    <script type="text/javascript" src="./js/jquery.min.js"></script>
+    <script src="js/bootstrap-select.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<div id="toolbar" class="param-container tool-bar">
+    <b style="color: #ffffff">体数据：</b>
+    <select id="position" style="width: 220px"> </select><br><br>
+    <b style="color: #ffffff">颜色表：</b>
+    <select id="colorTable"  class="selectpicker">
+        <option value="6" data-content="<span class='label band6'>&nbsp</span>" >&nbsp</option>
+        <option value="1" data-content="<span class='label band4'>&nbsp</span>" selected>&nbsp</option>
+        <option value="2" data-content="<span class='label band2'>&nbsp</span>">&nbsp</option>
+        <option value="3" data-content="<span class='label band3'>&nbsp</span>">&nbsp</option>
+        <option value="4" data-content="<span class='label band1'>&nbsp</span>">&nbsp</option>
+        <option value="5" data-content="<span class='label band5'>&nbsp</span>">&nbsp</option>
+    </select>
+</div>
+<script type="text/javascript">
+    /*示范代码说明：
+    *体数据遍历，更换体数据，更换颜色表
+    *
+    *主要涉及接口：
+    *volName
+    *getVolNames
+    *
+    * 示范代码：
+   */
+    function onload(Cesium) {
+        var viewer = new Cesium.Viewer('cesiumContainer');
+        viewer.imageryLayers.addImageryProvider(Cesium.createOpenStreetMapImageryProvider({
+            url : 'https://a.tile.openstreetmap.org/'
+        }));
+        var scene = viewer.scene;
+        var widget = viewer.cesiumWidget;
+        $('#toolbar').show();
+        $('#loadingbar').remove();
+        try{
+            var promise = scene.open(URL_CONFIG.SCENE_TISHUJU);
+            Cesium.when(promise,function(layers){
+                scene.camera.setView({
+                    destination : new Cesium.Cartesian3.fromDegrees(121.5561,38.8875,316.2276495281931),
+                    orientation : {
+                        heading : 1.8453,
+                        pitch : -0.1345,
+                        roll : 0
+                    }
+                });
+                var layer = scene.layers.find('model');
+                colorChange("1");
+                var volume = layer.getVolNames();//获取体数据名
+                for(var i = 0; i < volume.length; i++){
+                    $("#position").append('<option value="'+ volume[i] +'">' + volume[i] + '</option>');
+                }
+                $("#position").change(function () {//设置采用哪个体数据
+                    if(this.value == "VolumnH12"){
+                        layer.volName = "VolumnH12";
+                    }
+                    if(this.value == "VolumnH13"){
+                        layer.volName = "VolumnH13";
+                    }
+                    if(this.value == "VolumnH123"){
+                        layer.volName = "VolumnH123";
+                    }
+                })
+
+            },function(e){
+                if (widget._showRenderLoopErrors) {
+                    var title = '渲染时发生错误，已停止渲染。';
+                    widget.showErrorPanel(title, undefined, e);
+                }
+            });
+        }
+        catch(e){
+            if (widget._showRenderLoopErrors) {
+                var title = '渲染时发生错误，已停止渲染。';
+                widget.showErrorPanel(title, undefined, e);
+            }
+        }
+        function setColorTable(colorTable, key) {
+            var layer = scene.layers.find("model");
+            var interval = layer._fMaxValue - layer._fMinValue;
+            switch (key) {
+                case "1":
+                    colorTable.insert(layer._fMaxValue, new Cesium.Color(210/255, 15/255, 15/255));
+                    colorTable.insert(2*(layer._fMinValue+layer._fMaxValue)/3, new Cesium.Color(221/255, 224/255, 7/255));
+                    colorTable.insert((layer._fMinValue+layer._fMaxValue)/2, new Cesium.Color(20/255, 187/255, 18/255));
+                    colorTable.insert((layer._fMinValue+layer._fMaxValue)/4, new Cesium.Color(0, 161/255, 1));
+                    colorTable.insert(layer._fMinValue, new Cesium.Color(9/255, 9/255, 212/255));
+                    break;
+                case "2":
+                    colorTable.insert(layer._fMaxValue, new Cesium.Color(162/255, 251/255, 194/255));
+                    colorTable.insert(2*(layer._fMinValue+layer._fMaxValue)/3, new Cesium.Color(180/255, 200/255, 170/255));
+                    colorTable.insert((layer._fMinValue+layer._fMaxValue)/2, new Cesium.Color(200/255, 160/255, 130/255));
+                    colorTable.insert((layer._fMinValue+layer._fMaxValue)/4, new Cesium.Color(225/255, 130/255, 130/255));
+                    colorTable.insert(layer._fMinValue, new Cesium.Color(1, 103/255, 103/255));
+                    break;
+                case "3":
+                    colorTable.insert(layer._fMaxValue, new Cesium.Color(230/255, 198/255, 1));
+                    colorTable.insert(2*(layer._fMinValue+layer._fMaxValue)/3, new Cesium.Color(210/255, 150/255, 1));
+                    colorTable.insert((layer._fMinValue+layer._fMaxValue)/2, new Cesium.Color(190/255, 100/255, 1));
+                    colorTable.insert((layer._fMinValue+layer._fMaxValue)/4, new Cesium.Color(165, 50/255, 1));
+                    colorTable.insert(layer._fMinValue, new Cesium.Color(157/255, 0, 1));
+                    break;
+                case "4":
+                    colorTable.insert(layer._fMaxValue, new Cesium.Color(0, 39/255, 148/255));
+                    colorTable.insert(2*(layer._fMinValue+layer._fMaxValue)/3, new Cesium.Color(0, 39/255, 148/255));
+                    colorTable.insert((layer._fMinValue+layer._fMaxValue)/2, new Cesium.Color(70/255, 116/255, 200/255));
+                    colorTable.insert((layer._fMinValue+layer._fMaxValue)/4, new Cesium.Color(149/255, 232/255, 249/255));
+                    colorTable.insert(layer._fMinValue, new Cesium.Color(149/255, 232/255, 249/255));
+                    break;
+                case "5":
+                    colorTable.insert(layer._fMaxValue, new Cesium.Color(186/255, 1, 190/255));
+                    colorTable.insert(2*(layer._fMinValue+layer._fMaxValue)/3, new Cesium.Color(186/255, 1, 180/255));
+                    colorTable.insert((layer._fMinValue+layer._fMaxValue)/2, new Cesium.Color(106/255, 255/255, 170/255));
+                    colorTable.insert((layer._fMinValue+layer._fMaxValue)/4, new Cesium.Color(26/255, 255/255, 160/255));
+                    colorTable.insert(layer._fMinValue, new Cesium.Color(26/255, 255/255, 156/255));
+                    break;
+                case "6":
+                    colorTable.insert(layer._fMaxValue, new Cesium.Color.fromCssColorString("#93f602"));
+                    colorTable.insert(layer._fMinValue + 5*interval/6, new Cesium.Color.fromCssColorString("#2fac01"));
+                    colorTable.insert(layer._fMinValue + 4*interval/6, new Cesium.Color.fromCssColorString("#74cb01"));
+                    colorTable.insert(layer._fMinValue + 3*interval/6, new Cesium.Color.fromCssColorString("#d0ef01"));
+                    colorTable.insert(layer._fMinValue + 2*interval/6, new Cesium.Color.fromCssColorString("#e1ce01"));
+                    colorTable.insert(layer._fMinValue + interval/6, new Cesium.Color.fromCssColorString( "#e16a01"));
+                    colorTable.insert(layer._fMinValue, new Cesium.Color.fromCssColorString( "#f70701"));
+                    break;
+                default:
+                    break;
+            }
+        }
+        function colorChange(value) {
+           var layer = scene.layers.find("model");
+           var hyp = new Cesium.HypsometricSetting();
+           hyp.MaxVisibleValue = 0;
+           var color = new Cesium.ColorTable();
+           setColorTable(color, value);
+           hyp.ColorTable = color;
+           hyp.DisplayMode = Cesium.HypsometricSettingEnum.DisplayMode.FACE_AND_LINE;
+           hyp.Opacity = 0.618;
+           hyp.LineInterval = 60.0;
+           hyp.LineColor = new Cesium.Color(1,0,0,1);
+           hyp.ColorTableMaxKey = layer._fMaxValue;
+           hyp.ColorTableMinKey = layer._fMinValue;
+           hyp.MaxVisibleValue = layer._fMaxValue;
+           hyp.MinVisibleValue = layer._fMinValue;
+           layer.hypsometricSetting = {
+               hypsometricSetting : hyp,
+               analysisMode : Cesium.HypsometricSettingEnum.AnalysisRegionMode.ARM_ALL
+           }
+       }
+        $('#colorTable').change(function () {
+            var layer = scene.layers.find("model");
+            var value = $(this).find("option:selected")[0].value;
+            var hyp = new Cesium.HypsometricSetting();
+            hyp.MaxVisibleValue = 0;
+            var color = new Cesium.ColorTable();
+            setColorTable(color, value);
+            hyp.ColorTable = color;
+            hyp.DisplayMode = Cesium.HypsometricSettingEnum.DisplayMode.FACE_AND_LINE;
+            hyp.Opacity = 0.618;
+            hyp.LineInterval = 60.0;
+            hyp.LineColor = new Cesium.Color(1,0,0,1);
+            hyp.ColorTableMaxKey = layer._fMaxValue;
+            hyp.ColorTableMinKey = layer._fMinValue;
+            hyp.MaxVisibleValue = layer._fMaxValue;
+            hyp.MinVisibleValue = layer._fMinValue;
+            layer.hypsometricSetting = { //设置图层分层设色属性
+                hypsometricSetting : hyp,
+                analysisMode : Cesium.HypsometricSettingEnum.AnalysisRegionMode.ARM_ALL
+            }
+        });
+    }
+</script>
+</body>
+</html>

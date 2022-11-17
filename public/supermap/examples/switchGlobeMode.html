@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>Globe模式切换</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link href="./css/pretty.css" rel="stylesheet">
+    <link href="./css/bootstrap.min.css" rel="stylesheet">
+    <script src="./js/jquery.min.js"></script>
+    <script src="./js/config.js"></script>
+    <script src="./js/bootstrap.min.js"></script>
+    <script src="./js/bootstrap-select.min.js"></script>
+    <script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<div id='loadingbar' class="spinner">
+    <div class="spinner-container container1">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container2">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container3">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+</div>
+<div style="position: absolute;left: 5px;top: 5px;">
+    <select id="GlobeMode" class="selectpicker show-tick form-control">
+        <!--<option disabled selected value>&#45;&#45;选择地球模式&#45;&#45;</option>-->
+        <option selected value="sphere">圆球模式</option>
+        <option value="spheroid">椭球模式</option>
+    </select>
+</div>
+
+<script>
+    function onload(Cesium) {
+        //初始化viewer，并添加STK地形及BingMaps影像
+        var viewer = new Cesium.Viewer('cesiumContainer',{
+            terrainProvider : new Cesium.CesiumTerrainProvider({
+                url : URL_CONFIG.STK,
+                requestWaterMask : true,
+                requestVertexNormals : true
+            })
+        });
+        viewer.imageryLayers.addImageryProvider(new Cesium.BingMapsImageryProvider({
+            url : 'https://dev.virtualearth.net',
+            mapStyle : Cesium.BingMapsStyle.AERIAL,
+            key : URL_CONFIG.BING_MAP_KEY
+        }));
+        viewer.scene.camera.setView({
+            destination : new Cesium.Cartesian3(317341.1198994921,5642696.778815073,2961682.3300576834),
+            orientation : {
+                heading : 0.34555839949062594,
+                pitch : -0.1422794351856307,
+                roll : 0.0009471063581933947
+            }
+        });
+         $('#GlobeMode').change(function(){
+            var value = $(this).val();
+            viewer = viewer.destroy();
+            //创建椭球体
+            var obj=[];
+            if(value=="spheroid"){
+                obj=[6378137.0, 6378137.0, 6356752.3142451793];
+            }
+            else if(value=="sphere"){
+                obj=[6378137.0, 6378137.0, 6378137.0];
+            }
+            Cesium.Ellipsoid.WGS84 = Cesium.freezeObject(new Cesium.Ellipsoid(obj[0],obj[1],obj[2]));
+            viewer = new Cesium.Viewer('cesiumContainer',{
+                terrainProvider : new Cesium.CesiumTerrainProvider({
+                    url : URL_CONFIG.STK,
+                    requestWaterMask : true,
+                    requestVertexNormals : true
+                }),
+                imageryProvider :  new Cesium.BingMapsImageryProvider({
+                    key : URL_CONFIG.BING_MAP_KEY,
+                    url : URL_CONFIG.BINGMAP
+                })
+            });
+            viewer.scene.camera.setView({
+                destination : new Cesium.Cartesian3(317341.1198994921,5642696.778815073,2961682.3300576834),
+                orientation : {
+                    heading : 0.34555839949062594,
+                    pitch : -0.1422794351856307,
+                    roll : 0.0009471063581933947
+                }
+            });
+        });
+        $('#loadingbar').remove();
+
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>地下场景</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link href="./css/pretty.css" rel="stylesheet">
+    <script src="./js/jquery.min.js"></script>
+    <script src="./js/slider.js"></script>
+    <script src="./js/config.js"></script>
+    <script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+    <style>
+        .drawCur{
+            cursor: url(./images/cur/draw.cur), auto;
+        }
+        #excavation {
+            color:rgb(255, 255, 255);
+            font-size:14px;padding-top:4px;padding-bottom:4px;padding-left:33px;padding-right:33px;
+            border-width:2px;border-color:rgb(74, 99, 31);border-style:solid;border-radius:11px;
+            background-color:rgb(44, 89, 128);}
+        #excavation:hover{color:#ffffff;background-color:#78c300;border-color:#c5e591;}
+    </style>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<div id="toolbar" class="param-container tool-bar">
+    <div>
+    <label style="color:#FFFFFF ">图层透明:</label>
+    <input type="range" style="width: 65%" min="0" max="1" step="0.02" title="调整地上图层透明度" data-bind="value: overGroundAlpha, valueUpdate: 'input'">
+    </div><br>
+    <div>
+    <label style="color:#FFFFFF ">图层开挖:</label>
+    <button id="excavation" >进行倾斜开挖</button>
+    </div>
+</div>
+<script>
+    /*示范代码说明：
+     *本示范程序地上地下立体查看展示，可设置地上图层透明度、进行倾斜开挖操作
+     *
+     *主要涉及接口：
+     * fillForeColor
+     * addExcavationRegion
+     *
+     * 示范代码：
+    */
+    function onload(Cesium) {
+        var viewer = new Cesium.Viewer('cesiumContainer');
+        var scene = viewer.scene;
+        var globe = viewer.scene.globe;
+
+
+        viewer.scene.undergroundMode = true; //设置开启地下场景
+        viewer.scene.screenSpaceCameraController.minimumZoomDistance = -1000;//设置相机最小缩放距离,距离地表-1000米
+
+        viewer.scene.terrainProvider.isCreateSkirt = false; // 关闭裙边
+
+        // 添加地下管理模型
+        var promise_underground = scene.open('http://www.supermapol.com/realspace/services/3D-pipe/rest/realspace');
+
+        Cesium.when(promise_underground, function(layers){
+            var overGroundLayer = scene.layers.find('Config');
+            scene.camera.setView({
+                destination : new Cesium.Cartesian3(-2654051.707084536,3570921.9596162816,4570167.290651748),
+                orientation : {
+                    heading : 2.3280016887452777,
+                    pitch : -0.586141022221434,
+                    roll : 6.283185307176403
+                }
+            });
+            var viewModel = { //监听滑动条变化，改变alpha的值，设置地表透明度
+                overGroundAlpha : 1
+            };
+            Cesium.knockout.track(viewModel);
+            var toolbar = document.getElementById('toolbar');
+            Cesium.knockout.applyBindings(viewModel, toolbar);
+            Cesium.knockout.getObservable(viewModel,'overGroundAlpha').subscribe(// 设置地表图层透明度
+                function(newValue) {
+                    overGroundLayer.style3D.fillForeColor.alpha = parseFloat(newValue);
+                }
+            );
+
+            $("#excavation").on("click",function(){//绘制开挖区域
+                handlerPolygon = new Cesium.DrawHandler(viewer,Cesium.DrawMode.Polygon);
+                handlerPolygon.activeEvt.addEventListener(function(isActive){
+                    if(isActive == true){
+                        viewer.enableCursorStyle = false;
+                        viewer._element.style.cursor = '';
+                        $('body').removeClass('drawCur').addClass('drawCur');
+                    }
+                    else{
+                        viewer.enableCursorStyle = true;
+                        $('body').removeClass('drawCur');
+                    }
+                });
+                handlerPolygon.movingEvt.addEventListener(function(windowPosition){
+                });
+                handlerPolygon.drawEvt.addEventListener(function(result){
+                    handlerPolygon.polygon.show = false;
+                    handlerPolygon.polyline.show = false;
+                    var polygon = result.object;
+                    var positions = polygon.positions;
+                    var flatPoints = [];
+                    for(var i = 0,j = positions.length;i < j;i++){//获取经纬度和高度
+                        var position = positions[i];
+                        var cartographic = Cesium.Cartographic.fromCartesian(position);
+                        var lon = Cesium.Math.toDegrees(cartographic.longitude);
+                        var lat = Cesium.Math.toDegrees(cartographic.latitude);
+                        var height = cartographic.height;
+                        flatPoints.push(lon);
+                        flatPoints.push(lat);
+                        flatPoints.push(height);
+                    }
+                    overGroundLayer.addExcavationRegion({//设置倾斜开挖参数
+                        position : flatPoints,
+                        name : 'excavation_' + Math.random()
+                    });
+                    handlerPolygon.deactivate();
+                });
+                handlerPolygon.activate();
+            });
+
+        });
+
+        $('#toolbar').show();
+        $('#loadingbar').remove();
+    }
+</script>
+</body>
+</html>

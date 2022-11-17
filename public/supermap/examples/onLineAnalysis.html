@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+		<title>贴线分析</title>
+		<link href="css/widgets.css" rel="stylesheet">
+		<link href="./css/font-awesome.min.css" rel="stylesheet">
+		<link href="./css/bootstrap.min.css" rel="stylesheet">
+		<link href="./css/pretty.css" rel="stylesheet">
+		<link href="./css/style.css" rel="stylesheet">
+		<script type="text/javascript" src="./js/jquery.min.js"></script>
+		<script src="./js/bootstrap.min.js"></script>
+		<script src="./js/bootstrap-select.min.js"></script>
+		<script src="./js/slider.js"></script>
+		<script src="./js/config.js"></script>
+		<script src="./js/tooltip.js"></script>
+		<script src="./js/spectrum.js"></script>
+		<script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+	</head>
+
+	<body>
+		<div id="cesiumContainer"></div>
+		<div id='toolbar' class='btn-group' style='position: absolute;left: 5px;top: 5px;display: none;'>
+			<span>
+          <button id="linearExtrude" class="button black">贴线分析</button>
+           </span>
+	       <span>
+      	    <button id="reset" class="button black">重置</button>
+           </span>
+		</div>
+		<script type="text/javascript">
+			function onload(Cesium) {
+				//初始化viewer部件
+				var viewer = new Cesium.Viewer('cesiumContainer', {
+					imageryProvider: new Cesium.BingMapsImageryProvider({
+						url: 'https://dev.virtualearth.net',
+						mapStyle: Cesium.BingMapsStyle.AERIAL,
+						key: URL_CONFIG.BING_MAP_KEY
+					}),
+				});
+				var scene = viewer.scene;
+				scene.camera.frustum.near = 0.01;
+				var widget = viewer.cesiumWidget;
+				$("#toolbar").show();
+				var arr = [];
+				var i = 0;
+				while(i < 20000) {
+					arr.push(i);
+					i++;
+				}
+				var promise = [];
+				promise[6] = scene.addS3MTilesLayerByScp(URL_CONFIG.SCENE_GTC_HILL, {
+					name: 'hill'
+				});
+				promise[5] = scene.addS3MTilesLayerByScp(URL_CONFIG.SCENE_GTC_UOUTSIDE, {
+					name: 'u外部'
+				});
+				promise[4] = scene.addS3MTilesLayerByScp(URL_CONFIG.SCENE_GTC_UINSIDE, {
+					name: 'u内部'
+				});
+				promise[3] = scene.addS3MTilesLayerByScp(URL_CONFIG.SCENE_GTC_UWINDOW, {
+					name: 'u窗'
+				});
+				promise[2] = scene.addS3MTilesLayerByScp(URL_CONFIG.SCENE_GTC_UNIT9, {
+					name: '九号楼@九号楼'
+				});
+				promise[1] = scene.addS3MTilesLayerByScp(URL_CONFIG.SCENE_GTC_BUILDIBG, {
+					name: 'original'
+				});
+				promise[0] = scene.addS3MTilesLayerByScp(URL_CONFIG.SCENE_GTC_GROUND, {
+					name: 'ground'
+				});
+				Cesium.when.all(promise, function(layer) {
+					//设置相机位置、方向，定位至模型
+					scene.camera.setView({
+						destination: new Cesium.Cartesian3(-2095120.8195698452, 4492050.236234234, 4014691.2770372364),
+						orientation: {
+							heading: 1.0525528821913364,
+							pitch: -0.5403802934874635,
+							roll: 1.616484723854228e-12
+						}
+					});
+					var original = scene.layers.find("original");
+					original.setObjsVisible([47], false);
+				});
+				document.getElementById("linearExtrude").onclick = function() {
+					plasterAnalysis(viewer, scene);
+				};
+				document.getElementById("reset").onclick = function() {
+					viewer.entities.removeAll();
+					var layer = scene.layers.find("original");
+					layer.removeObjsColor([202]);
+					scene.camera.setView({
+						destination: new Cesium.Cartesian3(-2095120.8195698452, 4492050.236234234, 4014691.2770372364),
+						orientation: {
+							heading: 1.0525528821913364,
+							pitch: -0.5403802934874635,
+							roll: 1.616484723854228e-12
+						}
+					});
+
+				};
+
+				//贴线分析
+				function plasterAnalysis(viewer, scene) {
+					viewer.entities.removeAll();
+					window.scene = viewer.scene;
+					var pastePolyLine = viewer.entities.add({
+						polyline: {
+							positions: Cesium.Cartesian3.fromDegreesArrayHeights(
+								[115.008423196501, 39.00802071320561, 102.1,
+									115.01018439584423, 39.00853132862415, 102.1,
+									115.011168593648, 39.00880578673498, 102.1
+								]),
+							width: 4.0,
+							material: new Cesium.PolylineArrowMaterialProperty(Cesium.Color.RED),
+						}
+					});
+					setTimeout(function() {
+						scene.layers.find("original").setObjsColor([202], new Cesium.Color(1, 0, 0));
+						var tooltip = createTooltip(document.body);
+						var cartesian = Cesium.Cartesian3.fromDegrees(115.00896686645638, 39.00818670441549, 111.5);
+						var pick = Cesium.SceneTransforms.wgs84ToWindowCoordinates(viewer.scene, cartesian);
+						tooltip.showAt(pick, '贴线率：0.83');
+						window.setTimeout(function() {
+							tooltip.setVisible(false);
+						}, 3000);
+					}, 4000);
+				}
+			}
+		</script>
+	</body>
+
+</html>

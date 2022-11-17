@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>SQL Query</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link href="./css/pretty.css" rel="stylesheet">
+    <script src="./js/jquery.min.js"></script>
+    <script src="./js/config.js"></script>
+    <script src="./js/supermap/SuperMap.Include.js"></script>
+    <script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+    <style>
+        input[type=text]{
+            TEXT-ALIGN: center;
+            z-index: 3;
+            height: 18px;
+            background: none;
+            border: none;
+            padding: 5px 0;
+            -webkit-transition: 0.3s;
+            transition: 0.3s;
+            border-bottom: 2px solid #b8b2b2;
+            color: aliceblue;
+        }
+    </style>
+</head>
+<body class="loading">
+<div id="cesiumContainer"></div>
+<div id="toolbar" class="param-container tool-bar">
+    <label style="font: 400 13.3333px Arial;">SQL</label><input type="text" id="SQL" value="SMAREA>5000">
+    <button type="button" id="search" class="button black">查询</button><br>
+    <select id="position" style="width: 100%">
+        <option value ="1">定位点1</option>
+        <option value ="2">定位点2</option>
+        <option value="3">定位点3</option>
+        <option value="4">点位点4</option>
+    </select>
+</div>
+<div id="bubble" class="bubble" >
+    <div id="tools" style="text-align : right">
+    <span  class="fui-cross" title="关闭" id="close" style="color: darkgrey;padding:5px"></span>
+    </div>
+<div style="overflow-y:scroll;height:150px" id="tableContainer"><table id="tab"></table></div>
+</div>
+<script>
+    function onload(Cesium) {
+        var viewer = new Cesium.Viewer('cesiumContainer');
+        viewer.imageryLayers.addImageryProvider(new Cesium.BingMapsImageryProvider({
+            url : 'https://dev.virtualearth.net',
+            mapStyle : Cesium.BingMapsStyle.AERIAL,
+            key : URL_CONFIG.BING_MAP_KEY
+        }));
+        var scene = viewer.scene;
+        var widget = viewer.cesiumWidget;
+        var IDs=[];
+        $('#loadingbar').remove();
+        try{
+            var promise = scene.open(URL_CONFIG.SCENE_CBD);
+            Cesium.when(promise,function(layers){
+                //设置相机位置、视角，便于观察场景
+                scene.camera.setView({
+                    destination : new Cesium.Cartesian3.fromDegrees(116.4566,39.9149,5323.445971240632),
+                    orientation : {
+                        heading : 3.1612,
+                        pitch : -1.5188,
+                        roll : 6.283185307179563
+                    }
+                });
+                var camera =  scene.camera;
+                $("#search").click(function(){
+                    doSqlQuery($("#SQL").val()); 
+                });
+                $("#position").change(function () {
+                  if(this.value == "1"){
+                      camera.flyTo({
+                          destination : Cesium.Cartesian3.fromDegrees(116.45756824765414, 39.9151525065, 303.9282348283207),
+                          orientation : {
+                              heading : 3.361386,
+                              pitch : -0.543285,
+                              roll : 6.283185307179563
+                          }
+                      });
+                  }
+                if(this.value == "2"){
+                    camera.flyTo({
+                        destination : Cesium.Cartesian3.fromDegrees(116.45898554643348, 39.90943026228571, 32.707476595524625),
+                        orientation : {
+                            heading : 6.016771,
+                            pitch : -0.300416,
+                            roll : 0.0
+                        }
+                    });
+                }
+                if(this.value == "3"){
+                    camera.flyTo({
+                        destination : Cesium.Cartesian3.fromDegrees(116.43518565219966, 39.95097107746538, 2078.0503226706123),
+                        orientation : {
+                            heading : 2.718565,
+                            pitch : -0.415366,
+                            roll : 0.0
+                        }
+                    });
+                }
+                if(this.value == "4"){
+                    camera.flyTo({
+                        destination : Cesium.Cartesian3.fromDegrees(116.48368313561016, 39.911532190450295, 369.08993153401934),
+                        orientation : {
+                            heading : 4.771817,
+                            pitch : -0.190922,
+                            roll : 0.0
+                        }
+                    });
+                }
+
+                })
+            },function(){
+                var title = '加载SCP失败，请检查网络连接状态或者url地址是否正确？';
+                widget.showErrorPanel(title, undefined, e);
+            });
+        }
+        catch(e){
+            if (widget._showRenderLoopErrors) {
+                var title = '渲染时发生错误，已停止渲染。';
+                widget.showErrorPanel(title, undefined, e);
+            }
+        }
+        
+        function onQueryComplete(queryEventArgs){
+            var selectedFeatures = queryEventArgs.originResult.features;
+            viewer.entities.removeAll();
+            for(var i = 0;i < selectedFeatures.length;i++ ){
+                var value = selectedFeatures[i].fieldValues["0"];
+                var feature = selectedFeatures[i];
+                for(var j = 0; j < feature.fieldNames.length ; j++){
+                    var index = j.toString();
+                    if(j == 0){
+                         var des = '<table class="cesium-infoBox-defaultTable"><tbody>' + '<tr><th>' + selectedFeatures[i].fieldNames["0"] + '</th><td>' + selectedFeatures[i].fieldValues["0"] + '</td></tr>';
+                    }
+                    else if( j == feature.fieldNames.length - 1){
+                        des += '<tr><th>' + selectedFeatures[i].fieldNames[index] + '</th><td>' + selectedFeatures[i].fieldValues[index] + '</td></tr>' + "</tbody></table>";
+                    }
+                    else{
+                        des += '<tr><th>' + selectedFeatures[i].fieldNames[index] + '</th><td>' + selectedFeatures[i].fieldValues[index] + '</td></tr>';
+                    }
+                }
+                viewer.entities.add({
+                    position : Cesium.Cartesian3.fromDegrees(parseFloat(selectedFeatures[i].fieldValues["12"]),parseFloat(selectedFeatures[i].fieldValues["13"]),parseFloat(selectedFeatures[i].fieldValues["16"])),
+                    billboard :{
+                        image : './images/location4.png',
+                        width:30,
+                        height:40,
+                        
+                    },
+                    name : selectedFeatures[i].fieldValues["11"],
+                    description: des
+                });
+                IDs.push(parseInt(value)+11);
+            }
+            var buildingLayer = scene.layers.find("Building@CBD");
+            if(IDs.length>0){
+                buildingLayer.setSelection(IDs);
+            }
+        }
+        function doSqlQuery(SQL){
+            var getFeatureParam, getFeatureBySQLService, getFeatureBySQLParams;
+            getFeatureParam = new SuperMap.REST.FilterParameter({
+                attributeFilter: SQL
+            });
+            getFeatureBySQLParams = new SuperMap.REST.GetFeaturesBySQLParameters({
+                queryParameter: getFeatureParam,
+                toIndex : -1,
+                datasetNames: ["二维数据:" + "Building"]
+            });
+            var url = 'http://www.supermapol.com/realspace/services/data-cbd/rest/data';
+            getFeatureBySQLService = new SuperMap.REST.GetFeaturesBySQLService(url, {
+                eventListeners: {
+                    "processCompleted": onQueryComplete, 
+                    "processFailed": processFailed
+                }
+            });
+            getFeatureBySQLService.processAsync(getFeatureBySQLParams);
+        }
+
+        function processFailed(queryEventArgs){
+            alert('查询失败！');
+        }
+
+   }
+</script>
+</body>
+</html>

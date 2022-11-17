@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+		<title>Cross裁剪</title>
+		<link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+		<link href="./css/pretty.css" rel="stylesheet">
+		<script src="./js/jquery.min.js"></script>
+		<script src="./js/config.js"></script>
+		<script src="./js/tooltip.js"></script>
+		<script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+		<style>
+			input[type=range] {
+				width: 180px;
+			}
+			
+			input[type=number] {
+				width: 50px;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div id="cesiumContainer"></div>
+		<div id="toolbar" class="params-setting-container">
+			<div class="params-setting-anchor" title="显示/隐藏参数面板"><span class="fui-expand"></span></div>
+			<div class="params-setting">
+				<table>
+					<tbody>
+						<tr>
+							<td><label>裁剪宽度：</label></td>
+							<td>
+								<input type="range" id="clip-width" min="1" max="100" step="1" data-bind="value: width, valueUpdate: 'input'">
+							</td>
+							<td>
+								<input type="number" id="clip-width-label" min="1" max="100" step="1" data-bind="value: width, valueUpdate: 'input'" />
+							</td>
+						</tr>
+						<tr>
+							<td><label>裁剪高度：</label></td>
+							<td>
+								<input type="range" id="clip-height" min="1" max="100" step="1" data-bind="value: height, valueUpdate: 'input'">
+							</td>
+							<td>
+								<input type="number" id="clip-height-label" min="1" max="100" step="1" data-bind="value: height, valueUpdate: 'input'" />
+							</td>
+						</tr>
+						<tr>
+							<td><label>绕X轴旋转：</label></td>
+							<td>
+								<input id="pitch" type="range" min="0" max="360" step="1.0" data-bind="value: pitch, valueUpdate: 'input'">
+							</td>
+							<td>
+								<input type="number" min="0" max="360" step="1" data-bind="value: pitch, valueUpdate: 'input'">
+							</td>
+						</tr>
+						<tr>
+							<td><label>绕Y轴旋转：</label></td>
+							<td>
+								<input id="roll" type="range" min="0" max="360" step="1.0" data-bind="value: roll, valueUpdate: 'input'">
+							</td>
+							<td>
+								<input type="number" min="0" max="360" step="1.0" data-bind="value: roll, valueUpdate: 'input'">
+							</td>
+						</tr>
+						<tr>
+							<td>
+								<label>绕Z轴旋转：</label>
+							</td>
+							<td>
+								<input id="heading" type="range" min="0" max="360" step="1.0" data-bind="value: heading, valueUpdate: 'input'">
+							</td>
+							<td>
+								<input type="number" min="0" max="360" step="1.0" data-bind="value: heading, valueUpdate: 'input'">
+							</td>
+						</tr>
+						<tr>
+							<td><label>拉伸：</label></td>
+							<td>
+								<input id="extrude" type="range" min="0.1" max="30" step="0.1" data-bind="value: extrudeDistance, valueUpdate: 'input'">
+							</td>
+							<td>
+								<input type="number" min="0.1" max="30" step="0.5" data-bind="value: extrudeDistance, valueUpdate: 'input'">
+							</td>
+						</tr>
+						<tr>
+							<td colspan="3">
+								<input type="button" id="choose-clip-pos" class="button black" value="选取裁剪位置" />
+								<input type="button" id="clear" class="button black" value="清除" style="margin-left: 10px;" />
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+
+		<script>
+			function onload(Cesium) {
+				var viewer = new Cesium.Viewer('cesiumContainer');
+				viewer.imageryLayers.addImageryProvider(new Cesium.BingMapsImageryProvider({
+					url: 'https://dev.virtualearth.net',
+					mapStyle: Cesium.BingMapsStyle.AERIAL,
+					key: URL_CONFIG.BING_MAP_KEY
+				}));
+				var scene = viewer.scene;
+				scene.globe.depthTestAgainstTerrain = false;
+				var promise = scene.open(URL_CONFIG.SCENE_BIMBUILDING);
+				promise.then(function(layers) {
+					// 精准定位
+					scene.camera.setView({
+						destination: new Cesium.Cartesian3(-2180765.6717242915, 4379147.755349731, 4092644.516292509),
+						orientation: {
+							heading: 1.5751279310014885,
+							pitch: -1.493948327772495,
+							roll: 3.1415926535996626
+						}
+					});
+					var boxPosition, position, dim, width = 5,
+						height = 5,
+						heading = 0,
+						pitch = 0,
+						roll = 0,
+						extrudeDistance = 1.0,
+						startClip = false,
+						hasClipped = false;
+					var box = viewer.entities.add({ // 标识盒
+						position: Cesium.Cartesian3.fromDegrees(0, 0, 0),
+						show: false,
+						box: {
+							dimensions: new Cesium.Cartesian3(5, 5, 0.1),
+							fill: false,
+							outline: true,
+							outlineColor: Cesium.Color.WHITE,
+							outlineWidth: 5.0
+						}
+					});
+					var handler = new Cesium.ScreenSpaceEventHandler(scene.canvas);
+					handler.setInputAction(function(movement) {
+						if(startClip) {
+							boxPosition = scene.pickPosition(movement.endPosition);
+							if(!boxPosition) {
+								return;
+							}
+							box.position = boxPosition;
+						}
+					}, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+
+					handler.setInputAction(function(evt) {
+						if(startClip) {
+							position = scene.pickPosition(evt.position);
+							if(!position) {
+								return;
+							}
+							var hpr = new Cesium.HeadingPitchRoll(Cesium.Math.toRadians(heading), Cesium.Math.toRadians(pitch), Cesium.Math.toRadians(roll));
+							var orientation = Cesium.Transforms.headingPitchRollQuaternion(position, hpr);
+							box.orientation = orientation;
+							dim = new Cesium.Cartesian3(width, height, extrudeDistance);
+							updateClip();
+							startClip = false;
+							hasClipped = true;
+							box.show = false;
+						}
+					}, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+					var viewModel = {
+						width: 5,
+						height: 5,
+						heading: 0.0,
+						pitch: 0.0,
+						roll: 0.0,
+						extrudeDistance: 1.0,
+						isMoving: false
+					};
+					Cesium.knockout.track(viewModel);
+					var toolbar = document.getElementById('toolbar');
+					Cesium.knockout.applyBindings(viewModel, toolbar);
+
+					Cesium.knockout.getObservable(viewModel, 'width').subscribe(
+						function(newValue) {
+							width = Number(newValue);
+							box.box.dimensions = new Cesium.Cartesian3(width, height, 0.1);
+							dim = new Cesium.Cartesian3(width, height, extrudeDistance);
+							if(!position) {
+								return;
+							}
+							if(hasClipped) {
+								updateClip();
+							}
+						}
+					);
+
+					Cesium.knockout.getObservable(viewModel, 'height').subscribe(
+						function(newValue) {
+							height = Number(newValue);
+							box.box.dimensions = new Cesium.Cartesian3(width, height, 0.1);
+							dim = new Cesium.Cartesian3(width, height, extrudeDistance);
+							if(!position) {
+								return;
+							}
+							if(hasClipped) {
+								updateClip();
+							}
+						}
+					);
+					Cesium.knockout.getObservable(viewModel, 'heading').subscribe(
+						function(newValue) {
+							heading = Number(newValue);
+							var hpr = new Cesium.HeadingPitchRoll(Cesium.Math.toRadians(heading), Cesium.Math.toRadians(pitch), Cesium.Math.toRadians(roll));
+							var orientation = Cesium.Transforms.headingPitchRollQuaternion(boxPosition, hpr);
+							box.orientation = orientation;
+							if(!position) {
+								return;
+							}
+							if(hasClipped) {
+								updateClip();
+							}
+						}
+					);
+					Cesium.knockout.getObservable(viewModel, 'pitch').subscribe(
+						function(newValue) {
+							pitch = Number(newValue);
+							var hpr = new Cesium.HeadingPitchRoll(Cesium.Math.toRadians(heading), Cesium.Math.toRadians(pitch), Cesium.Math.toRadians(roll));
+							var orientation = Cesium.Transforms.headingPitchRollQuaternion(boxPosition, hpr);
+							box.orientation = orientation;
+							if(!position) {
+								return;
+							}
+							if(hasClipped) {
+								updateClip();
+							}
+						}
+					);
+					Cesium.knockout.getObservable(viewModel, 'roll').subscribe(
+						function(newValue) {
+							roll = Number(newValue);
+							var hpr = new Cesium.HeadingPitchRoll(Cesium.Math.toRadians(heading), Cesium.Math.toRadians(pitch), Cesium.Math.toRadians(roll));
+							var orientation = Cesium.Transforms.headingPitchRollQuaternion(boxPosition, hpr);
+							box.orientation = orientation;
+							if(!position) {
+								return;
+							}
+							if(hasClipped) {
+								updateClip();
+							}
+						}
+					);
+
+					Cesium.knockout.getObservable(viewModel, 'extrudeDistance').subscribe(
+						function(newValue) {
+							extrudeDistance = Number(newValue);
+							if(hasClipped) {
+								updateClip();
+							}
+						}
+					);
+
+					$("#choose-clip-pos").on("click", function() {
+						startClip = true;
+						box.show = true;
+					});
+					$("#clear").on("click", function() {
+						startClip = false;
+						box.show = false;
+						for(var i = 0, j = layers.length; i < j; i++) {
+							layers[i].clearCustomClipBox();
+						};
+						viewer.entities.removeAll();
+					});
+
+					// 折叠参数面板
+					$(".params-setting-anchor").click(function() {
+						$(".params-setting").toggleClass("params-setting-hide");
+					});
+
+					function updateClip() {
+						for(var i = 0, j = layers.length; i < j; i++) {
+							layers[i].setCustomClipCross({
+								position: position,
+								dimensions: dim,
+								heading: heading,
+								pitch: pitch,
+								roll: roll,
+								extrudeDistance: extrudeDistance
+							});
+						}
+					}
+				});
+			}
+		</script>
+	</body>
+
+</html>

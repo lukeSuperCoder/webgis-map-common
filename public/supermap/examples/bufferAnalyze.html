@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>缓冲区分析</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <script src="./js/jquery.min.js"></script>
+    <link href="./css/pretty.css" rel="stylesheet">
+    <script src="./js/config.js"></script>
+    <script src="./js/Convert.js"></script>
+    <script src="./js/supermap/SuperMap.Include.js"></script>
+    <script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<div id='loadingbar' class="spinner">
+    <div class="spinner-container container1">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container2">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container3">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+</div>
+<div id="toolbar" class="param-container tool-bar">
+    <button type="button" id="point" class="button black">绘制点</button>
+    <button type="button" id="polyline" class="button black">绘制线</button>
+    <button type="button" id="polygon" class="button black">绘制面</button>
+    <button type="button" id="clear" class="button black">清除</button>
+    <button type="button" id="buffer" class="button black">缓冲区分析</button>
+</div>
+<script>
+    function onload(Cesium) {
+        document.getElementById("point").onclick = function () {
+            deactiveAll();
+            handlerPoint.activate();
+        };
+        document.getElementById("polyline").onclick = function () {
+            deactiveAll();
+            handlerLine.activate();
+        };
+        document.getElementById("polygon").onclick = function () {
+            deactiveAll();
+            handlerPolygon.activate();
+        };
+        document.getElementById("clear").onclick = function () {
+            clearAll();
+        };
+        document.getElementById("buffer").onclick = function () {
+            if (bufferAnalyzeObject) {
+                var sourceGeometry;
+                if (bufferAnalyzeObject instanceof Cesium.PointPrimitive) {
+                    sourceGeometry = CesiumToSuperMap.convertPoint(Cesium, SuperMap, bufferAnalyzeObject.position);
+                }
+                else if (bufferAnalyzeObject instanceof Cesium.Entity && bufferAnalyzeObject._polygon) {
+                    sourceGeometry = CesiumToSuperMap.convertPolygon(Cesium, SuperMap, bufferAnalyzeObject);
+                }
+                else if (bufferAnalyzeObject instanceof Cesium.Polyline) {
+                    sourceGeometry = CesiumToSuperMap.convertPolyline(Cesium, SuperMap, bufferAnalyzeObject);
+                }
+                else {
+                    return;
+                }
+                if (!sourceGeometry) {
+                    return;
+                }
+                var bufferServiceByGeometry = new SuperMap.REST.BufferAnalystService(analyzeUrl),
+                    bufferDistance = new SuperMap.REST.BufferDistance({
+                        value: 0.01//单位是度（默认为地图投影的单位）
+                    }),
+                    bufferSetting = new SuperMap.REST.BufferSetting({
+                        endType: SuperMap.REST.BufferEndType.ROUND,
+                        leftDistance: bufferDistance,
+                        rightDistance: bufferDistance,
+                        semicircleLineSegment: 10
+                    }),
+                    geoBufferAnalystParam = new SuperMap.REST.GeometryBufferAnalystParameters({
+                        sourceGeometry: sourceGeometry,
+                        bufferSetting: bufferSetting
+                    });
+
+                bufferServiceByGeometry.events.on({"processCompleted": bufferAnalystCompleted});
+                bufferServiceByGeometry.processAsync(geoBufferAnalystParam);
+            }
+            else {
+                alert('请先绘制目标缓冲区域!');
+            }
+        };
+        function bufferAnalystCompleted(BufferAnalystEventArgs) {
+            if (BufferAnalystEventArgs) {
+                var bufferResultGeometry = BufferAnalystEventArgs.result.resultGeometry;
+                var entitys = SuperMapToCesium.geometryToEntity(Cesium, SuperMap, bufferResultGeometry);
+                if (entitys) {
+                    for (var o in entitys) {
+                        viewer.entities.add(entitys[o]);
+                        bufferEntitys.push(entitys[o]);
+                    }
+                }
+            }
+        }
+
+        function bufferAnalystFailed(args) {
+            alert(args.error.errorMsg);
+        }
+
+        function deactiveAll() {
+            handlerPoint.deactivate();
+            handlerLine.deactivate();
+            handlerPolygon.deactivate();
+        }
+
+        function clearAll() {
+            handlerPoint.clear();
+            handlerPolygon.clear();
+            handlerLine.clear();
+            if (bufferEntitys.length) {
+                for (var i = 0, j = bufferEntitys.length; i < j; i++) {
+                    viewer.entities.remove(bufferEntitys[i]);
+                }
+            }
+            bufferAnalyzeObject = undefined;
+        }
+
+        var bufferAnalyzeObject;
+        var analyzeUrl = "https://www.supermapol.com/realspace/services/spatialanalyst-changchun/restjsr/spatialanalyst";
+        var viewer = new Cesium.Viewer('cesiumContainer');
+        var bufferEntitys = [];
+
+        var handlerPoint = new Cesium.DrawHandler(viewer, Cesium.DrawMode.Point);
+        handlerPoint.activeEvt.addEventListener(function (isActive) {
+            if (isActive == true) {
+                $('body').removeClass('drawCur').addClass('drawCur');
+            }
+            else {
+                $('body').removeClass('drawCur');
+            }
+        });
+        handlerPoint.drawEvt.addEventListener(function (result) {
+            bufferAnalyzeObject = result.object;
+        });
+
+        var handlerLine = new Cesium.DrawHandler(viewer, Cesium.DrawMode.Line);
+        handlerLine.activeEvt.addEventListener(function (isActive) {
+            if (isActive == true) {
+                $('body').removeClass('drawCur').addClass('drawCur');
+            }
+            else {
+                $('body').removeClass('drawCur');
+            }
+        });
+        handlerLine.drawEvt.addEventListener(function (result) {
+            bufferAnalyzeObject = result.object;
+        });
+
+        var handlerPolygon = new Cesium.DrawHandler(viewer, Cesium.DrawMode.Polygon);
+        handlerPolygon.activeEvt.addEventListener(function (isActive) {
+            if (isActive == true) {
+                $('body').removeClass('drawCur').addClass('drawCur');
+            }
+            else {
+                $('body').removeClass('drawCur');
+            }
+        });
+        handlerPolygon.drawEvt.addEventListener(function (result) {
+            bufferAnalyzeObject = result.object;
+        });
+        var mapUrl = 'https://www.supermapol.com/realspace/services/map-jingjin/rest/maps/京津地区地图';
+        var provider = new Cesium.SuperMapImageryProvider({
+            url: mapUrl
+        });
+        var imageryLayer = viewer.imageryLayers.addImageryProvider(provider);
+        viewer.flyTo(imageryLayer);
+
+        $('#loadingbar').remove();
+        $('#toolbar').show();
+        if (!viewer.scene.pickPositionSupported) {
+            alert('不支持深度纹理,缓冲区分析功能无法使用！');
+        }
+    }
+</script>
+</body>
+</html>

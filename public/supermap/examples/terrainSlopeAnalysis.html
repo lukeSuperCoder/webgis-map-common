@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>地形坡度坡向分析</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link href="./css/pretty.css" rel="stylesheet">
+    <script src="./js/config.js"></script>
+    <script type="text/javascript" src="./js/jquery.min.js"></script>
+	<script src="./js/tooltip.js"></script>
+    <script src="js/bootstrap-select.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+    <style>
+        .drawCur{
+            cursor: url(./images/cur/draw.cur), auto;
+        }
+        #split{position: fixed}
+        #float{
+            position: fixed;
+        }
+    </style>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<div id="toolba1r" style="position : absolute;left : 15px; top : 15px;display : none;" >
+    <button type="button" id="clear" class="button black">清除</button>
+</div>
+<div id="split" style="background-image:url('./images/splitShow.gif'); width: 13px;height: 72px;top: 8px" title="功能模块"></div>
+<div id="float" style="background:#95e8f9;display: none;width: 250px;height: 470px;top: 15px;left: 1.5%;opacity: 0.5">
+    <div id="con" style="background:#95e8f9;width: 230px;height: 450px;top: 85px;left: 1.1%;margin: 10px">
+        <label for="calMode">1、计算模式：</label>
+        <select id="calMode">
+            <option value="calModeall_plane">指定多边形区域</option>
+            <option value="calModeall_any">全部区域参与分析</option>
+            <option value="calModeall_none">全部区域不参与分析</option>
+        </select><br>
+        <label>2、坡度区间：</label>
+        <label> 起：</label>
+        <input type="range"  id="wideminR" min="0" max="90"  value="0"  style="width: 170px";>
+        <input type="number" id="widemin" min="0" max="90"  value="0"  style="width: 30px"> <label> 终：</label>
+        <input type="range"  id="widemaxR" min="0" max="90"  value="78"  style="width: 170px">
+        <input type="number" id="widemax" min="0" max="90"  value="78"  style="width: 30px;">
+        <label >3、显示样式：</label>
+        <label><input type="radio"  id="showcolor" name="fill">显示填充颜色</label>
+        <label><input type="radio"  id="showarrow" name="fill">显示坡向箭头</label>
+        <label><input type="radio" id="showall"  name="fill" checked="checked">填充颜色和坡向箭头</label>
+        <label >4、颜色条带：</label>
+        <div id="bar" >
+        <select id="colorTable1"  class="selectpicker">
+            <option value="1" data-content="<span class='label band4'>&nbsp</span>">&nbsp</option>
+            <option value="2" data-content="<span class='label band2'>&nbsp</span>">&nbsp</option>
+            <option value="3" data-content="<span class='label band3'>&nbsp</span>">&nbsp</option>
+            <option value="4" data-content="<span class='label band1'>&nbsp</span>">&nbsp</option>
+            <option value="5" data-content="<span class='label band5'>&nbsp</span>">&nbsp</option>
+        </select>
+        </div><br>
+        <label >5、透明调节：</label>
+        <input type="number" step="0.1" id="trans" min="0" max="1"  value="0.5"  style="width:100px">
+        <input type="button" id="cance" value="清除结果">
+    </div>
+</div>
+<script type="text/javascript">
+    function onload(Cesium) {
+		var viewer = new Cesium.Viewer('cesiumContainer',{
+			terrainProvider : new Cesium.CesiumTerrainProvider({
+               url : URL_CONFIG.ZF_TERRAIN2,
+                isSct : true,//地形服务源自SuperMap iServer发布时需设置isSct为true
+                requestVertexNormals : true
+			})
+		});
+
+        //添加SuperMap iServer发布的影像服务
+        viewer.imageryLayers.addImageryProvider(new Cesium.SuperMapImageryProvider({
+            url : URL_CONFIG.ZF_IMG2
+        }));
+
+        var scene = viewer.scene;
+		scene.globe.enableLighting = true;
+        viewer.scene.camera.setView({
+            destination : Cesium.Cartesian3.fromDegrees(87.1, 27.8,8000.0),
+            orientation : {
+                heading : 6.10547067016156,
+                pitch : -0.8475077031996778,
+                roll :6.2831853016686185
+            }
+        });
+        var slope = new Cesium.SlopeSetting();
+       slope.DisplayMode = Cesium.SlopeSettingEnum.DisplayMode.FACE_AND_ARROW;
+        slope.MaxVisibleValue = document.getElementById("widemax").value;;
+        slope.MinVisibleValue =  document.getElementById("widemin").value;
+        var colorTable = new Cesium.ColorTable();
+        colorTable.insert(0, new Cesium.Color(255/255, 0/255, 0/255));
+        colorTable.insert(20, new Cesium.Color(221/255, 224/255, 7/255));
+        colorTable.insert(30, new Cesium.Color(20/255, 187/255, 18/255));
+        colorTable.insert(50, new Cesium.Color(0, 161/255, 1));
+        colorTable.insert(80, new Cesium.Color(9/255, 9/255, 255/255));
+            var wide;
+            wide =  Cesium.HypsometricSettingEnum.AnalysisRegionMode.ARM_REGION;
+              slope.ColorTable = colorTable;
+              slope.Opacity = 0.5;
+        var tooltip = createTooltip(viewer._element);
+        //绘制多边形
+        var handlerPolygon = new Cesium.DrawHandler(viewer,Cesium.DrawMode.Polygon,0);
+        handlerPolygon.activeEvt.addEventListener(function(isActive){
+            if(isActive == true){
+                viewer.enableCursorStyle = false;
+                viewer._element.style.cursor = '';
+                $('body').removeClass('drawCur').addClass('drawCur');
+            }
+            else{
+                viewer.enableCursorStyle = true;
+                $('body').removeClass('drawCur');
+            }
+        });
+        handlerPolygon.movingEvt.addEventListener(function(windowPosition){
+            if(windowPosition.x < 200 && windowPosition.y < 150){
+                tooltip.setVisible(false);
+                return ;
+            }
+        });
+        handlerPolygon.drawEvt.addEventListener(function(result){
+            if(!result.object.positions){
+                handlerPolygon.polygon.show = false;
+                handlerPolygon.polyline.show = false;
+                handlerPolygon.deactivate();
+                handlerPolygon.activate();
+                return;
+            };
+            var array = [].concat(result.object.positions);
+            tooltip.setVisible(false);
+            var positions = [];
+            for(var i = 0, len = array.length; i < len; i ++){
+                var cartographic = Cesium.Cartographic.fromCartesian(array[i]);
+                var longitude = Cesium.Math.toDegrees(cartographic.longitude);
+                var latitude = Cesium.Math.toDegrees(cartographic.latitude);
+                var h=cartographic.height;
+                if(positions.indexOf(longitude)==-1&&positions.indexOf(latitude)==-1){
+                    positions.push(longitude);
+                    positions.push(latitude);
+                    positions.push(h);
+                }
+            }
+
+            slope.CoverageArea = positions;
+            viewer.scene.globe.SlopeSetting = {
+                slopeSetting : slope,
+                analysisMode : wide
+            };
+            handlerPolygon.polygon.show = false;
+            handlerPolygon.polyline.show = true;
+            handlerPolygon.deactivate();
+            handlerPolygon.activate();
+        });
+        handlerPolygon.activate();
+        document.getElementById("cance").onclick = function() {
+          viewer.scene.globe.SlopeSetting = {
+              slopeSetting : slope,
+              analysisMode : Cesium.HypsometricSettingEnum.AnalysisRegionMode.ARM_NONE
+          };
+          handlerPolygon.polygon.show=false;
+          handlerPolygon.polyline.show=false;
+        };
+        viewer._cesiumWidget._creditContainer.style.display = "none";
+        $("#split").on("click",function(){
+            $("#float").slideToggle(500);
+        }
+        );
+        $("#trans").on("input change",function(){
+            slope.Opacity = this.value;
+            viewer.scene.globe.SlopeSetting = {
+                slopeSetting : slope,
+                analysisMode : wide
+            };
+        });
+        $("#wideminR").on("input change",function(){
+           var a = document.getElementById("widemin");
+            a.value = this.value;
+            slope.MinVisibleValue = this.value;
+            viewer.scene.globe.SlopeSetting = {
+                slopeSetting : slope,
+                analysisMode : wide
+            };
+        });
+        $("#widemin").on("input change",function(){
+            var a = document.getElementById("widemin");
+            a.value = this.value;
+        });
+        $("#widemaxR").on("input change",function(){
+            var a = document.getElementById("widemax");
+            a.value = this.value;
+            slope.MaxVisibleValue = this.value;
+            viewer.scene.globe.SlopeSetting = {
+                slopeSetting : slope,
+                analysisMode : wide
+            };
+        });
+        $("#widemax").on("input change",function(){
+            var a = document.getElementById("widemaxR");
+            a.value = this.value;
+        });
+        $("#calMode").on("input change",function(){
+            var index = document.getElementById("calMode").selectedIndex;
+            switch (index){
+                case 0:   wide =  Cesium.HypsometricSettingEnum.AnalysisRegionMode.ARM_REGION; break;
+                case 1:   wide =  Cesium.HypsometricSettingEnum.AnalysisRegionMode.ARM_ALL; break;
+                case 2:   wide =  Cesium.HypsometricSettingEnum.AnalysisRegionMode.ARM_NONE; break;
+                default:break;
+            }
+            viewer.scene.globe.SlopeSetting = {
+                slopeSetting : slope,
+                analysisMode : wide
+            };
+        });
+        $(":radio[name='fill']").change(function(){
+            if(document.getElementById("showcolor").checked)
+            {slope.DisplayMode = Cesium.SlopeSettingEnum.DisplayMode.FACE;}
+            else if(document.getElementById("showarrow").checked)
+            {slope.DisplayMode = Cesium.SlopeSettingEnum.DisplayMode.ARROW;}
+            else
+            {slope.DisplayMode = Cesium.SlopeSettingEnum.DisplayMode.FACE_AND_ARROW;}
+            viewer.scene.globe.SlopeSetting = {
+                slopeSetting : slope,
+                analysisMode : wide
+            };
+        }
+        )
+        $("#colorTable1").on("input change",function(){
+            colorTable.remove(0);
+            colorTable.remove(20);
+            colorTable.remove(30);
+            colorTable.remove(50);
+            colorTable.remove(80);
+            var value = document.getElementById("colorTable1").selectedIndex;
+            switch (value) {
+                case 0:
+                    colorTable.insert(0, new Cesium.Color(255/255, 0/255, 0/255));
+                    colorTable.insert(20, new Cesium.Color(221/255, 224/255, 7/255));
+                    colorTable.insert(30, new Cesium.Color(20/255, 187/255, 18/255));
+                    colorTable.insert(50, new Cesium.Color(0, 161/255, 1));
+                    colorTable.insert(80, new Cesium.Color(9/255, 9/255, 255/255));
+                    break;
+                case 1:
+                    colorTable.insert(0,new Cesium.Color(162/255, 251/255, 194/255));
+                    colorTable.insert(20,new Cesium.Color(180/255, 200/255, 170/255));
+                    colorTable.insert(30, new Cesium.Color(200/255, 160/255, 130/255));
+                    colorTable.insert(50, new Cesium.Color(225/255, 130/255, 130/255));
+                    colorTable.insert(80, new Cesium.Color(1, 103/255, 103/255));
+                    break;
+                case 2:
+                    colorTable.insert(0, new Cesium.Color(230/255, 198/255, 1));
+                    colorTable.insert(20, new Cesium.Color(210/255, 150/255, 1));
+                    colorTable.insert(30, new Cesium.Color(190/255, 100/255, 1));
+                    colorTable.insert(50, new Cesium.Color(165, 50/255, 1));
+                    colorTable.insert(80, new Cesium.Color(157/255, 0, 1));
+                    break;
+                case 3:
+                    colorTable.insert(0, new Cesium.Color(0, 39/255, 148/255));
+                    colorTable.insert(20, new Cesium.Color(0, 39/255, 148/255));
+                    colorTable.insert(30, new Cesium.Color(70/255, 116/255, 200/255));
+                    colorTable.insert(50, new Cesium.Color(149/255, 232/255, 249/255));
+                    colorTable.insert(80, new Cesium.Color(149/255, 232/255, 249/255));
+                    break;
+                case 4:
+                    colorTable.insert(0, new Cesium.Color(186/255, 1, 190/255));
+                    colorTable.insert(20, new Cesium.Color(186/255, 1, 180/255));
+                    colorTable.insert(30, new Cesium.Color(106/255, 255/255, 170/255));
+                    colorTable.insert(50, new Cesium.Color(26/255, 255/255, 160/255));
+                    colorTable.insert(80, new Cesium.Color(26/255, 255/255, 156/255));
+                    break;
+                default:
+                    break;
+            }
+            slope.ColorTable = colorTable;
+            viewer.scene.globe.SlopeSetting = {
+                slopeSetting : slope,
+                analysisMode : wide
+            };
+        });
+
+        if(!scene.pickPositionSupported){
+            alert('不支持深度纹理,无法绘制多边形，根据多边形显示分析区域功能无法使用！');
+        }
+        $('#toolbar').show();
+        $('#btnContainer').show();
+        $('#loadingbar').remove();
+
+     }
+
+    </script>
+</body>
+</html>

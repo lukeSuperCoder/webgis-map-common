@@ -1,0 +1,67 @@
+[
+  {
+    "entity": {
+      "alias": "系统管理",
+      "name": "sysManagent",
+      "icon": "el-icon-setting",
+      "id": 0,
+      "value": ""
+    },
+    "childs": [
+      {
+        "entity": {
+          "alias": "用户管理",
+          "name": "UserManagement",
+          "icon": "el-icon-user",
+          "id": 1,
+          "value": "/UserManagement"
+        }
+      },
+      {
+        "entity": {
+          "alias": "角色管理",
+          "name": "RoleManagement",
+          "icon": "el-icon-user",
+          "id": 2,
+          "value": "/RoleManagement"
+        }
+      },
+      {
+        "entity": {
+          "alias": "地图测试",
+          "name": "MapTest",
+          "icon": "el-icon-user",
+          "id": 2,
+          "value": "/MapTest"
+        }
+      },
+      {
+        "entity": {
+          "alias": "超图测试",
+          "name": "SuperMapTest",
+          "icon": "el-icon-user",
+          "id": 2,
+          "value": "/SuperMapTest"
+        }
+      },
+      {
+        "entity": {
+          "alias": "ol测试",
+          "name": "OpenLayerTest",
+          "icon": "el-icon-user",
+          "id": 2,
+          "value": "/OpenLayerTest"
+        }
+      },
+      {
+        "entity": {
+          "alias": "mapbox测试",
+          "name": "MapBoxTest",
+          "icon": "el-icon-user",
+          "id": 2,
+          "value": "/MapBoxTest"
+        }
+      }
+    ]
+  }
+]

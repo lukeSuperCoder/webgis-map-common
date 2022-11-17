@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>绘制点线面</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link href="./css/pretty.css" rel="stylesheet">
+    <link href="./css/examples.css" rel="stylesheet">
+    <script type="text/javascript" src="./js/jquery.min.js"></script>
+    <script type="text/javascript" src="./js/sweetalert-dev.js"></script>
+    <link rel="stylesheet" href="./css/sweetalert.css">
+    <script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<div class="my-toolbar" id="toolbar" >
+    <div class="my-itemDropDown" >
+        <div id='point' class="my-item">
+            <img class="my-itemIcon" src="images/point.png" title="point">
+        </div>
+        <div id='line' class="my-item">
+            <img class="my-itemIcon" src="images/line.png" title="line">
+        </div>
+        <div id='polygon' class="my-item">
+            <img class="my-itemIcon" src="images/polygon.png" title="polygon">
+        </div>
+    </div>
+</div>
+<script>
+    var host = document.location.toString().match(/file:\/\//)?"http://localhost:8090":'http://' + document.location.host;
+	function onload(Cesium) {
+	    var viewer = new Cesium.Viewer('cesiumContainer',{
+	    });
+	    var scene = viewer.scene;
+        $(".my-toolbar").show();
+
+        //创建点、线、面处理对象
+        var pointHandler = new Cesium.PointHandler(viewer);
+        var polylineHandler = new Cesium.PolylineHandler(viewer);
+        var polygonHandler = new Cesium.PolygonHandler(viewer);
+
+        viewer.scene.globe.depthTestAgainstTerrain = false;
+
+        //点绘制结束回调事件
+        pointHandler.drawCompletedEvent.addEventListener(function(point){
+            console.log("point is ..", point);
+            //do something with this point
+        });
+
+        //线绘制结束回调事件
+        polylineHandler.drawCompletedEvent.addEventListener(function(line){
+            console.log("line is ..", line);
+            //do something with this line
+        });
+
+        //面绘制结束回调事件
+        polygonHandler.drawCompletedEvent.addEventListener(function(polygon){
+            console.log("polygon is ..", polygon);
+            //do something with this polygon
+        });
+
+        document.getElementById("point").onclick = function(){
+            if(pointHandler.active || polylineHandler.active || polygonHandler.active){
+                swal("plz complete current drawing!");
+                return ;
+            }
+            else{
+                pointHandler.activate();
+            }
+        }
+
+        document.getElementById("line").onclick = function(){
+            if(pointHandler.active || polylineHandler.active || polygonHandler.active){
+                swal("plz complete current drawing!");
+                return ;
+            }
+            else{
+              polylineHandler.activate();
+            }
+        }
+
+        document.getElementById("polygon").onclick = function(){
+            if(pointHandler.active || polylineHandler.active || polygonHandler.active){
+                swal("plz complete current drawing!");
+                return ;
+            }
+            else{
+                polygonHandler.activate();
+            }
+        }
+ 	}
+</script>
+</body>
+</html>

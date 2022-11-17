@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>dynamiclayer</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link href="./css/pretty.css" rel="stylesheet">
+    <script src="./js/jquery.min.js"></script>
+    <script src="./js/config.js"></script>
+    <script src="./js/supermap/SuperMap.Include.js"></script>
+    <script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+    <style>
+        #loadingOverlay {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            opacity: 0.9;
+            width: 100%;
+            height: 10%;
+            display: none;
+        }
+        #loadingOverlay h1 {
+            text-align: center;
+            position: relative;
+            top: 50%;
+            margin-top: -0.5em;
+        }
+
+        .loading #loadingOverlay {
+            display: block;
+        }
+    </style>
+</head>
+<body class="loading">
+<div id="cesiumContainer"></div>
+<div id='loadingbar' class="spinner">
+    <div class="spinner-container container1">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container2">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container3">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+</div>
+<div id="loadingOverlay"><h1 style="color: #fff">Loading data...</h1></div>
+<script>
+    function onload(Cesium) {
+        var viewer = new Cesium.Viewer('cesiumContainer');
+        var scene = viewer.scene;
+        scene.globe.depthTestAgainstTerrain = false;
+        $('#loadingbar').remove();
+        var url = './SampleData/models/ship.s3m';
+        var layer = new Cesium.DynamicLayer3D(scene.context,url);
+        scene.primitives.add(layer);
+        doSqlQuery();
+        function onQueryComplete(queryEventArgs){
+            document.body.className = document.body.className.replace(/(?:\s|^)loading(?:\s|$)/, ' ');
+            var airRoute = queryEventArgs.originResult.features;
+            var count = queryEventArgs.originResult.features.length;
+            var arr = [];
+            var objects = [];
+            for (var i = 0; i < count; i++){
+                for(var j = 0;j < 20;j++){
+                    var geoline3D = airRoute[i];
+                    var point3ds = geoline3D.geometry.points;
+                    var len = point3ds.length;
+                    var index = Math.floor(Math.random()*(len - 1));
+                    var half = len / 2;
+                    var dir = index < half ? true : false;
+                    if(j == 0){
+                        index = 0;
+                        dir = true;
+                    }
+                    else if(j == 19){
+                        index = len - 1;
+                        dir = false;
+                    }
+
+                    var point = point3ds[index];
+                    if(!point){
+                        continue;
+                    }
+
+                    var state = new Cesium.DynamicObjectState({
+                        longitude : point.x,
+                        latitude : point.y,
+                        altitude : 0,
+                        scale : new Cesium.Cartesian3(2000,2000,2000)
+                    });
+                    objects.push({
+                        state : state,
+                        dir : dir,
+                        index : index,
+                        origin : index
+                    });
+                    arr.push(state);
+                }
+
+            }
+            layer.updateObjectWithModel(url,arr);
+            setInterval(function() {
+                var m = 0;
+                for(var i = 0;i < count;i++){
+                    var geoline3D = airRoute[i];
+                    var point3ds = geoline3D.geometry.points;
+                    if(point3ds.length == 0){
+                        m++;
+                        continue;
+                    }
+                    for(j = 0;j < 20;j++){
+                        var obj = objects[(i-m)*20+j];
+                        var state = obj.state;
+                        var dir = obj.dir;
+                        var point;
+                        if(dir){
+                            obj.index += 1;
+                            point = point3ds[obj.index];
+                            if(!point){
+                                layer.clear(url,i*20+j);
+                                obj.index = obj.origin;
+                                point = point3ds[obj.index];
+                            }
+                        }
+                        else{
+                            obj.index -= 1;
+                            point = point3ds[obj.index];
+                            if(!point){
+                                layer.clear(url,i*20+j);
+                                obj.index = obj.origin;
+                                point = point3ds[obj.index];
+                            }
+                        }
+                        state.longitude = point.x;
+                        state.latitude = point.y;
+                    }
+                }
+                layer.updateObjectWithModel(url,arr);
+            }, 1200);
+
+        }
+
+
+        function doSqlQuery(){
+            var getFeatureParam, getFeatureBySQLService, getFeatureBySQLParams;
+
+            getFeatureParam = new SuperMap.REST.FilterParameter({
+                attributeFilter: "SMID>0"
+            });
+            getFeatureBySQLParams = new SuperMap.REST.GetFeaturesBySQLParameters({
+                queryParameter: getFeatureParam,
+                toIndex:500,
+                datasetNames: ["data:" + "wordroad"]
+            });
+            var url = 'https://www.supermapol.com/realspace/services/data-route25000/rest/data';
+            getFeatureBySQLService = new SuperMap.REST.GetFeaturesBySQLService(url, {
+                eventListeners: {"processCompleted": onQueryComplete, "processFailed": processFailed}});
+            getFeatureBySQLService.processAsync(getFeatureBySQLParams);
+        }
+
+
+        function processFailed(queryEventArgs){
+
+        }
+    }
+</script>
+</body>
+</html>

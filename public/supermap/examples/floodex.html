@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>淹没分析（地形）</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link href="./css/pretty.css" rel="stylesheet">
+    <script type="text/javascript" src="./js/jquery.min.js"></script>
+    <script src="./js/config.js"></script>
+	<script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<div id='loadingbar' class="spinner">
+    <div class="spinner-container container1">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container2">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container3">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+</div>
+<div id="toolbar" class="param-container tool-bar">
+
+    <div class="form-group">
+        <input id="maxHeight" value="9000" required="required" class="form-control"/>
+        <label class="form-label">最大高度  (米) :    </label>
+    </div>
+    <div class="form-group">
+        <input id="minHeight" value="4000" required="required" class="form-control"/>
+        <label  class="form-label">最小高度  (米) :</label>
+    </div>
+    <div class="form-group">
+        <input id="speed" value="500" required="required" class="form-control"/>
+        <label class="form-label">淹没速度(米/秒):</label>
+    </div>
+    <div style="margin: 10px;">
+        <button type="button" id="begin" class="button black">开始</button>
+        <button type="button" id="clear" class="button black">清除</button>
+    </div>
+</div>
+<script type="text/javascript">
+    var host = document.location.toString().match(/file:\/\//)?"http://localhost:8090":'http://' + document.location.host;
+    var currentHeight = 0;
+    var maxValue = 0;
+    var minValue = 0;
+    var altitude = -1;
+    var int = null;
+    function onload(Cesium) {
+        function color2(color) {
+            var red = parseInt(color.charAt(0) + color.charAt(1), 16) / 255.0;
+            var green = parseInt(color.charAt(2) + color.charAt(3), 16) / 255.0;
+            var blue = parseInt(color.charAt(4) + color.charAt(5), 16) / 255.0;
+
+			return new Cesium.Color(red,green,blue);
+		}
+		function getRandomColor(){
+			return "#"+("00000"+((Math.random()*16777215+0.5)>>0).toString(16)).slice(-6);
+			//return "#FF0000FF";
+		}
+		//初始化viewer部件，添加STK World Terrain地形服务
+		viewer = new Cesium.Viewer('cesiumContainer',{
+			terrainProvider : new Cesium.CesiumTerrainProvider({
+				url : URL_CONFIG.STK,
+				requestWaterMask : true,
+				requestVertexNormals : true
+			})
+		});
+         viewer.imageryLayers.addImageryProvider(new Cesium.BingMapsImageryProvider({
+            url : 'https://dev.virtualearth.net',
+            mapStyle : Cesium.BingMapsStyle.AERIAL,
+            key : URL_CONFIG.BING_MAP_KEY
+        }));
+        var scene = viewer.scene;
+        //$("div").show();
+		// $("#toolbar222").show
+        //创建分层设色对象
+		var hyp = new Cesium.HypsometricSetting();
+		//设置显示模式
+		hyp.DisplayMode = Cesium.HypsometricSettingEnum.DisplayMode.FACE;
+		//设置线颜色为红色
+		hyp._lineColor = new Cesium.Color(1.0, 0.0, 0.0, 1.0);
+		//设置最大/最小可见高度
+		hyp.MinVisibleValue = 0;
+		//设置颜色表的最大/最小key值,表示高度
+		hyp.ColorTableMinKey = 1;
+		hyp.ColorTableMaxKey = 9000;
+		//新建颜色表
+		var colorTable = new Cesium.ColorTable();
+		var height=1;
+		//每隔200m向颜色表插入一个随机色
+		for(var i= 0;i<90;i++){
+			height+=200;
+			colorTable.insert(height,getRandomColor());
+		}
+		//返回随机颜色
+		function getRandomColor(){
+			return new Cesium.Color(Math.random(),Math.random(),Math.random());
+		}
+		hyp.ColorTable = colorTable;
+		hyp.Opacity = 0.8;
+		//等高线间隔为200m
+		hyp.LineInterval = 200.0;
+		//设置相机视角
+		viewer.scene.camera.setView({
+			destination : Cesium.Cartesian3.fromDegrees(88.3648, 29.0946, 90000),
+			orientation : {
+				heading : 6.10547067016156,
+				pitch : -0.8475077031996778,
+				roll :6.2831853016686185
+			}
+		});
+		//点击“开始”按钮
+		var positions = null;
+		//绘制多边形
+        var polygonHandler = new Cesium.DrawHandler(viewer,Cesium.DrawMode.Polygon);
+        polygonHandler.activate();
+		polygonHandler.drawEvt.addEventListener(function(polygon){
+            var array = [].concat(polygon.object.positions);
+            positions = [];
+            for(var i = 0, len = array.length; i < len; i ++){
+
+                var cartographic = Cesium.Cartographic.fromCartesian(array[i]);
+                var longitude = Cesium.Math.toDegrees(cartographic.longitude);
+                var latitude = Cesium.Math.toDegrees(cartographic.latitude);
+                var h=cartographic.height;
+                if(positions.indexOf(longitude)==-1&&positions.indexOf(latitude)==-1){
+                    positions.push(longitude);
+                    positions.push(latitude);
+                    positions.push(h);
+                }
+            }
+            polygonHandler.deactivate();
+            polygonHandler.activate();
+        });
+        function flood(positions){
+            currentHeight = 0;
+            int = self.setInterval("flood()", 100);
+            maxValue = parseInt(document.getElementById("maxHeight").value);
+            minValue = parseInt(document.getElementById("minHeight").value);
+			hyp.MinVisibleValue = minValue;
+			currentHeight = minValue;
+            window.flood = function() {
+                if(currentHeight > maxValue) {
+                    self.clearInterval(int);
+                    return;
+                }
+                hyp.MaxVisibleValue = currentHeight;
+                hyp.CoverageArea = positions;
+                viewer.scene.globe.HypsometricSetting = {
+                    hypsometricSetting : hyp,
+                    analysisMode : Cesium.HypsometricSettingEnum.AnalysisRegionMode.ARM_REGION
+                };
+                currentHeight += (parseInt(document.getElementById("speed").value))/10;
+            }
+        }
+
+        document.getElementById("begin").onclick = function() {
+            if(!positions){
+                var defaultpositions=[87.92970568741808,29.648196751042956,5365.623501858622,88.24404154374791,30.043454220083056,5084.998086332863,88.39546146007626,29.60273373846709,5235.04766490179];
+                flood(defaultpositions);
+                return;
+            }
+            flood(positions);
+            polygonHandler.polygon.show=false;
+            polygonHandler.polyline.show=false;
+        };
+
+        document.getElementById("clear").onclick = function() {
+            self.clearInterval(int);
+            hyp.MaxVisibleValue = 0;
+            viewer.scene.globe.HypsometricSetting = {
+                hypsometricSetting : hyp,
+                analysisMode : Cesium.HypsometricSettingEnum.AnalysisRegionMode.ARM_ALL
+            }
+        };
+        $('#toolbar').show();
+        $('#loadingbar').remove();
+        if(!scene.pickPositionSupported){
+            alert('不支持深度拾取,淹没分析功能无法使用（无法交互绘制面）！');
+        }
+    }
+    </script>
+</body>
+</html>

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+		<title>加载gltf三维模型操作手册</title>
+		<link rel="shortcut icon" type="image/x-icon" href="../../web/img/favicon.ico"/>
+		<script type="text/javascript" include="jquery,bootstrap,template,admin-lte,jquery.scrollto,lazyload"
+				src="../js/include-web.js" from="doc"></script>
+		<link rel="stylesheet" href="../css/common.css">
+		<link rel="stylesheet" href="../css/examples.css">
+		<link rel="stylesheet" href="../css/header.css">
+		<link rel='stylesheet' href='../css/sm-extend.css'/>
+		<link rel='stylesheet' href='../css/sm-doc.css'/>
+	</head>
+	<body class="hold-transition skin-blue sidebar-mini" data-spy="scroll" data-target="#scrollSpy">
+		<!-- ./wrapper -->
+		<div class="wrapper"></div>
+		<div id='container' class='container' style="width: 90%; padding-top: 75px;">
+			<div class='page-header'>
+				<h1>加载gltf三维模型操作手册</h1>
+				<hr/>
+				<h2 class="title">概述<a name="Summary"></a></h2>
+				<p>在使用场景中，SuperMap  iClient3D for WebGL(以下简称：WebGL客户端)需要加载一些带有动画的三维模型来展示特殊场景效果，而三维建模软件众多而模型格式纷纭，格式上的不统一给WebGL客户端载入模型带来麻烦；另一方面这些模型通常还包含了场景、灯光、摄像机等冗杂信息，这将大大降低模型载入效率和显示性能。</p>
+				<p>glTF是由khronos组织定义的一种文本交换格式，它可减少3D模型中与渲染无关的冗余内容，并且充分支持OpenGL，WebGL，OpenGL ES图形加速标准，glTF格式具有利于网络传输的特性，而广泛适用于在互联网和移动设备上展现三维模型。 </p>
+				<p>当我们拿到一个由三维建模软件制成的三维模型时，通过以下操作可以实现在WebGL客户端导入三维模型，其过程主要有三步： </p>
+				<ol>
+					<ol class="list">
+						<li><a href="#01ExportDAE">导出DAE模型</a></li>
+						<li><a href="#02DAE2GLTF">DAE模型转GLTF</a></li>
+						<li><a href="#03BrowseGLTF">客户端加载模型数据</a></li>
+					</ol>
+				</ol>
+
+				<h2 class="title">操作流程<a name="OperationFlow"></a></h2>
+				<p>下面以导入一个带有动画的塔吊模型（*.max格式）为示例作详细操作演示。</p>
+				<h3><a name="01ExportDAE"></a>1.导出DAE模型</h3>
+				<h4>使用说明</h4><br>
+				<p>此步骤需要使用3ds  MAX软件将*.max的模型导出为DAE格式，DAE文件格式是3D交互文件格式，一般用于多个图形程序之间交换数据。 </p>
+				<p>3ds MAX在导出时所提供的DAE格式选项为“Autodesk  Collada (*.DAE)“，使用该格式模型贴图将不能正常导出，我们需要使用”<strong>OpenCOLLADA (*.DAE)</strong>”格式导出，因此请下载适应于3ds MAX的DAE输出插件。</p>
+				<p>本示例所使用的插件为：“<strong>COLLADAMax.dle</strong>“。 </p>
+				<h4>操作步骤</h4><br>
+				<p>(1).安装第三方插件：下载插件后，将插件文件存放于3ds  MAX安装目录下的plugins文件夹，本示例地址为：“<u>C:\Program  Files\Autodesk\3ds Max 2014\plugins</u>”，如下图所示。</p>
+				<div class="pageImage"><img src="../images/TopicDOC/LoadGltf_ColladaMaxPlugin.jpg" width="495" height="255">
+					<p>图 1：插件存放地址示意</p>
+				</div>
+				<p>(2).重启3ds  MAX，打开原始三维模型，选择“<strong>导出|Export</strong>”，选择文件存放路径、输入文件名称，<strong>保存类型</strong>选择“<strong>OpenCOLLADA(*.DAE)</strong>“格式，如下图所示。</p>
+				<div class="pageImage"><img src="../images/TopicDOC/LoadGltf_ExportType.png" width="351" height="152">
+					<p>图 2：选择保存类型</p>
+				</div>
+				<p>(3).点击“<strong>保存</strong>”，弹出“<strong>OpenCOLLADA Export</strong>”对话框，勾选”<strong>copy Images</strong>”，点击<strong>OK</strong>。 </p>
+				<div class="pageImage"><img src="../images/TopicDOC/LoadTerrain_CreatSceneCacheDialog.png" width="688" height="636"><img src="../images/TopicDOC/LoadGltf_SelectCopyImages.png" width="413" height="277">
+					<p>图 3：“OpenCOLLADA Export” 对话框</p>
+				</div>
+
+				<h4>操作结果</h4><br>
+				<p>导出DAE模型操作完成后，DAE格式的模型将存放于目标路径下，其中还包括了一个“<strong>images</strong>”的文件夹，此文件夹存放着模型的纹理图片。</p>
+				<div class="pageImage"><img src="../images/TopicDOC/LoadGltf_ExportDAEResult.jpg" width="673" height="199">
+					<p>图 4：导出DAE结果</p>
+				</div>
+				<h3><a name="02DAE2GLTF"></a>2. DAE模型转GLTF</h3>
+				<h4>使用说明</h4><br>
+				<p>导出DAE格式的模型后，在此操作中将使用转换工具（colladaTogltf.exe）将模型由DAE格式转为gltf格式。转换工具colladaTogltf.exe的获取地址： <a href="https://github.com/KhronosGroup/glTF/wiki/Converter-builds" target="_blank"><u>https://github.com/KhronosGroup/glTF/wiki/Converter-builds</u></a> </p>
+				<p>此转换工具无需安装，请按照如下操作步骤进行。 </p>
+				<h4>操作步骤</h4><br>
+				<p>(1)  Windows图标+R键打开 <strong>运行</strong> 对话框，输入 “<strong>cmd</strong>” 打开命令行窗口。</p>
+				<p>(2) 在命令行窗口中，进入到转换工具colladaTogltf.exe所在的文件夹，即输入：“<strong>cd %exePath%</strong>”。</p>
+				<p>(3) 输入命令行，命令格式为： <strong>collada2gltf.exe –f %daePath% -e</strong></p>
+
+				<ul>
+					<ul class="disc">
+						<li><strong>%daePath%</strong>为DAE模型文件的存放全路径，如本例的“ E:\models\models\diaota\diaota.DAE ”；</li>
+						<li><strong>-e命令选项</strong>表示转换后输出一个gltf文件，它将包含模型的几何形状和纹理信息</li>
+					</ul>
+				</ul>
+				<div class="pageImage"><img src="../images/TopicDOC/LoadGltf_CMD.jpg" width="677" height="442">
+					<p>图 5：输入命令行实现DAE到gltf的转换</p>
+				</div>
+
+				<p>(4) 按下回车键即可进行格式转换。</p>
+				<h4>操作结果</h4><br>
+				<p>转换完成后gltf模型与DAE模型存放在同一文件夹下，如下图所示。 </p>
+				<div class="pageImage"><img src="../images/TopicDOC/LoadGltf_2GltfResult.jpg" width="706" height="244">
+					<p>图 6：转换后的gltf文件</p>
+				</div>
+				<p>值得注意的是，glTF格式模型的数据量大幅度降低，这将有利于提高网络客户端加载模型速度。</p>
+				<h3><a name="03BrowseGLTF"></a>3. 客户端加载模型数据</h3>
+				<h4>使用说明</h4><br>
+				<p>WebGL客户端可通过KML文件直接加载*.gltf格式的三维模型， 文件“<strong>KML_crane.html</strong>”为加载gltf三维模型的范例，它加载“<strong>crane.kml</strong> ”文件所记录的模型地址，则此步骤的主要操作则是修改KML文件中模型的存放地址。</p>
+				<h4>操作步骤</h4><br>
+				<p>(1)	将转换后的gltf模型数据复制存放到服务器资源文件夹下，地址：<strong>%SuperMap iServer_HOME%/webapps/</strong><strong>%WebGL产品包% /examples/SampleData/models</strong></p>
+				<p>(2)	进入WebGL产品包存放路径（<strong>%SuperMap iServer_HOME%/webapps</strong>），在“<strong>examples/SampleData</strong>”文件夹下，文本方式打开“<strong>crane.kml</strong>“文件，修改KML文件中模型的存放地址，如下图的内容。 </p>
+
+				<div class="pageImage"><img src="../images/TopicDOC/LoadGltf_ModifyKML.png" width="798" height="421">
+					<p>图 7：修改模型存放地址</p>
+				</div>
+
+				<p>(3)以localhost方式打开“<strong>KML_crane.html</strong> “网页，浏览器输入地址即为：<u> http://localhost:8090/<strong>%WebGL产品包%</strong>/examples/ KML_crane.htm</u></p>
+				<h4>操作结果</h4><br>
+				<p>打开网页后，相机飞至地形数据所在位置，显示效果如下图：</p>
+				<div class="pageImage"><img src="../images/TopicDOC/LoadGltf_BrowseGltf.jpg" style="width:90%">
+					<p>图 8：WebGL加载三维模型效果图</p>
+				</div>
+			</div>
+			<!--法律申明-->
+			<div class='footer'>
+				<p>版权所有&nbsp;&copy; 2000-2018. &nbsp;北京超图软件股份有限公司</p>
+			</div>
+		</div>
+		<script type="text/javascript" src="../js/utils.js"></script>
+		<script>
+			$('.wrapper').load("../template/example-pure.html", function () {
+				utils.loadTemplate(".icl-header", "../template/header-doc.html", {});
+				//var $body = $('body');
+				//$body.append("<script type='text/javascript' src='../js/common.js'><\/script>");
+			});
+		</script>
+	</body>
+</html>

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>动态单体化</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link href="./css/bootstrap.min.css" rel="stylesheet">
+    <link href="./css/pretty.css" rel="stylesheet">
+    <script src="./js/jquery.min.js"></script>
+    <script src="./js/bootstrap.min.js"></script>
+    <script src="./js/bootstrap-select.min.js"></script>
+    <script src="./js/config.js"></script>
+    <script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<div id='loadingbar' class="spinner">
+    <div class="spinner-container container1">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container2">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container3">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+</div>
+<div id='toolbar' class="param-container tool-bar">
+    <p>提示：</p>
+    <span>点击房屋面以查看动态单体化效果</span>
+</div>
+<script>
+    function onload(Cesium) {
+        var viewer = new Cesium.Viewer('cesiumContainer');
+        var scene = viewer.scene;
+        var camera = scene.camera;
+
+        // 方法一，通过数据服务的形式添加单体化标识面
+        // (推荐使用)
+        var dataServiceUrl = 'http://www.supermapol.com/realspace/services/data-dynamicDTH/rest/data/featureResults.rjson?returnContent=true'; // 数据服务URL
+        var dataSourceName = '铁岭矢量面'; // 数据源名称
+        var dataSetName = 'New_Region3D_1'; // 数据集名称
+        // 加载倾斜摄影图层
+        var promise = scene.addS3MTilesLayerByScp('http://www.supermapol.com/realspace/services/3D-dynamicDTH/rest/realspace/datas/Config%20-%201/config', {
+            name: 'oblique photography'
+        });
+        promise.then(function (obliqueLayers) {
+            camera.setView({ // 先定位，开始渲染定位区域的倾斜
+                destination: new Cesium.Cartesian3(-2623004.4174251584, 3926981.958360567, 4287374.829655093),
+                orientation: {
+                    heading: 4.39611370540786,
+                    pitch: -0.43458664812464143,
+                    roll: 2.0174972803488345e-11
+                }
+            });
+
+            var handler = new Cesium.ScreenSpaceEventHandler(scene.canvas);
+            handler.setInputAction(function (e) {
+                // 首先移除之前添加标识实体
+                viewer.entities.removeById('identify-area');
+                // 获取点击位置笛卡尔坐标
+                var position = scene.pickPosition(e.position);
+                // 从笛卡尔坐标获取经纬度
+                var cartographic = Cesium.Cartographic.fromCartesian(position);
+                var longitude = Cesium.Math.toDegrees(cartographic.longitude);
+                var latitude = Cesium.Math.toDegrees(cartographic.latitude);
+
+                var queryPoint = { // 查询点对象
+                    x: longitude,
+                    y: latitude
+                };
+
+                queryByPoint(queryPoint);
+
+            }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+            // 去除加载动画
+            $('#toolbar').show();
+            $('#loadingbar').remove();
+        });
+
+        // 通过点击查询用于表示单体化的面要素，添加到场景中高亮显示。
+        function queryByPoint(queryPoint) {
+            var queryObj = {
+                "getFeatureMode": "SPATIAL",
+                "spatialQueryMode": "INTERSECT",
+                "datasetNames": [dataSourceName + ":" + dataSetName],
+                "geometry": {
+                    id: 0,
+                    parts: [1],
+                    points: [queryPoint],
+                    type: "POINT"
+                }
+            };
+
+            queryObjJSON = JSON.stringify(queryObj); // 转化为JSON字符串作为查询参数
+
+            $.ajax({
+                type: "post",
+                url: dataServiceUrl,
+                data: queryObjJSON,
+                success: function (result) {
+                    var resultObj = JSON.parse(result);
+                    if (resultObj.featureCount > 0) {
+                        addClapFeature(resultObj.features[0]);
+                    }
+                },
+                error: function (msg) {
+                    console.log(msg);
+                }
+            })
+        }
+
+        // 将数据服务查询到的要素添加到场景中高亮显示，表示选中效果。
+        function addClapFeature(feature) {
+            var lonLatArr = getLonLatArray(feature.geometry.points);
+            viewer.entities.add({
+                id: 'identify-area',
+                name: '单体化标识面',
+                polygon: {
+                    hierarchy: Cesium.Cartesian3.fromDegreesArray(lonLatArr),
+                    material: new Cesium.Color(1.0, 0.0, 0.0, 0.3),
+                },
+                clampToS3M: true // 贴在S3M模型表面
+            });
+        }
+
+        // 得到[经度,纬度,经度,纬度...]形式的数组，用于构造面。
+        function getLonLatArray(points) {
+            var point3D = [];
+            points.forEach(function (point) {
+                point3D.push(point.x);
+                point3D.push(point.y);
+            });
+            return point3D;
+        }
+
+        /*
+         // 方法二：以图层的方式加载
+         // 加载倾斜摄影数据
+         var promise2 = scene.addS3MTilesLayerByScp('http://www.supermapol.com/realspace/services/3D-dynamicDTH/rest/realspace/datas/Config%20-%201/config',{name : 'oblique photography'});
+         Cesium.when.all([promise2], function(obliqueLayers){ // 等倾斜摄影数据加载完了再去加载矢量面，否则矢量面找不到目标去贴对象
+         camera.setView({ // 先定位，开始渲染定位区域的倾斜
+         destination : new Cesium.Cartesian3(-2623004.4174251584, 3926981.958360567, 4287374.829655093),
+         orientation : {
+         heading: 4.39611370540786,
+         pitch : -0.43458664812464143,
+         roll : 2.0174972803488345e-11
+         }
+         });
+         // 加载矢量面数据
+         var promise1 = scene.addS3MTilesLayerByScp('http://www.supermapol.com/realspace/services/3D-dynamicDTH/rest/realspace/datas/New_Region3D_1_%E9%93%81%E5%B2%AD%E7%9F%A2%E9%87%8F%E9%9D%A2/config', {
+         name:'vector area'
+         });
+         Cesium.when.all([promise1], function(vectorLayers){
+         var vectorLayer = scene.layers.find('vector area'); // 矢量图层
+         vectorLayer.style3D._fillForeColor.alpha = 0; // 矢量图层填充前景色透明
+         vectorLayer.selectedColor = new Cesium.Color(1.0, 0.0, 0.0, 0.5); // 选中时给一个可见颜色
+         vectorLayer.selectColorType = 1; // 选中颜色的显示类型为替换色
+         vectorLayer.selectEnabled = true; // 矢量图层可选
+         });
+         // 去除加载动画
+         $('#toolbar').show();
+         $('#loadingbar').remove();
+         });
+         */
+
+        /*
+         // 方法三，以场景的方式加载
+         var promises = scene.open('http://www.supermapol.com/realspace/services/3D-dynamicDTH/rest/realspace');
+         Cesium.when.all(promises, function(layers){
+         camera.setView({ // 先定位，开始渲染定位区域的倾斜
+         destination : new Cesium.Cartesian3(-2623004.4174251584, 3926981.958360567, 4287374.829655093),
+         orientation : {
+         heading: 4.39611370540786,
+         pitch : -0.43458664812464143,
+         roll : 2.0174972803488345e-11
+         }
+         });
+         var vectorLayer = scene.layers.find('New_Region3D_1_铁岭矢量面'); // 矢量图层，图层的名字为服务数据中SCP的文件名
+         vectorLayer.style3D._fillForeColor.alpha = 0; // 矢量图层填充前景色透明
+         vectorLayer.selectedColor = new Cesium.Color(1.0, 0.0, 0.0, 0.5); // 选中时给一个可见颜色
+         vectorLayer.selectColorType = 1; // 选中颜色的显示类型为替换色
+         vectorLayer.selectEnabled = true; // 矢量图层可选
+         // 去除加载动画
+         $('#toolbar').show();
+         $('#loadingbar').remove();
+         });
+         */
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>add symbol</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link href="./css/font-awesome.min.css" rel="stylesheet">
+    <link href="./css/bootstrap.min.css" rel="stylesheet">
+    <link href="./css/pretty.css" rel="stylesheet">
+    <link href="./css/style.css" rel="stylesheet">
+    <script src="./js/jquery.min.js"></script>
+    <script src="./js/bootstrap.min.js"></script>
+    <script src="./js/bootstrap-select.min.js"></script>
+    <script src="./js/slider.js"></script>
+    <script src="./js/config.js"></script>
+    <script src="./js/tooltip.js"></script>
+    <script src="./js/spectrum.js"></script>
+    <script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+    <style>
+        input[type=range] {
+            width: 170px;
+        }
+
+        input[type=text] {
+            width: 80px;
+            padding: 1px;
+            height: 18px;
+            margin: 2.5px;
+        }
+
+        label {
+            display: inline-block;
+            margin: 5px;
+            font-weight: bold;
+            color: #ffffff;
+        }
+
+        .drawCur {
+            cursor: url(./images/cur/draw.cur), auto;
+        }
+
+        .positionAdjust {
+            width: 150px;
+            margin: 0;
+            margin-left: 55px;
+            display: inline-block;
+            top: -45px;
+            position: relative;
+        }
+    </style>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<div id='loadingbar' class="spinner">
+    <div class="spinner-container container1">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container2">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container3">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+</div>
+<div>
+    <ul id="nav-bar">
+        <li class="level-one" id="flatten"><i class="fa fa-eraser"></i>
+            <ul class="level-two">
+                <li>压平
+                <li/>
+            </ul>
+        </li>
+        <li class="level-one" id="styleSetting"><i class="fa fa-cubes"></i>
+            <ul class="level-two">
+                <li>添加模型
+                <li/>
+            </ul>
+        </li>
+    </ul>
+</div>
+<div id="wrapper" style="display:none">
+    <div id="login" class="animate form">
+        <span class="close" aria-hidden="true">×</span>
+        <form>
+            <h1 class="title">模型库</h1>
+            <p id="icons">
+            </p>
+            <h1>模型属性编辑</h1>
+            <p>
+            <div>
+                <label>绕X轴旋转</label><input id="pitch" type="range" min="0" max="360" step="1.0" title="pitch"
+                                           data-bind="value: pitch, valueUpdate: 'input'">
+            </div>
+            <div>
+                <label>绕Y轴旋转</label><input id="roll" type="range" min="0" max="360" step="1.0" title="roll"
+                                           data-bind="value: roll, valueUpdate: 'input'">
+            </div>
+            <div>
+                <label>绕Z轴旋转</label><input id="heading" type="range" min="0" max="360" step="1.0" title="heading"
+                                           data-bind="value: heading, valueUpdate: 'input'">
+            </div>
+            </p>
+            <p>
+            <div>
+                <label>缩放</label><input type="range" id="scale" min="1" max="10" step="0.1" value="1" title="模型缩放比例"
+                                        data-bind="value: scale, valueUpdate: 'input'">
+            </div>
+            </p>
+            <p>
+            <div>
+                <label>颜色</label><input class="colorPicker" size="8" data-bind="value: material,valueUpdate: 'input'"
+                                        id="colorPicker">
+            </div>
+            </p>
+            <p>
+                <label>移动</label>
+            </p>
+            <p>
+            <div>
+
+                <div class="positionAdjust">
+                    <label>X:</label><input type="text" readonly id="positionX" value="0">
+                    <span id="XPlus" style="position: relative; top: -3px; height: 40%; right: 16px; width:8px;"
+                          class="fa fa-caret-up"></span>
+                    <span id="XMinus" style=" position: relative;top: 5px; height: 40%; right: 28px; width:8px"
+                          class="fa fa-caret-down"></span>
+                </div>
+                <div class="positionAdjust">
+                    <label>Y:</label><input type="text" readonly id="positionY" value="0">
+                    <span id="YPlus" style="position: relative; top: -3px; height: 40%; right: 16px; width:8px"
+                          class="fa fa-caret-up"></span>
+                    <span id="YMinus" style=" position: relative;top: 5px; height: 40%; right: 28px; width:8px"
+                          class="fa fa-caret-down"></span>
+                </div>
+                <div class="positionAdjust">
+                    <label>Z:</label><input type="text" readonly id="positionZ" value="0">
+                    <span id="ZPlus" style="position: relative; top: -3px; height: 40%; right: 16px; width:8px"
+                          class="fa fa-caret-up"></span>
+                    <span id="ZMinus" style=" position: relative;top: 5px; height: 40%; right: 28px; width:8px"
+                          class="fa fa-caret-down"></span>
+                </div>
+                <label id="delete" style="right:10px;position:relative;top:0;">删除</label>
+            </div>
+            </p>
+        </form>
+    </div>
+</div>
+<script>
+    var handlerPoint, handlerPolygon;
+    var defaultUrl = './SampleData/models/springTree.s3m';
+    function onload(Cesium) {
+        document.getElementById("styleSetting").onclick = function () {
+            var $el = $('#dropdown');
+            if ($el.hasClass('dropdown-visible')) {
+                $('#dropdown').removeClass('dropdown-visible');
+            }
+            else {
+                $('#dropdown').removeClass('dropdown-visible').addClass('dropdown-visible');
+            }
+        };
+        var viewer = new Cesium.Viewer('cesiumContainer', {
+            infoBox: false
+        });
+        viewer.imageryLayers.addImageryProvider(new Cesium.BingMapsImageryProvider({
+            url: 'https://dev.virtualearth.net',
+            mapStyle: Cesium.BingMapsStyle.AERIAL,
+            key: URL_CONFIG.BING_MAP_KEY
+        }));
+        var scene = viewer.scene;
+        var viewModel = {
+            heading: 1.0,
+            pitch: 1.0,
+            roll: 1.0,
+            scale: 1.0,
+            material: '#ffffff',
+        };
+
+        Cesium.knockout.track(viewModel);
+        var toolbar = document.getElementById('wrapper');
+        Cesium.knockout.applyBindings(viewModel, toolbar);
+        Cesium.knockout.getObservable(viewModel, 'heading').subscribe(
+            function (newValue) {
+                var rotationValue = Cesium.Math.toRadians(newValue);
+                if (viewer.selectedEntity) {
+                    var instance = viewer.selectedEntity.primitive;
+                    var index = viewer.selectedEntity.id;
+                    instance.updateRotation(new Cesium.HeadingPitchRoll(rotationValue, 0, 0), index);
+                }
+            }
+        );
+        Cesium.knockout.getObservable(viewModel, 'pitch').subscribe(
+            function (newValue) {
+                var rotationValue = Cesium.Math.toRadians(newValue);
+                if (viewer.selectedEntity) {
+                    var instance = viewer.selectedEntity.primitive;
+                    var index = viewer.selectedEntity.id;
+                    instance.updateRotation(new Cesium.HeadingPitchRoll(0, rotationValue, 0), index);
+                }
+            }
+        );
+        Cesium.knockout.getObservable(viewModel, 'roll').subscribe(
+            function (newValue) {
+                var rotationValue = Cesium.Math.toRadians(newValue);
+                if (viewer.selectedEntity) {
+                    var instance = viewer.selectedEntity.primitive;
+                    var index = viewer.selectedEntity.id;
+                    instance.updateRotation(new Cesium.HeadingPitchRoll(0, 0, rotationValue), index);
+                }
+            }
+        );
+        Cesium.knockout.getObservable(viewModel, 'scale').subscribe(
+            function (newValue) {
+                var scale = parseFloat(newValue);
+                if (viewer.selectedEntity) {
+                    var instance = viewer.selectedEntity.primitive;
+                    var index = viewer.selectedEntity.id;
+                    instance.updateScale(new Cesium.Cartesian3(scale, scale, scale), index);
+                }
+            }
+        );
+        Cesium.knockout.getObservable(viewModel, 'material').subscribe(
+            function (newValue) {
+                var color = Cesium.Color.fromCssColorString(newValue);
+                if (viewer.selectedEntity) {
+                    var instance = viewer.selectedEntity.primitive;
+                    var index = viewer.selectedEntity.id;
+                    instance.updateColor(color, index);
+                }
+            }
+        );
+        Cesium.loadJson('data/models.json').then(function (data) {
+            var result = data.s3mModels;
+            for (var i = 0, j = result.length; i < j; i++) {
+                addItem(result[i]);
+            }
+        });
+        var promise = scene.open(URL_CONFIG.SCENE_SRSB);
+        Cesium.when(promise, function (layers) {
+            // 更精准的定位
+            scene.camera.setView({
+                destination: new Cesium.Cartesian3.fromDegrees(13.043020669014005, 47.80938240691388, 136.22656377766077),
+                orientation: {
+                    heading: 0.5007521476695089,
+                    pitch: -0.14422822965773707,
+                    roll: 4.886935300874029e-11
+                }
+            });
+            if (!scene.pickPositionSupported) {
+                alert('不支持深度纹理,无法进行鼠标交互绘制！');
+            }
+            var tooltip = createTooltip(document.body);
+
+            handlerPolygon = new Cesium.DrawHandler(viewer, Cesium.DrawMode.Polygon);
+            var layer = scene.layers.find('srsb'); // 获取倾斜摄影图层
+            handlerPolygon.activeEvt.addEventListener(function (isActive) {
+                if (isActive == true) {
+                    viewer.enableCursorStyle = false;
+                    viewer._element.style.cursor = '';
+                    $('body').removeClass('drawCur').addClass('drawCur');
+                }
+                else {
+                    viewer.enableCursorStyle = true;
+                    $('body').removeClass('drawCur');
+                }
+            });
+            handlerPolygon.movingEvt.addEventListener(function (windowPosition) {
+                if (windowPosition.x < 210 && windowPosition.y < 120) {
+                    tooltip.setVisible(false);
+                    return;
+                }
+                if (handlerPolygon.isDrawing) {
+                    tooltip.showAt(windowPosition, '<p>点击确定压平区域中间点</p><p>右键单击结束绘制</p>');
+                }
+                else {
+                    tooltip.showAt(windowPosition, '<p>点击绘制压平区域第一个点</p>');
+                }
+            });
+            handlerPolygon.drawEvt.addEventListener(function (result) {
+                handlerPolygon.polygon.show = false;
+                handlerPolygon.polyline.show = false;
+                var polygon = result.object;
+                var positions = polygon.positions;
+                var flatPoints = [];
+                for (var i = 0, j = positions.length; i < j; i++) {
+                    var position = positions[i];
+                    var cartographic = Cesium.Cartographic.fromCartesian(position);
+                    var lon = Cesium.Math.toDegrees(cartographic.longitude);
+                    var lat = Cesium.Math.toDegrees(cartographic.latitude);
+                    var height = cartographic.height;
+                    flatPoints.push(lon);
+                    flatPoints.push(lat);
+                    flatPoints.push(height);
+                }
+                layer.addFlattenRegion({
+                    position: flatPoints,
+                    name: 'flatten' + Math.random()
+                });
+                tooltip.setVisible(false);
+                // handlerPolygon.deactivate();
+            });
+
+            handlerPoint = new Cesium.DrawHandler(viewer, Cesium.DrawMode.Point);
+            handlerPoint.activeEvt.addEventListener(function (isActive) {
+                if (isActive == true) {
+                    viewer.enableCursorStyle = false;
+                    viewer._element.style.cursor = '';
+                    $('body').removeClass('drawCur').addClass('drawCur');
+                }
+                else {
+                    viewer.enableCursorStyle = true;
+                    $('body').removeClass('drawCur');
+                }
+            });
+
+            handlerPoint.movingEvt.addEventListener(function (windowPosition) {
+                if (windowPosition.x < 210 && windowPosition.y < 120) {
+                    tooltip.setVisible(false);
+                    return;
+                }
+                tooltip.showAt(windowPosition, '<p>点击添加小品</p>');
+            });
+            var s3mInstanceColc = new Cesium.S3MInstanceCollection(scene._context);
+            scene.primitives.add(s3mInstanceColc);
+            handlerPoint.drawEvt.addEventListener(function (result) {
+                handlerPoint.clear();
+                var point = result.object;
+                var color = Cesium.Color.WHITE;
+                s3mInstanceColc.add(defaultUrl, {
+                    position: point.position,
+                    hpr: new Cesium.HeadingPitchRoll(0, 0, 0),
+                    scale: new Cesium.Cartesian3(1, 1, 1),
+                    color: color
+                });
+                var colorStr = color.toCssColorString();
+                viewModel.material = colorStr;
+                $('#colorPicker').css({
+                    color: colorStr
+                });
+                $("img").removeClass("selected");
+                handlerPoint && handlerPoint.deactivate();
+                tooltip.setVisible(false);
+            });
+
+            document.getElementById("flatten").onclick = function () {
+                handlerPoint && handlerPoint.deactivate();
+                handlerPolygon && handlerPolygon.activate();
+            };
+
+        });
+        $("#styleSetting").click(function () {
+            if ($(".level-one").hasClass("selected")) {
+                $(".level-one").removeClass("selected");
+            }
+
+            $("#styleSetting").addClass("selected");
+            $("#wrapper").show();
+            handlerPolygon.deactivate();
+        });
+
+        $("#flatten").click(function () {
+            if ($(".level-one").hasClass("selected")) {
+                $(".level-one").removeClass("selected");
+            }
+            $("#wrapper").hide();
+            $("#flatten").addClass("selected");
+        })
+        $(".close").click(function () {
+            $("#wrapper").hide();
+            $("#styleSetting").removeClass("selected");
+        });
+        $("#delete").click(function () {
+            if (viewer.selectedEntity) {
+                var instance = viewer.selectedEntity.primitive;
+                var index = viewer.selectedEntity.id;
+                instance.updateScale(new Cesium.Cartesian3(0, 0, 0), index);
+            }
+        });
+        $("#colorPicker").spectrum({
+            color: "ffffff",
+            showPalette: true,
+            showAlpha: true,
+            localStorageKey: "spectrum.demo",
+            palette: palette
+        });
+        $("#XPlus").click(function () {
+            if (viewer.selectedEntity) {
+                var x = parseInt(document.getElementById("positionX").value);
+                x++;
+                document.getElementById("positionX").value = x;
+                var instance = viewer.selectedEntity.primitive;
+                var index = viewer.selectedEntity.id;
+                var pos = instance._position;
+                var newPos = new Cesium.Cartesian3(pos.x + 50, pos.y, pos.z);
+                instance.updatePosition(newPos, index);
+            }
+        });
+        $("#XMinus").click(function () {
+            if (viewer.selectedEntity) {
+                var x = parseInt(document.getElementById("positionX").value);
+                x--;
+                document.getElementById("positionX").value = x;
+                var instance = viewer.selectedEntity.primitive;
+                var index = viewer.selectedEntity.id;
+                var pos = instance._position;
+                var newPos = new Cesium.Cartesian3(pos.x - 50, pos.y, pos.z);
+                instance.updatePosition(newPos, index);
+            }
+        });
+        $("#YPlus").click(function () {
+            if (viewer.selectedEntity) {
+                var y = parseInt(document.getElementById("positionY").value);
+                y++;
+                document.getElementById("positionY").value = y;
+                var instance = viewer.selectedEntity.primitive;
+                var index = viewer.selectedEntity.id;
+                var pos = instance._position;
+                var newPos = new Cesium.Cartesian3(pos.x, pos.y + 50, pos.z);
+                instance.updatePosition(newPos, index);
+            }
+        });
+        $("#YMinus").click(function () {
+            if (viewer.selectedEntity) {
+                var y = parseInt(document.getElementById("positionY").value);
+                y--;
+                document.getElementById("positionY").value = y;
+                var instance = viewer.selectedEntity.primitive;
+                var index = viewer.selectedEntity.id;
+                var pos = instance._position;
+                var newPos = new Cesium.Cartesian3(pos.x, pos.y - 50, pos.z);
+                instance.updatePosition(newPos, index);
+            }
+        });
+        $("#ZPlus").click(function () {
+            if (viewer.selectedEntity) {
+                var z = parseInt(document.getElementById("positionZ").value);
+                z++;
+                document.getElementById("positionZ").value = z;
+                var instance = viewer.selectedEntity.primitive;
+                var index = viewer.selectedEntity.id;
+                var pos = instance._position;
+                var newPos = new Cesium.Cartesian3(pos.x, pos.y, pos.z + 50);
+                instance.updatePosition(newPos, index);
+            }
+        });
+        $("#ZMinus").click(function () {
+            if (viewer.selectedEntity) {
+                var z = parseInt(document.getElementById("positionZ").value);
+                z--;
+                document.getElementById("positionZ").value = z;
+                var instance = viewer.selectedEntity.primitive;
+                var index = viewer.selectedEntity.id;
+                var pos = instance._position;
+                var newPos = new Cesium.Cartesian3(pos.x, pos.y, pos.z - 50);
+                instance.updatePosition(newPos, index);
+            }
+        });
+        function addItem(data) {
+            var str = '<a><img style="width: 18%;height: 100%; margin-top:5px; margin-bottom:5px;" src={thumbnail} id={name}></a>'.replace('{thumbnail}', data.thumbnail).replace('{name}', data.name);
+            var $el = $('#icons').append(str);
+            var $child = $("#" + data.name);
+            $child.on('click', function () {
+                defaultUrl = data.path;
+                if ($("img").hasClass("selected")) {
+                    $("img").removeClass("selected");
+                    handlerPolygon && handlerPolygon.deactivate();
+                }
+                else {
+                    handlerPoint && handlerPoint.activate();
+                    $(this).addClass("selected");
+                }
+            });
+        }
+
+        $('#loadingbar').remove();
+    }
+</script>
+</body>
+</html>

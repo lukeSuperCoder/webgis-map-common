@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>地形开挖</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link href="./css/pretty.css" rel="stylesheet">
+    <script type="text/javascript" src="./js/jquery.min.js"></script>
+    <script src="./js/tooltip.js"></script>
+    <script src="./js/config.js"></script>
+	<script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<div id='loadingbar' class="spinner">
+    <div class="spinner-container container1">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container2">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container3">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+</div>
+<div id="toolbar" class="param-container tool-bar">
+    <div class="param-item">
+        <label class="form-label">开挖深度(米) :</label>
+        <input id="depth" type="number" value="500" required="required" style="width:90px;"/>
+    </div>
+    <div class="param-item">
+        <button type="button" id="clear" style="float:right;" class="button black">清除</button>
+    </div>
+</div>
+<script type="text/javascript">
+    function onload(Cesium) {
+		//初始化viewer部件，添加STK World Terrain地形服务
+		var viewer = new Cesium.Viewer('cesiumContainer',{
+			terrainProvider : new Cesium.CesiumTerrainProvider({
+				url : URL_CONFIG.STK,
+				requestWaterMask : true,
+				requestVertexNormals : true
+			})
+		});
+        viewer.imageryLayers.addImageryProvider(new Cesium.BingMapsImageryProvider({
+            url : 'https://dev.virtualearth.net',
+            mapStyle : Cesium.BingMapsStyle.AERIAL,
+            key : URL_CONFIG.BING_MAP_KEY
+        }));
+        var scene = viewer.scene;
+        // 设置相机视角
+		viewer.scene.camera.setView({
+			destination : Cesium.Cartesian3.fromDegrees(88.3648, 29.0946, 90000),
+			orientation : {
+				heading : 6.10547067016156,
+				pitch : -0.8475077031996778,
+				roll :6.2831853016686185
+			}
+		});
+        var tooltip = createTooltip(viewer._element);
+		//绘制多边形
+        var handlerPolygon = new Cesium.DrawHandler(viewer,Cesium.DrawMode.Polygon, 0);
+        handlerPolygon.activeEvt.addEventListener(function(isActive){
+            if(isActive == true){
+                viewer.enableCursorStyle = false;
+                viewer._element.style.cursor = '';
+                $('body').removeClass('drawCur').addClass('drawCur');
+            }
+            else{
+                viewer.enableCursorStyle = true;
+                $('body').removeClass('drawCur');
+            }
+        });
+        handlerPolygon.movingEvt.addEventListener(function(windowPosition){
+            if(windowPosition.x < 200 && windowPosition.y < 150){
+                tooltip.setVisible(false);
+                return ;
+            }
+            if(handlerPolygon.isDrawing){
+                tooltip.showAt(windowPosition,'<p>点击确定开挖区域中间点</p><p>右键单击结束绘制,进行开挖</p>');
+            }
+            else{
+                tooltip.showAt(windowPosition,'<p>点击绘制开挖区域第一个点</p>');
+            }
+        });
+        handlerPolygon.drawEvt.addEventListener(function(result){
+            if(!result.object.positions){
+                tooltip.showAt(result,'<p>请绘制正确的多边形</p>');
+                handlerPolygon.polygon.show = false;
+                handlerPolygon.polyline.show = false;
+                handlerPolygon.deactivate();
+                handlerPolygon.activate();
+                return;
+            };
+            var array = [].concat(result.object.positions);
+            tooltip.setVisible(false);
+            var positions = [];
+            for(var i = 0, len = array.length; i < len; i ++){
+                var cartographic = Cesium.Cartographic.fromCartesian(array[i]);
+                var longitude = Cesium.Math.toDegrees(cartographic.longitude);
+                var latitude = Cesium.Math.toDegrees(cartographic.latitude);
+                var h=cartographic.height;
+                if(positions.indexOf(longitude)==-1&&positions.indexOf(latitude)==-1){
+                    positions.push(longitude);
+                    positions.push(latitude);
+                    positions.push(h);
+                }
+            }
+            var dep = $('#depth').val();
+            viewer.scene.globe.removeAllExcavationRegion();
+            viewer.scene.globe.addExcavationRegion({
+                name : 'ggg' ,
+                position : positions,
+                height : dep,
+                transparent : false
+            });
+            handlerPolygon.polygon.show = false;
+            handlerPolygon.polyline.show = false;
+            handlerPolygon.deactivate();
+            handlerPolygon.activate();
+        });
+        handlerPolygon.activate();
+        document.getElementById("clear").onclick = function() {
+            viewer.scene.globe.removeAllExcavationRegion();
+            handlerPolygon.polygon.show=false;
+            handlerPolygon.polyline.show=false;
+        };
+
+        if(!scene.pickPositionSupported){
+            alert('不支持深度纹理,无法绘制多边形，地形开挖功能无法使用！');
+        }
+        $('#toolbar').show();
+        $('#loadingbar').remove();
+    }
+</script>
+</body>
+</html>

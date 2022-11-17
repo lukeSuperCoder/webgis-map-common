@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en" style="height: 100%">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <meta name="description" content="Test">
+    <meta name="cesium-sandcastle-labels" content="Geometries">
+    <title>标号库加载</title>
+
+    <script type="text/javascript" src="../Build/Cesium/ThirdParty/Workers/PlotAlgo/PlotAlgoInclude.js"></script>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link rel="stylesheet" href="./css/sideBar.css">
+    <script src="js/jquery.min.js"></script>
+    <link rel="stylesheet" type="text/css" media="screen,projection" href="css/jquery-sticklr.css"/>
+    <script src="js/plotPanelControl/PlottingUI.Include.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <link href="css/bootstrap-new.min.css" rel="stylesheet">
+    <script type="text/javascript" src="js/widgets.js"></script>
+    <script type="text/javascript" src="js/require.min.js" data-main="js/main"></script>
+</head>
+
+<body class="sandcastle-loading" data-sandcastle-bucket="bucket-requirejs.html"
+      style="margin: 0px; overflow: hidden;background: #fff;height: 100%;">
+
+<div id="toolbar" class="panel panel-primary"
+     style=" position: absolute;top: 10px;left: 10px;width: 300px;text-align: center;z-index: 9999;border-radius: 4px;">
+    <div class='panel-heading'>
+        <h5 class='panel-title text-center'>标号库加载</h5></div>
+    <div class='panel-body content'>
+        <input type="button" class="btn btn-default" value="标绘" onclick="plotSymbol()"/>&nbsp; &nbsp;
+        <input type="button" class="btn btn-default" value="清空图层" onclick="clearLayers()"/>&nbsp; &nbsp;
+    </div>
+    <div id="popupWin" class="popupWindow"
+         style=" background: #FFF;z-index: 9999;display: block;display: block;top: 400px; height: 150px;">
+        <div class='panel'>
+            <div class='input-group'>
+                <div class="winTitle" style=" margin-left: 20px;font-size: 14px;font-weight: bold;">
+                    <span class="title_left">标号库信息：</span>
+                </div>
+            </div>
+        </div>
+        <div id="symbolLibInfo" class="winContent"
+             style="  padding: 5px;overflow-y: auto;height: 220px;overflow-y:auto;height:250px;">
+        </div>
+    </div>
+</div>
+
+<div id="cesiumContainer" class="fullSize"
+     style="position: relative;left: 0%;height: 100%;border: 1px solid #3473b7;"></div>
+<script id="cesium_sandcastle_script">
+    var cesium, scene, viewer, serverUrl;
+    var plottingLayer;
+    var symbolLibManager;
+    var plotting, plotEditControl, plotDrawControl;
+
+    function onload(Cesium) {
+        'use strict';
+        cesium = Cesium;
+        //若本地没有标绘相关服务则可访问支持中心的iserver
+        // var host = document.location.toString().match('/file:\/\//') ? 'http://localhost:8090' : 'http://' + document.location.host;
+        var host =  'http://support.supermap.com.cn:8090' ;
+        viewer = new Cesium.Viewer('cesiumContainer');
+        scene = viewer.scene;
+        scene.globe.depthTestAgainstTerrain = false;
+        serverUrl = host + '/iserver/services/plot-jingyong/rest/plot';
+        InitPlot(viewer, serverUrl);
+        loadSymbolLib();
+    }
+
+    function InitPlot(viewer, serverUrl) {
+        if (!viewer) {
+            return;
+        }
+        plottingLayer = new cesium.PlottingLayer(scene, "plottingLayer");
+        scene.layers.add(plottingLayer);
+
+        plotting = cesium.Plotting.getInstance(serverUrl, scene);
+
+        plotEditControl = new cesium.PlotEditControl(scene, plottingLayer);//编辑控件
+        plotEditControl.activate();
+        plotDrawControl = new cesium.PlotDrawControl(scene, plottingLayer);//绘制控件
+        plotDrawControl.drawFinishEvent.addEventListener(function () {//标绘结束，激活编辑控件
+            plotEditControl.activate();
+        });
+
+    }
+
+    function loadSymbolLib() {
+        symbolLibManager = plotting.getSymbolLibManager();
+        if(symbolLibManager.isInitializeOK()){
+            showSymbolLibInfo();
+        } else {
+            symbolLibManager.initializecompleted.addEventListener(function (result) {
+                if(result.libIDs.length !== 0){
+                    showSymbolLibInfo();
+                }
+            });
+            symbolLibManager.initializeAsync();
+        }
+    }
+
+    function showSymbolLibInfo() {
+        document.all.symbolLibInfo.innerHTML = "";
+
+
+        var symbolLib = symbolLibManager.getSymbolLibByIndex(0);
+
+        //获取选中的对象
+        var container = document.getElementById("symbolLibInfo");
+        var table = document.createElement("table");
+        var body = document.createElement("tbody");
+        table.setAttribute("border", "1");
+        table.setAttribute("borderColor", "black");
+        table.setAttribute("width", "100%");
+
+        //标号库名称
+        var tr_SymbolLibName = document.createElement("tr");
+
+        var tdName_SymbolLibName = document.createElement("td");
+        var textName_SymbolLibName = document.createTextNode("标号库名称");
+        tdName_SymbolLibName.appendChild(textName_SymbolLibName);
+        tr_SymbolLibName.appendChild(tdName_SymbolLibName);
+
+        var tdValue_SymbolLibName = document.createElement("td");
+        var textValue_SymbolLibName = document.createTextNode(symbolLib.getSymbolLibName());
+        tdValue_SymbolLibName.appendChild(textValue_SymbolLibName);
+        tr_SymbolLibName.appendChild(tdValue_SymbolLibName);
+
+        body.appendChild(tr_SymbolLibName);
+
+        //标号库ID
+        var tr_SymbolLibID = document.createElement("tr");
+
+        var tdName_SymbolLibID = document.createElement("td");
+        var textName_SymbolLibID = document.createTextNode("标号库ID");
+        tdName_SymbolLibID.appendChild(textName_SymbolLibID);
+        tr_SymbolLibID.appendChild(tdName_SymbolLibID);
+
+        var tdValue_SymbolLibID = document.createElement("td");
+        var textValue_SymbolLibID = document.createTextNode(symbolLib.getSymbolLibID());
+        tdValue_SymbolLibID.appendChild(textValue_SymbolLibID);
+        tr_SymbolLibID.appendChild(tdValue_SymbolLibID);
+
+        body.appendChild(tr_SymbolLibID);
+
+        //标号库标号个数
+        var tr_SymbolCount = document.createElement("tr");
+
+        var tdName_SymbolCount = document.createElement("td");
+        var textName_SymbolCount = document.createTextNode("标号个数");
+        tdName_SymbolCount.appendChild(textName_SymbolCount);
+        tr_SymbolCount.appendChild(tdName_SymbolCount);
+
+        var tdValue_SymbolCount = document.createElement("td");
+        var textValue_SymbolCount = document.createTextNode(symbolLib.getSymbolCount());
+        tdValue_SymbolCount.appendChild(textValue_SymbolCount);
+        tr_SymbolCount.appendChild(tdValue_SymbolCount);
+
+        body.appendChild(tr_SymbolCount);
+
+
+        table.appendChild(body);
+        container.appendChild(table);
+    }
+
+    function getCode(symbolInfo) {
+        var nCode = -1;
+        while (symbolInfo.symbolNodeType === "SYMBOL_GROUP") {
+            symbolInfo = symbolInfo.childNodes[0];
+        }
+
+        nCode = symbolInfo.symbolCode;
+
+        return nCode;
+    }
+
+    function getFirstSymbol() {
+        var nCode = -1;
+        var symbolLib = symbolLibManager.getSymbolLibByIndex(0);
+        if (null === symbolLib) {
+            drawGraphicObject.deactivate();
+            return nCode;
+        }
+
+        var rootSymbolInfo = symbolLib.getRootSymbolInfo();
+
+        var i = 0;
+        nCode = getCode(rootSymbolInfo.childNodes[i]);
+        while (-1 === nCode) {
+            i++;
+            nCode = getCode(rootSymbolInfo.childNodes[i]);
+        }
+
+        return nCode;
+    }
+
+    function plotSymbol() {
+        var symbolLib = symbolLibManager.getSymbolLibByIndex(0);
+        plotDrawControl.libID = symbolLib.getSymbolLibID();
+        plotDrawControl.code = getFirstSymbol();
+        plotDrawControl.activate();
+    }
+
+    //删除指定标号
+    function deleteSeleGeo() {
+        plottingLayer.removeGeoGraphicObject(plottingLayer._selectedFeature);
+    }
+
+    function clearLayers() {
+        plottingLayer.removeAll();
+    }
+
+    //“Delete”按键删除选中标号
+    $(document).keydown(function (event) {
+        if (event.keyCode === 46) {
+            deleteSeleGeo();
+        }
+    });
+
+</script>
+</body>
+</html>

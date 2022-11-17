@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>体数据临近采样</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link href="./css/pretty.css" rel="stylesheet">
+    <script src="./js/jquery.min.js"></script>
+    <script src="./js/tooltip.js"></script>
+    <script src="./js/config.js"></script>
+    <script src="./js/supermap/SuperMap.Include.js"></script>
+    <script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<div id='toolbar' class="param-container tool-bar">
+    <span>提示：点击颜色矩形区域查询对应强度值</span>
+</div>
+<script>
+    var viewer, clickPt;
+
+    function onload(Cesium) {
+        viewer = new Cesium.Viewer('cesiumContainer');
+        viewer.imageryLayers.addImageryProvider(new Cesium.BingMapsImageryProvider({
+            url: 'https://dev.virtualearth.net',
+            mapStyle: Cesium.BingMapsStyle.AERIAL,
+            key: URL_CONFIG.BING_MAP_KEY
+        }));
+        var scene = viewer.scene;
+        var valueGRIDRSCP = 0;
+        var labelPosition = null;
+        var promise = scene.open(URL_CONFIG.SCENE_VOLUME_NEAREST);
+        try {
+            Cesium.when(promise, function (layers) {
+                scene.camera.setView({
+                    destination: new Cesium.Cartesian3(-2769125.255286418, 4763792.4497615425, 3212549.872569873),
+                    orientation: {
+                        heading: 1.215322003864097,
+                        pitch: -0.24848432513855245,
+                        roll: 0.0000027813965495226967
+                    }
+                });
+                var tooltip = createTooltip(document.body);
+                var handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+                handler.setInputAction(function (e) {
+                    console.log(e);
+                    labelPosition = e;
+                    clickPt = scene.pickPosition(e.position);
+                    var ellipsoid = viewer.scene.globe.ellipsoid;
+                    var cartographic = ellipsoid.cartesianToCartographic(clickPt);
+                    var lat = Cesium.Math.toDegrees(cartographic.latitude);
+                    var lng = Cesium.Math.toDegrees(cartographic.longitude);
+
+                    var pt = {
+                        x: lng,
+                        y: lat
+                    };
+                    query(pt);
+                    //创建弹出框信息
+
+                }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+                var layer = scene.layers.find("bm");
+                layer.selectEnabled = false;
+                layer.cullEnabled = true;
+                layer.style3D.fillStyle = Cesium.FillStyle.Fill_And_WireFrame;
+                layer.wireFrameMode = Cesium.WireFrameType.Sketch;
+                layer.style3D.lineColor = Cesium.Color.fromCssColorString("#9F9F9F");
+                layer.style3D.lineWidth = 0.5;
+
+                var colorTable = new Cesium.ColorTable();
+
+                colorTable.insert(0, Cesium.Color.fromCssColorString("#ec0300"));
+                colorTable.insert(4.99, Cesium.Color.fromCssColorString("#ec0300"));
+
+                colorTable.insert(5, Cesium.Color.fromCssColorString("#f89c01"));
+                colorTable.insert(9.99, Cesium.Color.fromCssColorString("#f89c01"));
+
+                colorTable.insert(10, Cesium.Color.fromCssColorString("#fffd00"));
+                colorTable.insert(19.99, Cesium.Color.fromCssColorString("#fffd00"));
+
+                colorTable.insert(20, Cesium.Color.fromCssColorString("#37ce00"));
+                colorTable.insert(29.99, Cesium.Color.fromCssColorString("#37ce00"));
+
+                colorTable.insert(30, Cesium.Color.fromCssColorString("#0000fa"));
+                colorTable.insert(39.99, Cesium.Color.fromCssColorString("#0000fa"));
+
+                colorTable.insert(40, Cesium.Color.fromCssColorString("#ff00cc"));
+                colorTable.insert(49.99, Cesium.Color.fromCssColorString("#ff00cc"));
+
+                colorTable.insert(50, Cesium.Color.fromCssColorString("#000000"));
+
+                var hyp = new Cesium.HypsometricSetting();
+
+                hyp.ColorTable = colorTable;
+                hyp.DisplayMode = Cesium.HypsometricSettingEnum.DisplayMode.FACE;
+                hyp.Opacity = 1.0;
+                hyp.LineInterval = 1.0;
+                hyp.ColorTableMaxKey = layer._fMaxValue;
+                hyp.ColorTableMinKey = layer._fMinValue;
+                hyp.MaxVisibleValue = layer._fMaxValue;
+                hyp.MinVisibleValue = layer._fMinValue;
+                hyp.filterMode = Cesium.HypsometricSettingEnum.FilterMode.NEAREST;
+                layer.hypsometricSetting = {
+                    hypsometricSetting: hyp,
+                    analysisMode: Cesium.HypsometricSettingEnum.AnalysisRegionMode.ARM_ALL
+                }
+            }, function (e) {
+                if (widget._showRenderLoopErrors) {
+                    var title = '加载SCP失败，请检查网络连接状态或者url地址是否正确？';
+                    widget.showErrorPanel(title, undefined, e);
+                }
+            });
+        } catch (e) {
+            if (widget._showRenderLoopErrors) {
+                var title = '渲染时发生错误，已停止渲染。';
+                widget.showErrorPanel(title, undefined, e);
+            }
+        }
+
+        function query(pt) {
+            var geometry = new SuperMap.Geometry.Point(pt.x, pt.y);
+            var getFeatureParameter, getFeatureService;
+            getFeatureParameter = new SuperMap.REST.GetFeaturesByBufferParameters({
+                bufferDistance: 0.00005,
+                //attributeFilter: "SMID > 0",
+                datasetNames: ["mr:mr"],
+                returnContent: true,
+                geometry: geometry
+            });
+            getFeatureService = new SuperMap.REST.GetFeaturesByBufferService("http://www.supermapol.com/realspace/services/data-compare/rest/data", {
+                eventListeners: {
+                    "processCompleted": processCompleted,
+                    "processFailed": null
+                }
+            });
+            getFeatureService.processAsync(getFeatureParameter);
+
+        }
+
+        function processCompleted(getFeaturesEventArgs) {
+            var dis = 999999;
+            var data;
+            getFeaturesEventArgs.result.features.forEach(function (item, i) {
+
+                var cart3 = new Cesium.Cartesian3.fromDegrees(Number(item.data.SMX), Number(item.data.SMY), Number(item.data.Z));
+                var _dis = Cesium.Cartesian3.distance(clickPt, cart3);
+                if (dis > _dis) {
+                    dis = _dis;
+                    data = item.data;
+                }
+            });
+            viewer.entities.removeAll();
+            if (getFeaturesEventArgs.result.features.length > 0) {
+                var pt = {
+                    x: Number(data.SMX),
+                    y: Number(data.SMY),
+                    z: Number(data.Z)
+                }
+
+                viewer.entities.add({
+                    position: Cesium.Cartesian3.fromDegrees(pt.x, pt.y, pt.z),
+                    point: {
+                        pixelSize: 10,
+                        color: Cesium.Color.RED
+                    }
+                });
+                var colorE = getColor(Number(data.GRIDRSCP));
+                viewer.entities.add({
+                    position: Cesium.Cartesian3.fromDegrees(pt.x, pt.y, pt.z),
+                    box: {
+                        dimensions: new Cesium.Cartesian3(5, 6, 3),
+                        material: Cesium.Color.fromCssColorString(colorE).withAlpha(0.5),
+                        outline: true,
+                        outlineColor: Cesium.Color.BLACK
+                    }
+                });
+                valueGRIDRSCP = data.GRIDRSCP;
+                var entity = new Cesium.Entity({
+                    name: "",
+                    description: createDescription(Cesium, [valueGRIDRSCP])
+                });
+                viewer.selectedEntity = entity;
+            }
+        }
+
+        function getColor(value) {
+            if (value < 5) {
+                return '#ec0300';
+            } else if (5 < value && value < 10) {
+                return '#f89c01';
+            } else if (10 < value && value < 20) {
+                return '#fffd00';
+            } else if (20 < value && value < 30) {
+                return '#37ce00';
+            } else if (30 < value && value < 40) {
+                return '#0000fa';
+            } else if (40 < value && value < 50) {
+                return '#ff00cc';
+            } else if (50 <= value) {
+                return '#000000';
+            }
+        }
+
+        //创建描述位置的对话框
+        function createDescription(Cesium, properties) {
+            var simpleStyleIdentifiers = ['强度值：'];
+            var html = '';
+            for (var key in properties) {
+                if (properties.hasOwnProperty(key)) {
+                    if (simpleStyleIdentifiers.indexOf(key) !== -1) {
+                        continue;
+                    }
+                    var value = properties[key];
+                    if (Cesium.defined(value) && value !== '') {
+                        html += '<tr><td>' + simpleStyleIdentifiers[key] + '</td><td>' + value + '</td></tr>';
+                    }
+                }
+            }
+            if (html.length > 0) {
+                html = '<table class="zebra"><tbody>' + html + '</tbody></table>';
+            }
+            return html;
+        }
+    }
+</script>
+</body>
+
+</html>

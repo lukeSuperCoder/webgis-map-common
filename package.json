@@ -1,0 +1,73 @@
+{
+  "name": "commontemplate",
+  "version": "0.2.0",
+  "private": true,
+  "scripts": {
+    "serve": "vue-cli-service serve",
+    "build": "vue-cli-service build",
+    "lint": "vue-cli-service lint"
+  },
+  "dependencies": {
+    "@antv/l7": "^2.9.27",
+    "@antv/l7-maps": "^2.9.27",
+    "@supermap/iclient-ol": "^10.2.1",
+    "@supermap/vue-iclient-mapboxgl": "^10.2.1",
+    "@turf/turf": "^6.5.0",
+    "@types/mapbox__mapbox-gl-draw": "^1.2.4",
+    "core-js": "^3.6.5",
+    "element-ui": "^2.15.6",
+    "mapbox-gl": "^2.7.0",
+    "mapbox-gl-draw-circle": "^1.1.2",
+    "mapbox-gl-draw-freehand-mode": "^2.1.0",
+    "mapbox-gl-draw-rectangle-mode": "^1.0.4",
+    "nanoid": "^3.3.1",
+    "ol": "^6.12.0",
+    "ol-hashed": "^2.1.0",
+    "postcss-px2rem": "^0.3.0",
+    "scss": "^0.2.4",
+    "scss-loader": "^0.0.1",
+    "terraformer-wkt-parser": "^1.2.1",
+    "vue": "^2.6.11",
+    "vue-router": "^3.2.0",
+    "vuex": "^3.4.0",
+    "webpack": "^4.46.0"
+  },
+  "devDependencies": {
+    "@vue/cli-plugin-babel": "~4.5.0",
+    "@vue/cli-plugin-eslint": "~4.5.0",
+    "@vue/cli-plugin-router": "~4.5.0",
+    "@vue/cli-plugin-vuex": "~4.5.0",
+    "@vue/cli-service": "~4.5.0",
+    "axios": "^0.18.0",
+    "babel-eslint": "^10.1.0",
+    "compression-webpack-plugin": "^5.0.0",
+    "eslint": "^6.7.2",
+    "eslint-plugin-vue": "^6.2.2",
+    "jest": "^27.5.1",
+    "node-sass": "^4.14.1",
+    "sass": "^1.43.5",
+    "sass-loader": "^7.0.0",
+    "vue-cli-plugin-axios": "^0.0.4",
+    "vue-cli-plugin-element": "^1.0.1",
+    "vue-template-compiler": "^2.6.11"
+  },
+  "eslintConfig": {
+    "root": true,
+    "env": {
+      "node": true
+    },
+    "extends": [
+      "plugin:vue/essential",
+      "eslint:recommended"
+    ],
+    "parserOptions": {
+      "parser": "babel-eslint"
+    },
+    "rules": {}
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ]
+}

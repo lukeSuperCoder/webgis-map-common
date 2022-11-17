@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>属性查询</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link href="./css/pretty.css" rel="stylesheet">
+    <script src="./js/jquery.min.js"></script>
+    <script src="./js/config.js"></script>
+	<script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<div id='loadingbar' class="spinner">
+    <div class="spinner-container container1">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container2">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container3">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+</div>
+<blockquote id="bubble" class="bubble">
+        <img id="myimg" src="./images/home_banner.jpg" width="50%" height="auto">
+        <h2 id="title"></h2>
+        <p id="des" class="word"></p>
+        <audio controls="controls">
+          <source src="./media/song.mp3" type="audio/mpeg" />
+            Your browser does not support the audio tag.
+        </audio>
+</blockquote>
+<script type="text/javascript">
+    function onload(Cesium) {
+        var infoboxContainer = document.getElementById("bubble");
+        //初始化viewer部件
+        var viewer = new Cesium.Viewer('cesiumContainer');
+        viewer.imageryLayers.addImageryProvider(new Cesium.BingMapsImageryProvider({
+            url : 'https://dev.virtualearth.net',
+            mapStyle : Cesium.BingMapsStyle.AERIAL,
+            key : URL_CONFIG.BING_MAP_KEY
+        }));
+        viewer.customInfobox = infoboxContainer;
+        var scene = viewer.scene;
+        var canvas = scene.canvas;
+        var widget = viewer.cesiumWidget;
+        $('#loadingbar').remove();
+        try {
+            //添加S3M图层服务
+            var promise = scene.open(URL_CONFIG.SCENE_JINJIANG);
+            Cesium.when(promise, function (layers) {
+                if(!scene.pickPositionSupported){
+                    alert('不支持深度拾取,属性查询功能无法使用！');
+                }
+                var layer = scene.layers.find('jinjiang');
+                //设置属性查询参数
+                layer.setQueryParameter({
+                    url: 'http://www.supermapol.com/realspace/services/data-jinjiang/rest/data',
+                    dataSourceName: 'jinjiang',
+                    dataSetName: 'test',
+                    keyWord: 'SmID'
+                });
+                //设置相机视角
+               scene.camera.setView({
+                    //将经度、纬度、高度的坐标转换为笛卡尔坐标
+                    destination : new Cesium.Cartesian3(-2767302.844416157,5085941.49155452,2675759.1559041184),
+                    orientation : {
+                        heading : 4.7793869967010565,
+                        pitch : -0.5899023527373464,
+                        roll : 8.539835505416704e-12
+                    }
+                });
+
+
+            }, function (e) {
+                if (widget._showRenderLoopErrors) {
+                    var title = '渲染时发生错误，已停止渲染。';
+                    widget.showErrorPanel(title, undefined, e);
+                }
+            });
+        }
+        catch (e) {
+            if (widget._showRenderLoopErrors) {
+                var title = '渲染时发生错误，已停止渲染。';
+                widget.showErrorPanel(title, undefined, e);
+            }
+        }
+        //添加自定义infobox
+        var title = document.getElementById("title");
+        var des = document.getElementById("des");
+        var myimg = document.getElementById("myimg");
+        //注册鼠标点击事件
+        viewer.pickEvent.addEventListener(function(feature){
+            var title = Cesium.defaultValue(feature.NAME,'');
+            var description = Cesium.defaultValue(feature.DES,'');
+            title.innerText = title;
+            des.innerText = description;
+            myimg.src = "./images/" + title + ".jpg";
+        });
+    }
+</script>
+</body>
+</html>

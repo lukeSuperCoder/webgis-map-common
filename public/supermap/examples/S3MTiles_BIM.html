@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>BIM模型</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link href="./css/pretty.css" rel="stylesheet">
+    <script src="./js/jquery.min.js"></script>
+    <script src="./js/config.js"></script>
+    <script src="./js/bootstrap.min.js"></script>
+    <script src="./js/bootstrap-select.min.js"></script>
+    <script src="./js/bootstrap-treeview.js"></script>
+    <script src="./js/spectrum.js"></script>
+	<script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<div id='loadingbar' class="spinner">
+    <div class="spinner-container container1">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container2">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container3">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+</div>
+<div id='tool-menu' class='tool-menu'>
+    <a data-toggle='dropdown' id='layerMangerBtn' title='图层管理' class='tool-menu-btn tool-menu-btn-inverse'>
+        <span class='smicon-layerlist tool-menu-btn-icon'></span>
+        <div class="dropDown-container treeview-dropDown-container" id="treeContainer">
+            <div id='layerTree'></div>
+        </div>
+    </a>
+    <a class='tool-menu-btn tool-menu-btn-inverse' style='padding:10px 0px;'><span style='border-left : 1px solid #dddddd;'></span></a>
+    <div id='tool-menu-btn-group' class='tool-menu-btn-group'>
+        <a data-toggle='dropdown' id='colorBtn'  title='选中颜色' class='tool-menu-btn tool-menu-btn-inverse'>
+            <span class='fui-list-small-thumbnails tool-menu-btn-icon'></span>
+            <div class="dropDown-container">
+                <div style='min-width : 100px;border-radius : 4px;text-align : left;padding : 10px;'>
+                    <label style="font-size:8px">选中颜色： </label><input  class="colorPicker" size="8" data-bind="value: material,valueUpdate: 'input'" id="colorPicker">
+                </div>
+                <div style="text-align : left;padding : 10px;">
+                    <label>过滤透明度：</label><input type="number" min="0" max="1" step="0.1" value="0" id="select-filter-alpha"/>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+<div id="bubble" class="bubble" style="bottom:0;left:82%;display:none;" >
+    <div id="tools" style="text-align : right">
+    <span  style="color: rgb(95, 74, 121);padding: 5px;position: absolute;left: 10px;top: 4px;">对象属性</span>
+    <span class="fui-export" id="bubblePosition" style="color: darkgrey; padding:5px" title="停靠"></span>
+    <span  class="fui-cross" title="关闭" id="close" style="color: darkgrey;padding:5px"></span>
+    </div>
+<div style="overflow-y:scroll;height:150px" id="tableContainer"><table id="tab"></table></div>
+</div> 
+<script type="text/javascript">
+    function onload(Cesium) {
+        // 初始化viewer部件
+        var viewer = new Cesium.Viewer('cesiumContainer');
+        viewer.imageryLayers.addImageryProvider(new Cesium.BingMapsImageryProvider({
+            url : 'https://dev.virtualearth.net',
+            mapStyle : Cesium.BingMapsStyle.AERIAL,
+            key : URL_CONFIG.BING_MAP_KEY
+        }));
+        var scene = viewer.scene;
+        var imageryLayers = viewer.imageryLayers;
+        var baseLayer = imageryLayers.get(0);
+        scene.camera.frustum.near = 0.01;
+        var widget = viewer.cesiumWidget;
+        var infoboxContainer = document.getElementById("bubble");
+        viewer.customInfobox = infoboxContainer;
+        var list;
+        $("#toolbar").show();
+        $('#loadingbar').remove();
+        var viewModel = {
+            material : '#ffffff',
+        };
+        $("#colorPicker").spectrum({
+            color: "rgba(23,92,239,0.5)",
+            showPalette: true,
+            showAlpha: true,
+            localStorageKey: "spectrum.demo",
+            palette: palette
+        });
+        Cesium.knockout.track(viewModel);
+        var toolbar = document.getElementById('colorBtn');
+        Cesium.knockout.applyBindings(viewModel, toolbar);
+        try{
+            //场景添加S3M图层服务
+            var promise = scene.open(URL_CONFIG.SCENE_BIMBUILDING);
+            Cesium.when(promise,function(layers){
+                //设置相机位置、方向，定位至模型
+                scene.camera.setView({
+                    destination : new Cesium.Cartesian3(-2180753.065987198,4379023.266141494,4092583.575045952),
+                    orientation : {
+                        heading : 4.0392222751147955,
+                        pitch :0.010279641987852584,
+                        roll : 1.240962888005015e-11
+                    }
+                });
+                var layer = scene.layers.find('BIMbuilding');
+                //读取子图层信息，通过数组的方式返回子图层的名称以及子图层所包含的对象的IDs
+                layer.setQueryParameter({
+                    url:"http://www.supermapol.com/realspace/services/data-BIMbuilding/rest/data",
+                    dataSourceName : "BIMBuilding",
+                    isMerge : true
+                });
+                datainfo(layer);
+
+                // 初始化选中颜色
+                var color = new Cesium.Color.fromCssColorString("rgba(23,92,239,0.5)");
+                layer.selectedColor = color;
+
+                // 用户自定义选中颜色
+                Cesium.knockout.getObservable(viewModel,'material').subscribe(
+                    function(newValue) {
+                        var color = Cesium.Color.fromCssColorString(newValue);
+                        layer.selectedColor = color;
+                    }
+                );
+                //通过服务地址得到子图层信息
+                
+                //初始化树形菜单
+                var $tree = $('#layerTree').treeview({
+                    data: [{text : "图层列表",selectable : false}],
+                    showIcon: false,
+                    showCheckbox: true,
+                    backColor : 'transparent',
+                    color : '#fff',
+                    //通过NodeChecked状态设置子图层的显示与隐藏的切换
+                    onNodeChecked : function(evt,node){
+                        var ids = [];
+                        for(var i = 0;i < list.length;i++)
+                        {
+                            if(list[i].datasetName == node.text)
+                            {
+                                ids = range(list[i].startID, list[i].endID);
+                                break;
+                            }
+                        }
+                        if(ids.length>0)
+                        {
+                            layer.setOnlyObjsVisible(ids,true);
+                        }
+                        else if(node.text == "影像图层" || node.text == "BingMap"){
+                            baseLayer.show = true;
+                        }
+                        else{
+                            layer.visible = true;
+                        }
+                    }, 
+                    onNodeUnchecked : function(evt,node){
+                        var ids = [];
+                        for(var i = 0;i < list.length;i++)
+                        {
+                            if(list[i].datasetName == node.text){
+                                ids = range(list[i].startID, list[i].endID);
+                                break;
+                            }
+                        }
+                        if(ids.length>0){
+                            // layer.removeAllObjsColor();
+                            layer.setOnlyObjsVisible(ids,false);
+                        }
+                        else if(node.text == "影像图层" || node.text == "BingMap"){
+                            baseLayer.show = false;
+                        }
+                        else{
+                            layer.visible = false;
+                        }
+                    },
+                    //节点被选中时，设该子图层颜色为半透明
+                    onNodeSelected : function (evt,node) {
+                        var ids = [];
+                        for(var i = 0;i < list.length;i++)
+                        {
+                            if(list[i].datasetName == node.text)
+                            {
+                            ids = range(list[i].startID, list[i].endID);
+                            }
+                        }
+                        if(ids.length>0)
+                        {
+                            layer.releaseSelection();
+                            layer.setSelection(ids);
+                        }
+                        else{
+                            layer.removeAllObjsColor();
+                        }
+                    }
+                });
+                var rootNode = $tree.treeview('getNode',0);
+                //加载图层
+                var S3MNode = $tree.treeview('addNode',[rootNode,{text : "S3M图层",showDel : true,fontSize : '10pt',state : {checked : true}}]);
+                var childNode = $tree.treeview('addNode',[S3MNode,{text : layer._name,showDel : true,fontSize : '10pt',state : {checked : true}}]);
+                //加载子图层
+                function datainfo(layer){
+                    layer.datasetInfo().then(function(result){
+                        list = result;
+                        if(list.length>0){
+                            for(var i = 0;i < list.length;i++){
+                                $tree.treeview('addNode',[childNode,{text : list[i].datasetName,showDel : true,fontSize : '10pt',state : {checked : true}}]);
+                            }
+                        } 
+                    });
+                }
+                // 过滤指定透明度一下的要素，选择其后的要素
+                layer.selectionFiltrateByTransparency = 0;
+                $("#select-filter-alpha").on('input propertychange', function(){
+                    layer.selectionFiltrateByTransparency = Number($("#select-filter-alpha").val());
+                });
+            },function(e){
+                if (widget._showRenderLoopErrors) {
+                    var title = '加载SCP失败，请检查网络连接状态或者url地址是否正确？';
+                    widget.showErrorPanel(title, undefined, e);
+                }
+            });
+        }
+        catch(e){
+            if (widget._showRenderLoopErrors) {
+                var title = '渲染时发生错误，已停止渲染。';
+                widget.showErrorPanel(title, undefined, e);
+            }
+        }
+        //点击对象查询对象属性
+        var table = document.getElementById("tab");
+        viewer.pickEvent.addEventListener(function(feature){
+             $("#bubble").show();
+             for (i = table.rows.length-1;i > -1;i--){
+                table.deleteRow(i);
+            }
+            for(var key in feature ){
+                var newRow = table.insertRow();
+                var cell1 = newRow.insertCell();
+                var cell2 = newRow.insertCell();
+                cell1.innerHTML = key;
+                cell2.innerHTML = feature[key];
+            } 
+        });
+        $("#bubblePosition").click(function(){
+            if($("#bubblePosition").hasClass("fui-export")){
+                viewer.customInfobox = undefined;
+                $("#bubble").removeClass("bubble").addClass("float");
+                $("#bubblePosition").removeClass("fui-export").addClass("fui-bubble");
+                $("#bubblePosition")[0].title = "悬浮";
+                $("#bubble").css({'left' : '82%','bottom' : '45%'});
+                $("#tableContainer").css({'height':'350px'});
+            }
+            else if($("#bubblePosition").hasClass("fui-bubble")){
+                $("#bubble").removeClass("float").addClass("bubble");
+                $("#bubblePosition").removeClass("fui-bubble").addClass("fui-export");
+                $("#bubblePosition")[0].title = "停靠";
+                $("#tableContainer").css({'height':'150px'});
+                viewer.customInfobox = infoboxContainer;
+            }
+        });
+        $("#close").click(function(){
+            $("#bubble").hide();
+        });
+
+        function range(startID,endID){
+            var array=[];
+            for(var i = startID; i < endID + 1; i++){
+                array.push(i);
+            }
+            return array;
+        }
+        //图层列表的隐藏显示
+        $(document).on('click.dropDown-container touchstart.dropDown-container','[data-toggle=dropdown]',function(evt){
+            evt.stopPropagation();
+            var target = evt.target;
+            if(!target.contains(evt.currentTarget) && target.tagName != 'SPAN'){
+                return ;
+            }
+            var $this = $(this), $parent, isActive;
+            var $target = $this.children('div.dropDown-container');
+            if($target.length == 0){
+                $('.dropDown-container').removeClass('dropDown-visible');
+                return ;
+            }
+            isActive = $target.hasClass('dropDown-visible');
+            $('.dropDown-container').removeClass('dropDown-visible');
+            if(!isActive){
+                $target.addClass('dropDown-visible');
+            }
+            return false;
+        });
+        var height = $('body').height()*0.85 + 'px';
+        $('#treeContainer').css({'height' : height,'min-width' : '260px','text-align' : 'left'});
+    }
+    </script>
+</body>
+</html>

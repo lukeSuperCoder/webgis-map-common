@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+
+<head>
+	<meta charset="utf-8">
+	<title>后处理效果</title>
+	<link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+	<link href="./css/pretty.css" rel="stylesheet">
+	<script type="text/javascript" src="./js/jquery.min.js"></script>
+	<script src="./js/config.js"></script>
+	<script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+	<style>
+		html,
+		body,
+		#cesiumContainer {
+			width: 100%;
+			height: 100%;
+			margin: 0;
+			padding: 0;
+			overflow: hidden;
+		}
+		
+		.param-item {
+			margin-bottom: 15px;
+		}
+		
+		.param-item>label>span,
+		.param-item>label>input {
+			vertical-align: middle;
+			margin-right: 5px;
+		}
+	</style>
+</head>
+
+<body>
+	<div id="cesiumContainer"></div>
+	<div class="applyImg" id="imgApply">
+		后期特效
+	</div>
+	<div class="closeDiv">
+		<div class="closeImg" id="closeFun">
+		</div>
+	</div>
+	<div class="applyContainer" id="comApply" style="background-color: #FFFFFF;">
+		<div style="margin: 10px;background-color:rgba(255, 255, 255, 0.3)">
+			<div style="text-align:center;">
+				<button id="postprocessing" class="button black">开启</button>
+			</div>
+			<h1 class="title"></h1>
+			<div class="param-item">
+				<label for="colorCorrectionShow">
+                <span>颜色校正开启</span><input type="checkbox" id="colorCorrectionShow" checked>
+            </label>
+			</div>
+			<div class="param-item">
+				<label>饱和度 </label>
+				<input type="number" id="saturation" min="-10" max="30" value="1.2" step="0.1" style="width: 210px">
+			</div>
+			<div class="param-item">
+				<label>亮度 </label>
+				<input type="number" id="brightness" min="-1" max="1" value="0.8" step="0.01" style="width: 210px">
+			</div>
+			<div class="param-item">
+				<label>对比度 </label>
+				<input type="number" id="contrast" min="-10" max="10" value="0.7" step="0.1" style="width: 210px">
+			</div>
+			<div class="param-item">
+				<label>色调: </label>
+				<input type="number" id="hue" min="0" max="3" value="0.0" step="0.1" style="width: 210px">
+			</div>
+			<h1 class="title"></h1>
+			<div class="param-item">
+				<label>
+                <span>开启泛光 </span><input type="checkbox" id="bloomShow">
+            </label>
+			</div>
+			<div class="param-item">
+				<label>亮度阈值 </label>
+				<input type="number" id="bloom-threshold" min="0" max="1" value="0.65" step="0.01" style="width: 210px">
+
+			</div>
+			<div class="param-item">
+				<label>泛光强度 </label>
+				<input type="number" id="bloom-intensity" min="0" max="10" value="1" step="0.1" style="width: 210px">
+			</div>
+		</div>
+		<script>
+			/*示范代码说明：
+			 *场景后期渲染特效
+			 *
+			 *主要涉及接口：
+			 * colorCorrection
+			 * bloomEffect
+			 * scanEffect
+			 * style3D
+			 * PolylineDynamicMaterialProperty
+			 *
+			 * 示范代码：
+			 */
+			function onload(Cesium) {
+				var viewer = new Cesium.Viewer('cesiumContainer', {
+					infobox: false,
+					timeline: true
+				});
+				viewer.imageryLayers.addImageryProvider(new Cesium.BingMapsImageryProvider({
+					url: 'https://dev.virtualearth.net',
+					mapStyle: Cesium.BingMapsStyle.CANVAS_DARK,
+					key: URL_CONFIG.BING_MAP_KEY
+				}));
+				var scene = viewer.scene;
+				scene.fxaa = true;
+				scene.skyAtmosphere.show = false;
+				//添加垂直方向的平行光源
+				var position = new Cesium.Cartesian3(-2181832.669422784, 4380035.081259461, 4093003.6925714);
+				var options = {
+					intensity: 1
+				};
+				var directionalLight_v = new Cesium.DirectionalLight(position, options);
+				scene.addLightSource(directionalLight_v);
+
+				//打开数据
+				var promise = scene.open(URL_CONFIG.SCENE_CBD);
+				var CBD_Building = scene.open('http://www.supermapol.com/realspace/services/3D-CBDbuilding/rest/realspace');
+				var promise = [promise, CBD_Building];
+				Cesium.when.all(promise, function(layers) {
+					// 更精准的定位
+					scene.camera.setView({
+						destination: Cesium.Cartesian3.fromDegrees(116.41303969700293, 39.911101276942915, 1299.7138363188635),
+						orientation: {
+							heading: 1.555585,
+							pitch: -0.464817,
+							roll: 0.000000
+						}
+					});
+					var overBuilding = scene.layers.find('Ground_2@CBD');
+					overBuilding.style3D.fillForeColor.alpha = 0.0;
+					var overBuilding = scene.layers.find('Building@CBD');
+					overBuilding.style3D.fillForeColor.alpha = 0.0;
+
+					viewer.scene.colorCorrection.show = true;
+					viewer.scene.colorCorrection.saturation = $("#saturation").val();
+					viewer.scene.colorCorrection.brightness = $("#brightness").val();
+					viewer.scene.colorCorrection.contrast = $("#contrast").val();
+					viewer.scene.colorCorrection.hue = $("#hue").val();
+
+					$("#coverLayer").hide();
+					$("#comApply").hide();
+					$(".closeDiv").hide();
+
+					//颜色校正开关
+					$("#colorCorrectionShow").on("input change", function() {
+						viewer.scene.colorCorrection.show = this.checked;
+					});
+
+					//调节饱和度
+					$("#saturation").on("input change", function() {
+						viewer.scene.colorCorrection.saturation = this.value;
+					});
+
+					//调节亮度
+					$("#brightness").on("input change", function() {
+						viewer.scene.colorCorrection.brightness = this.value;
+					});
+
+					//调节对比度
+					$("#contrast").on("input change", function() {
+						viewer.scene.colorCorrection.contrast = this.value;
+					});
+
+					//调节色调
+					$("#hue").on("input change", function() {
+						viewer.scene.colorCorrection.hue = this.value;
+					});
+
+					//泛光效果开关
+					$("#bloomShow").on("input change", function() {
+						viewer.scene.bloomEffect.show = this.checked;
+						viewer.scene.bloomEffect.threshold = $("#bloom-threshold").val();
+						viewer.scene.bloomEffect.bloomIntensity = $("#bloom-intensity").val();
+					});
+
+					//调节亮度阈值
+					$("#bloom-threshold").on("input change", function() {
+						viewer.scene.bloomEffect.threshold = parseFloat(this.value);
+					});
+
+					//调节泛光强度
+					$("#bloom-intensity").on("input change", function() {
+						viewer.scene.bloomEffect.bloomIntensity = parseFloat(this.value);
+					});
+
+					//开启后期效果
+					$("#postprocessing").on("click", function() {
+						var pos = new Cesium.Cartesian3(-2179710.7298528524, 4379875.29591898, 4092519.229662703);
+						var ecartographic = Cesium.Cartographic.fromCartesian(pos);
+						var startLongitude = Cesium.Math.toDegrees(ecartographic.longitude);
+						var startLatitude = Cesium.Math.toDegrees(ecartographic.latitude);
+						var startHeight = ecartographic.height + 1000;
+						var endHeight;
+						var startTime = Cesium.JulianDate.now();
+						var isConstant = false;
+						var offset = 0;
+						viewer.entities.add({
+							polyline: {
+								positions: new Cesium.CallbackProperty(function(time, result) { //属性变更回调
+									offset += 1;
+									if(offset < 15) {
+										endHeight = startHeight - 5000 * Cesium.JulianDate.secondsDifference(time, startTime);
+									};
+									return Cesium.Cartesian3.fromDegreesArrayHeights([startLongitude, startLatitude, startHeight, startLongitude, startLatitude, endHeight], Cesium.Ellipsoid.WGS84, result);
+								}, isConstant),
+								width: 4,
+								material: new Cesium.PolylineGlowMaterialProperty({
+									glowPower: 0.9,
+									color: Cesium.Color.YELLOW
+								})
+							}
+						});
+						//利用计时器控制
+						window.setTimeout(function() {
+							var entities = viewer.entities.values;
+							for(var i = 0; i < entities.length; i++) {
+								if(entities[i].polyline) {
+									entities[i].polyline.show = false;
+								}
+							}
+							viewer.scene.scanEffect.show = true; //开启扫描效果
+							viewer.scene.scanEffect.mode = Cesium.ScanEffectMode.CIRCLE; //利用圆环扫描效果
+							viewer.scene.scanEffect.centerPostion = pos;
+							viewer.scene.scanEffect._period = 2000;
+							viewer.scene.scanEffect.color = Cesium.Color.CORNFLOWERBLUE
+
+							viewer.scene.colorCorrection.saturation = 3.9;
+							viewer.scene.colorCorrection.brightness = 0.8
+							viewer.scene.colorCorrection.contrast = 1.0;
+							viewer.scene.colorCorrection.hue = 0.0;
+
+						}, 1500);
+						window.setTimeout(function() {
+							viewer.scene.scanEffect.show = false;
+							viewer.camera.flyTo({
+								destination: Cesium.Cartesian3.fromDegrees(116.44188901345262, 39.91993509313601, 345.54367925450634),
+								orientation: {
+									heading: 2.047663,
+									pitch: -0.479311,
+									roll: 0.0
+								}
+							});
+							viewer.camera.flyCircle(pos);
+							viewer.camera.flyCircleLoop = true;
+						}, 6000);
+						window.setTimeout(function() {
+							viewer.scene.colorCorrection.saturation = 3.0;
+							viewer.scene.colorCorrection.brightness = 0.8;
+							viewer.scene.colorCorrection.contrast = 1.0;
+							viewer.scene.colorCorrection.hue = 0.0;
+							window.setInterval(function() {
+								var layers = viewer.scene.layers._layers._array;
+								for(var i = 0; i < layers.length; i++) {
+									if(layers[i].brightness >= 0.5) {
+										layers[i].brightness -= 0.1;
+									}
+								}
+							}, 1000);
+						}, 9000);
+						window.setTimeout(function() {
+							viewer.scene.scanEffect.show = true;
+							viewer.scene.scanEffect.mode = Cesium.ScanEffectMode.LINE; //改用线状扫描效果
+							pos = new Cesium.Cartesian3(-2179075.5441530147, 4380948.987896232, 4091572.06656471);
+							viewer.scene.scanEffect.centerPostion = pos;
+							viewer.scene.scanEffect._speed = 500;
+							viewer.scene.scanEffect._lineWidth = 1000;
+							viewer.scene.scanEffect._period = 4000;
+							viewer.scene.scanEffect.color = Cesium.Color.WHITE;
+							var overBuilding = scene.layers.find('building');
+							overBuilding.style3D.fillForeColor.alpha = 0.8;
+
+							//添加动态路线
+							viewer.entities.add({
+								name: 'RED dynamic line',
+								polyline: {
+									positions: Cesium.Cartesian3.fromDegreesArrayHeights([116.4554563524458, 39.921874704650065, 18.07962248521768, 116.45552996194091, 39.90341610632384, 26.82953620572273]),
+									width: 10,
+									hMax: 500000,
+									material: new Cesium.PolylineDynamicMaterialProperty({
+										color: Cesium.Color.RED,
+										outlineWidth: 0,
+										outlineColor: Cesium.Color.BLACK
+									})
+								}
+							});
+							viewer.entities.add({
+								name: 'RED dynamic line',
+								polyline: {
+									positions: Cesium.Cartesian3.fromDegreesArrayHeights([116.47187525989217, 39.91223795254095, 7.865979996198354, 116.44440885131516, 39.91201856949045, 8.884343825566416]),
+									width: 10,
+									hMax: 500000,
+									material: new Cesium.PolylineDynamicMaterialProperty({
+										color: Cesium.Color.RED,
+										outlineWidth: 0,
+										outlineColor: Cesium.Color.BLACK
+									})
+								}
+							});
+							viewer.entities.add({
+								name: 'RED dynamic line',
+								polyline: {
+									positions: Cesium.Cartesian3.fromDegreesArrayHeights([116.44535566560141, 39.90711403515967, 6.05044468236714, 116.47111450327363, 39.90690019157419, 13.424603940211748]),
+									width: 10,
+									hMax: 500000,
+									material: new Cesium.PolylineDynamicMaterialProperty({
+										color: Cesium.Color.RED,
+										outlineWidth: 0,
+										outlineColor: Cesium.Color.BLACK
+									})
+								}
+							});
+							viewer.entities.add({
+								name: 'RED dynamic line',
+								polyline: {
+									positions: Cesium.Cartesian3.fromDegreesArrayHeights([116.47154085250362, 39.91426736989627, 7.854685932265943, 116.46748814785363, 39.91451163555731, 9.834131648431287, 116.46346347990571, 39.91519856902425, 9.998785446967235, 116.45545872872242, 39.917975799470625, 17.006602738356943, 116.44680024556473, 39.9200967294364, 7.0225665872157395]),
+									width: 10,
+									hMax: 500000,
+									material: new Cesium.PolylineDynamicMaterialProperty({
+										color: Cesium.Color.RED,
+										outlineWidth: 0,
+										outlineColor: Cesium.Color.BLACK
+									})
+								}
+							});
+							viewer.entities.add({
+								name: 'RED dynamic line',
+								polyline: {
+									positions: Cesium.Cartesian3.fromDegreesArrayHeights([116.44995384707796, 39.9151689466424, 15.5242899459013, 116.4591894773506, 39.91503643745474, 7.365070458004033, 116.45923210298479, 39.914568795360665, 6.154412024503722, 116.45942483190308, 39.914220636059454, 8.078682137431434, 116.45961155156685, 39.91230956052081, 9.280614011889835]),
+									width: 5,
+									hMax: 500000,
+									material: new Cesium.PolylineDynamicMaterialProperty({
+										color: Cesium.Color.RED,
+										outlineWidth: 0,
+										outlineColor: Cesium.Color.BLACK
+									})
+								}
+							});
+							viewer.entities.add({
+								name: 'RED dynamic line',
+								polyline: {
+									positions: Cesium.Cartesian3.fromDegreesArrayHeights([116.45550749066707, 39.90675563108506, 26.883668992115727, 116.45563758685901, 39.912152389252086, 20.724316684397586, 116.45530774056648, 39.91791789241006, 15.163674636962648, 116.4554294508966, 39.92496807435627, 23.775874180463646]),
+									width: 5,
+									hMax: 500000,
+									material: new Cesium.PolylineDynamicMaterialProperty({
+										color: Cesium.Color.RED,
+										outlineWidth: 0,
+										outlineColor: Cesium.Color.BLACK
+									})
+								}
+							});
+							viewer.entities.add({
+								name: 'RED dynamic line',
+								polyline: {
+									positions: Cesium.Cartesian3.fromDegreesArrayHeights([116.44770748653264, 39.91956657325995, 6.110295281025008, 116.44749049265452, 39.91899108455153, 6.1510667852346685, 116.44745698814788, 39.91321295949332, 6.051136668268155, 116.45147067709759, 39.91324039878925, 14.215693625638767, 116.45144084881659, 39.91056831145463, 21.795354942814846, 116.45508367234657, 39.91054996972923, 11.510839923169804]),
+									width: 5,
+									hMax: 500000,
+									material: new Cesium.PolylineDynamicMaterialProperty({
+										color: Cesium.Color.RED,
+										outlineWidth: 0,
+										outlineColor: Cesium.Color.BLACK
+									})
+								}
+							});
+							viewer.entities.add({
+								name: 'RED dynamic line',
+								polyline: {
+									positions: Cesium.Cartesian3.fromDegreesArrayHeights([116.47115646074296, 39.91225609428276, 6.2830561631940025, 116.467993166917, 39.91222736769096, 6.053628649133717, 116.46730394239569, 39.910349414808444, 6.787015261078569, 116.46728559262513, 39.908440977775285, 7.481847185394354, 116.46346666884538, 39.90844450440061, 6.073589670435151, 116.46346666884538, 39.90844450440061, 6.073589670435151, 116.46346042166819, 39.92466416276117, 9.408467319449565]),
+									width: 10,
+									hMax: 500000,
+									material: new Cesium.PolylineDynamicMaterialProperty({
+										color: Cesium.Color.RED,
+										outlineWidth: 0,
+										outlineColor: Cesium.Color.BLACK
+									})
+								}
+							});
+						}, 15000);
+					});
+
+					$("#imgApply").on("click", function() {
+						$("#coverLayer").show("slow");
+						$("#comApply").show("slow");
+						$(".closeDiv").show("slow");
+					})
+
+					$("#closeFun").on("click", function() {
+						$("#coverLayer").hide("slow");
+						$("#comApply").hide("slow");
+						$(".closeDiv").hide("slow");
+					})
+				});
+			}
+		</script>
+</body>

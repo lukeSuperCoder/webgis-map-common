@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>沿线飞行</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link href="./css/bootstrap.min.css" rel="stylesheet">
+    <link href="./css/pretty.css" rel="stylesheet">
+    <script src="./js/jquery.min.js"></script>
+    <script src="./js/bootstrap.min.js"></script>
+    <script src="./js/bootstrap-select.min.js"></script>
+    <script src="./js/config.js"></script>
+    <script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+    <style>
+        #play {
+            content: url(./images/play.png);
+            height: 30px;
+            padding: 5px;
+        }
+
+        #pause {
+            content: url(./images/pause.png);
+            height: 30px;
+            padding: 5px;
+        }
+
+        #stop {
+            content: url(./images/stop.png);
+            height: 30px;
+            padding: 5px;
+        }
+
+        .bootstrap-select {
+            width: 150px;
+        }
+    </style>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<div id='loadingbar' class="spinner">
+    <div class="spinner-container container1">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container2">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container3">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+</div>
+<div id='toolbar' class="param-container tool-bar">
+    <span type="button" id="play" class="button black" title="开始"></span>
+    <span type="button" id="pause" class="button black" title="暂停"></span>
+    <span type="button" id="stop" class="button black" title="停止"></span>
+    <div style="width: 150px;">
+        <select id="stopList" class="form-control" style="width: 100%;">
+            <!--<option disabled selected value>&#45;&#45;选择站点&#45;&#45;</option>-->
+        </select>
+    </div>
+    <div class="checkbox">
+        <label>
+            <input type="checkbox" id="show-line" checked> 显示飞行路线
+        </label>
+    </div>
+    <div class="checkbox">
+        <label>
+            <input type="checkbox" id="show-stop" checked> 显示飞行站点
+        </label>
+    </div>
+</div>
+<script>
+    //请在联网状态下查看此飞行范例
+    var flyManager;
+    function onload(Cesium) {
+        var toolbar = document.getElementById('toolbar');
+        var viewer = new Cesium.Viewer('cesiumContainer');
+        viewer.imageryLayers.addImageryProvider(new Cesium.BingMapsImageryProvider({
+            url: 'https://dev.virtualearth.net',
+            mapStyle: Cesium.BingMapsStyle.AERIAL,
+            key: URL_CONFIG.BING_MAP_KEY
+        }));
+        var scene = viewer.scene;
+        scene.globe.depthTestAgainstTerrain = false;
+        var camera = scene.camera;
+        //添加S3M图层服务
+        var promise = scene.open(URL_CONFIG.SCENE_NIAOCHAO);
+        promise.then(function (layers) {
+            camera.setView({
+                destination: Cesium.Cartesian3.fromDegrees(116.3801, 39.9874, 12.0),
+                orientation: {
+                    heading: 6.260995919619558,
+                    pitch: 0,
+                    roll: 0
+                }
+            });
+            var routes = new Cesium.RouteCollection(viewer.entities);
+            //添加fpf飞行文件，fpf由SuperMap iDesktop生成
+            var fpfUrl = './SampleData/fpf/niaocao.fpf';
+            routes.fromFile(fpfUrl);
+            //初始化飞行管理
+            var flyManager = new Cesium.FlyManager({
+                scene: scene,
+                routes: routes
+            });
+            //注册站点到达事件
+            flyManager.stopArrived.addEventListener(function (routeStop) {
+                routeStop.waitTime = 1; // 在每个站点处停留1s
+            });
+
+            flyManager.readyPromise.then(function () { // 飞行路线就绪
+                var currentRoute = flyManager.currentRoute;
+                currentRoute.isLineVisible = true;
+                currentRoute.isStopVisible = true;
+                //生成飞行文件中的所有站点列表
+                var allStops = flyManager.getAllRouteStops();
+                var menu = document.getElementById('stopList');
+                for (var i = 0, j = allStops.length; i < j; i++) {
+                    var option = document.createElement('option');
+                    option.innerHTML = "站点 " + (i + 1);
+                    option.value = allStops[i].index;
+                    menu.appendChild(option);
+                }
+
+                $('#stopList').change(function () { //注册站点切换事件
+                    flyManager && flyManager.stop();
+                    var index = parseInt($(this).val()); // 站点的索引
+                    var route = flyManager.currentRoute;
+                    var stop = route.get(index);
+                    flyManager.currentStopIndex = index;
+                    flyManager.viewToStop(stop);
+                });
+
+                $('#play').click(function () {
+                    flyManager && flyManager.play();
+                });
+                $('#pause').click(function () {
+                    flyManager && flyManager.pause();
+                });
+                $('#stop').click(function () {
+                    flyManager && flyManager.stop();
+                });
+
+                $('#show-line').change(function(){
+                    currentRoute.isLineVisible = $(this).prop('checked');
+                });
+
+                $('#show-stop').change(function(){
+                    currentRoute.isStopVisible = $(this).prop('checked');
+                });
+
+                $('#toolbar').show();
+                $('#loadingbar').remove();
+            });
+        });
+    }
+</script>
+</body>
+</html>

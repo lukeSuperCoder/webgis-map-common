@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>检索定位</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <script src="./js/config.js"></script>
+    <link href="./css/pretty.css" rel="stylesheet">
+    <style>
+        .cesium-viewer-navigationContainer{
+            display: none;
+        }
+    </style>
+    <script src="./js/jquery.min.js"></script>
+    <script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<div id='loadingbar' class="spinner">
+    <div class="spinner-container container1">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container2">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container3">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+</div>
+<script>
+	function onload(Cesium){
+		var viewer = new Cesium.Viewer('cesiumContainer',{
+			geocoder : true//需开启地理编码
+		});
+        viewer.imageryLayers.addImageryProvider(new Cesium.TiandituImageryProvider({
+            mapStyle : Cesium.TiandituMapsStyle.VEC_W,
+            token: URL_CONFIG.TOKEN_TIANDITU
+        }));
+        var imageryLayers = viewer.imageryLayers;
+        //初始化天地图全球中文注记服务，并添加至影像图层
+        var labelImagery = new Cesium.TiandituImageryProvider({
+            mapStyle : Cesium.TiandituMapsStyle.CIA_C, //天地图全球中文注记服务（经纬度投影）
+            token: URL_CONFIG.TOKEN_TIANDITU
+        });
+        imageryLayers.addImageryProvider(labelImagery);
+        //请开发者自行到supermap online官网（http://www.supermapol.com/）申请key
+        viewer.geocoder.viewModel.geoKey = 'fvV2osxwuZWlY0wJb8FEb2i5';
+        $('#loadingbar').remove();
+	}
+</script>
+</body>
+</html>
