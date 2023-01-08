@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:v-on="http://www.w3.org/1999/xhtml" xmlns:v-bind="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>线框模式</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link href="./css/pretty.css" rel="stylesheet">
+    <script src="./js/vue.min.js"></script>
+    <script src="./js/config.js"></script>
+    <script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<div id="toolbar" class="param-container tool-bar">
+    <div id="layer-fill-style" class="legend" style="display: inline-block;padding-right: 1rem;">
+        <p>填充风格</p>
+        <div class="legend-item"><input id="layer-fill-mode" type="radio" value="fill" v-model="fillStyle"/><label
+                for="layer-fill-mode">填充模式</label></div>
+        <div class="legend-item"><input id="layer-wireframe-mode" type="radio" value="wireframe" v-model="fillStyle"
+                                        checked/><label for="layer-wireframe-mode">线框模式</label></div>
+        <div class="legend-item"><input id="layer-fill-and-wireframe-mode" type="radio" value="fill-and-wireframe"
+                                        v-model="fillStyle"/><label for="layer-fill-and-wireframe-mode">填充和线框模式</label>
+        </div>
+    </div>
+    <div id="wire-frame-mode" class="legend"
+         style="display: inline-block; border-left: 1px solid #b3b3b3;padding-left: 1rem;"
+         v-show="fillStyle !== 'fill'">
+        <p>线框模式</p>
+        <div class="legend-item"><input id="triangle-wireframe-mode" type="radio" value="triangle"
+                                        v-model="wireframeMode"/><label for="triangle-wireframe-mode">三角面线框</label>
+        </div>
+        <div class="legend-item"><input id="EffectOutline-wireframe-mode" type="radio" value="EffectOutline"
+                                        v-model="wireframeMode"/><label for="EffectOutline-wireframe-mode">四边形线框</label>
+        </div>
+        <div class="legend-item"><input id="sketch-wireframe-mode" type="radio" value="sketch" v-model="wireframeMode"/><label
+                for="sketch-wireframe-mode">草图模式</label></div>
+    </div>
+</div>
+
+<script>
+    function onload(Cesium) {
+        var viewer = new Cesium.Viewer('cesiumContainer');
+        var scene = viewer.scene;
+        scene.globe.depthTestAgainstTerrain = false;
+        var promise = scene.open(URL_CONFIG.SCENE_WIREFRAME);
+        Cesium.when(promise, function (layers) {
+            var layer = scene.layers.find('wireFrame');
+            layer.setLodRangeScale(0.01); // 精细加载
+            scene.camera.setView({
+                destination: new Cesium.Cartesian3(-2118819.620091373, 4442047.395228925,4057039.7514125207),
+                orientation: {
+                    heading: 4.22723426501055,
+                    pitch: -0.11245742638511502,
+                    roll: 2.220446049250313e-14
+                }
+            });
+            let vm = new Vue({
+                el: '#toolbar',
+                data: {
+                    fillStyle: 'wireframe',
+                    wireframeMode: 'sketch'
+                },
+                mounted: function () {
+                    layer.style3D.fillStyle = Cesium.FillStyle.WireFrame;
+                    layer.wireFrameMode = Cesium.WireFrameType.Sketch;
+                },
+                watch: { // 监听属性变化
+                    fillStyle: function (val) {
+                        switch (val) {
+                            case 'fill':
+                                layer.style3D.fillStyle = Cesium.FillStyle.Fill; // 填充模式
+                                break;
+                            case 'wireframe':
+                                layer.style3D.fillStyle = Cesium.FillStyle.WireFrame; // 线框模式
+                                break;
+                            case 'fill-and-wireframe':
+                                layer.style3D.fillStyle = Cesium.FillStyle.Fill_And_WireFrame; // 填充和线框模式
+                                break;
+                            default:
+                                break;
+                        }
+                        layer.refresh();
+                    },
+                    wireframeMode: function (val) {
+                        switch (val) {
+                            case 'triangle':
+                                layer.wireFrameMode = Cesium.WireFrameType.Triangle; // 以三角面为单位的线框
+                                break;
+                            // case 'quad':
+                            //     layer.wireFrameMode = Cesium.WireFrameType.Quad; // 以平面为单位的线框
+                            //     break;
+                            case 'EffectOutline':
+                                layer.wireFrameMode = Cesium.WireFrameType.EffectOutline; // 以四边形为单位的线框
+                                break;
+                            case 'sketch':
+                                layer.wireFrameMode = Cesium.WireFrameType.Sketch; // 草图模式
+                                break;
+                            default:
+                                break;
+                        }
+                        layer.refresh();
+                    }
+                }
+            });
+        });
+    }
+</script>
+</body>
+</html>

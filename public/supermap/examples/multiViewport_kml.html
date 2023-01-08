@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>kml图层分屏显示</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link href="./css/bootstrap.min.css" rel="stylesheet">
+    <link href="./css/pretty.css" rel="stylesheet">
+    <script src="./js/jquery.min.js"></script>
+    <script src="./js/bootstrap.min.js"></script>
+    <script src="./js/bootstrap-select.min.js"></script>
+    <script src="./js/config.js"></script>
+    <script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+    <style>
+        label {
+            display: inline-block;
+            margin-right: 1rem;
+        }
+
+        label > input,
+        label > span {
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        #split_up {
+            position: absolute;
+            background-color: white;
+            left: 50%;
+            bottom: 50%;
+            width: 2px;
+            height: 50%;
+            -webkit-transform: translate(-50%, 0);
+        }
+
+        #split_bottom {
+            position: absolute;
+            background-color: white;
+            left: 50%;
+            top: 50%;
+            width: 2px;
+            height: 50%;
+            -webkit-transform: translate(-50%, 0);
+        }
+
+        #split_left {
+            position: absolute;
+            background-color: white;
+            right: 50%;
+            bottom: 50%;
+            height: 2px;
+            width: 50%;
+            -webkit-transform: translate(0, -50%);
+        }
+
+        #split_right {
+            position: absolute;
+            background-color: white;
+            left: 50%;
+            bottom: 50%;
+            height: 2px;
+            width: 50%;
+            -webkit-transform: translate(0, -50%);
+        }
+
+        #split_vertical_trisection_left {
+            position: absolute;
+            background-color: white;
+            left: 33.33%;
+            top: 0;
+            height: 100%;
+            width: 2px;
+        }
+
+        #split_vertical_trisection_right {
+            position: absolute;
+            background-color: white;
+            right: 33.33%;
+            top: 0;
+            height: 100%;
+            width: 2px;
+        }
+    </style>
+</head>
+
+<body>
+<div id="cesiumContainer"></div>
+<div id='loadingbar' class="spinner">
+    <div class="spinner-container container1">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container2">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container3">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+</div>
+<div id="split_up" style="display: none;"></div>
+<div id="split_bottom" style="display: none;"></div>
+<div id="split_left" style="display: none;"></div>
+<div id="split_right" style="display: none;"></div>
+<div id="split_vertical_trisection_left" style="display: none;"></div>
+<div id="split_vertical_trisection_right" style="display: none;"></div>
+<div id="toolbar" class="param-container tool-bar">
+    <select id="viewportType" class="selectpicker show-tick form-control">
+        <option value="NONE" selected>不使用分屏</option>
+        <option value="HORIZONTAL">水平分屏</option>
+        <option value="VERTICAL">垂直分屏</option>
+        <option value="TRIPLE">三视口</option>
+        <option value="VerticalTrisection">水平三视口</option>
+        <option value="QUAD">四视口</option>
+    </select>
+    <div id="pannel" style="padding: 10px;display: none;">
+        <div id="kml" style="margin-top: 1rem;">
+            <p>kmlLayer：</p>
+            <div>
+                <label id="b_one">
+                    <input type="checkbox" id="building_one" data-value="0" checked/>
+                    <span>一</span>
+                </label>
+                <label id="b_two">
+                    <input type="checkbox" id="building_two" data-value="1" checked/>
+                    <span>二</span>
+                </label>
+            </div>
+            <div>
+                <label id="b_three">
+                    <input type="checkbox" id="building_three" data-value="2" checked/>
+                    <span>三</span>
+                </label>
+                <label id="b_four">
+                    <input type="checkbox" id="building_four" data-value="3" checked/>
+                    <span>四</span>
+                </label>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    function onload(Cesium) {
+        var viewer = new Cesium.Viewer('cesiumContainer');
+        window.scene = viewer.scene;
+
+        var scene = viewer.scene;
+        viewer.imageryLayers.addImageryProvider(new Cesium.BingMapsImageryProvider({
+            url: 'https://dev.virtualearth.net',
+            mapStyle: Cesium.BingMapsStyle.AERIAL,
+            key: URL_CONFIG.BING_MAP_KEY
+        }));
+
+        //加载kml文件
+        var kmlLayer;
+        var datasource = viewer.dataSources.add(Cesium.KmlDataSource.load('./SampleData/kml/2015beijingsubway.kml', {
+            camera: scene.camera,
+            canvas: scene.canvas
+        })).then(function (kmlDatasource) {
+            kmlLayer = kmlDatasource;
+            var entity = kmlDatasource.entities.values[0];
+
+            viewer.zoomTo(entity);
+        });
+
+        scene.camera.flyTo({
+            destination: new Cesium.Cartesian3(-2272043.8280796595, 4586301.511822039, 4178165.942198116),
+            orientation: {
+                heading: 0.025567895440590682,
+                pitch: -1.2441455333429694,
+                roll: 6.283185307179586
+            }
+        });
+
+
+        $('#viewportType').change(function () {
+            var value = $(this).val();
+            switch (value) {
+                case "NONE":
+                    $("#split_up").css("display", "none");
+                    $("#split_bottom").css("display", "none");
+                    $("#split_left").css("display", "none");
+                    $("#split_right").css("display", "none");
+                    $("#split_vertical_trisection_left").css("display", "none");
+                    $("#split_vertical_trisection_right").css("display", "none");
+                    $('#pannel').hide();
+                    break;
+                case "HORIZONTAL":
+                    $("#split_up").css("display", "block");
+                    $("#split_bottom").css("display", "block");
+                    $("#split_left").css("display", "none");
+                    $("#split_right").css("display", "none");
+                    $("#split_vertical_trisection_left").css("display", "none");
+                    $("#split_vertical_trisection_right").css("display", "none");
+                    $('#pannel').show();
+                    $('#b_one,#b_two,#g_one,#g_two').show();
+                    $('#b_three,#g_three,#b_four,#g_four').hide();
+                    break;
+                case "VERTICAL":
+                    $("#split_up").css("display", "none");
+                    $("#split_bottom").css("display", "none");
+                    $("#split_left").css("display", "block");
+                    $("#split_right").css("display", "block");
+                    $("#split_vertical_trisection_left").css("display", "none");
+                    $("#split_vertical_trisection_right").css("display", "none");
+                    $('#pannel').show();
+                    $('#b_one,#b_two,#g_one,#g_two').show();
+                    $('#b_three,#g_three,#b_four,#g_four').hide();
+                    break;
+                case "TRIPLE":
+                    $("#split_up").css("display", "block");
+                    $("#split_bottom").css("display", "none");
+                    $("#split_left").css("display", "block");
+                    $("#split_right").css("display", "block");
+                    $("#split_vertical_trisection_left").css("display", "none");
+                    $("#split_vertical_trisection_right").css("display", "none");
+                    $('#pannel').show();
+                    $('#b_one,#b_two,#g_one,#g_two,#b_three,#g_three').show();
+                    $('#b_four,#g_four').hide();
+                    break;
+                case "VerticalTrisection":
+                    $("#split_up").css("display", "none");
+                    $("#split_bottom").css("display", "none");
+                    $("#split_left").css("display", "none");
+                    $("#split_right").css("display", "none");
+                    $("#split_vertical_trisection_left").css("display", "block");
+                    $("#split_vertical_trisection_right").css("display", "block");
+                    $('#b_one,#b_two,#g_one,#g_two,#b_three,#g_three').show();
+                    $('#b_four,#g_four').hide();
+                    $('#pannel').show();
+                    break;
+                default:
+                    $("#split_up").css("display", "block");
+                    $("#split_bottom").css("display", "block");
+                    $("#split_left").css("display", "block");
+                    $("#split_right").css("display", "block");
+                    $("#split_vertical_trisection_left").css("display", "none");
+                    $("#split_vertical_trisection_right").css("display", "none");
+                    $('#pannel').show();
+                    $('#b_one,#b_two,#g_one,#g_two,#b_three,#g_three,#b_four,#g_four').show();
+                    break;
+            }
+            scene.multiViewportMode = Cesium.MultiViewportMode[value];
+        });
+
+        $('#kml input[type=checkbox]').on("input propertychange", function (evt) {
+            var value = Number($(this).attr('data-value'));
+            kmlLayer.setVisibleInViewport(value, $(this).prop("checked"));
+        });
+        $('#loadingbar').remove();
+
+    }
+</script>
+</body>
+
+</html>

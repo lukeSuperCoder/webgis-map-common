@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>栅格运算分析</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+      <link href="./css/pretty.css" rel="stylesheet">
+    <script src="./js/Convert.js"></script>
+    <script src="./js/supermap/SuperMap.Include.js"></script>
+    <script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+    <script src="./js/config.js"></script>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<div id="toolbar" class="param-container tool-bar">
+    <button type="button" id="chooseView" class="button black">栅格运算</button>
+    <button type="button" id="clear" class="button black">移除</button>
+</div>
+<script>
+    function onload(Cesium) {
+        var urlMap = 'http://www.supermapol.com/realspace/services/map-jingjin/rest/maps/京津地区地图';
+        var urlAnalyze = 'http://www.supermapol.com/realspace/services/spatialanalyst-sample/restjsr/spatialanalyst';
+        var viewer = new Cesium.Viewer('cesiumContainer');
+        var resultLayer = undefined;
+        var imageryLayers = viewer.imageryLayers;
+        //初始化影像服务，并添加至影像图层中
+        var provider = new Cesium.SuperMapImageryProvider({
+            url : urlMap
+        });
+        var imageryLayer = imageryLayers.addImageryProvider(provider);
+        //飞行至影像图层
+        viewer.flyTo(imageryLayer);
+       document.getElementById("chooseView").onclick = function() {
+            analystProcess();
+        };
+        document.getElementById("clear").onclick = function() {
+            if(resultLayer){
+                imageryLayers.remove(resultLayer);
+                resultLayer = undefined;
+            }
+        };
+        function analystProcess() {
+            if(resultLayer){
+                imageryLayers.remove(resultLayer);
+                resultLayer = undefined;
+            }
+            var mathExpressionAnalysisService = new SuperMap.REST.MathExpressionAnalysisService(urlAnalyze, {
+                eventListeners:{
+                    "processCompleted": analystCompleted,
+                    "processFailed": analystFailed
+                }
+            });
+            //新建一个栅格代数运算参数对象
+            var mathExpressionAnalysisParameters = new SuperMap.REST.MathExpressionAnalysisParameters({
+                //指定数据集
+                dataset: "JingjinTerrain@Jingjin",
+                //要执行的栅格运算代数表达式
+                "expression": "[Jingjin.JingjinTerrain] + 600",
+                //存储结果数据集的数据源
+                "targetDatasource": "Jingjin",
+                //结果数据集名称
+                "resultGridName": "MathExpressionAnalysis_Result",
+                deleteExistResultDataset: true
+            });
+
+            mathExpressionAnalysisService.processAsync(mathExpressionAnalysisParameters);
+        }
+        function analystCompleted(args) {
+            var color1 = new SuperMap.REST.ServerColor(40,140,40),
+                    color2 = new SuperMap.REST.ServerColor(170,198,40),
+                    color3 = new SuperMap.REST.ServerColor(191,191,0),
+                    color4 = new SuperMap.REST.ServerColor(191,95,0),
+                    color5 = new SuperMap.REST.ServerColor(127,0,0),
+
+                    themeGridRangeIteme1 = new SuperMap.REST.ThemeGridRangeItem({
+                        start: 0,
+                        end: 650,
+                        color: color1
+                    }),
+                    themeGridRangeIteme2 = new SuperMap.REST.ThemeGridRangeItem({
+                        start: 650,
+                        end:  750,
+                        color: color2
+                    }),
+                    themeGridRangeIteme3 = new SuperMap.REST.ThemeGridRangeItem({
+                        start: 750,
+                        end:  900,
+                        color: color3
+                    }),
+                    themeGridRangeIteme4 = new SuperMap.REST.ThemeGridRangeItem({
+                        start: 900,
+                        end:  1350,
+                        color: color4
+                    }),
+                    themeGridRangeIteme5 = new SuperMap.REST.ThemeGridRangeItem({
+                        start: 1350,
+                        end:  3600,
+                        color: color5
+                    }),
+
+                    themeGridRange = new SuperMap.REST.ThemeGridRange({
+                        reverseColor:false,
+                        rangeMode: SuperMap.REST.RangeMode.EQUALINTERVAL,
+                        //栅格分段专题图子项数组
+                        items: [themeGridRangeIteme1,
+                            themeGridRangeIteme2,
+                            themeGridRangeIteme3,
+                            themeGridRangeIteme4,
+                            themeGridRangeIteme5
+                        ]
+                    }),
+                    themeParameters = new SuperMap.REST.ThemeParameters({
+                        //制作专题图的数据集（栅格代数运算的结果数据集）
+                        datasetNames:[args.result.dataset.split('@')[0]],
+                        dataSourceNames: ["Jingjin"],
+                        joinItems: null,
+                        //专题图对象列表
+                        themes: [themeGridRange]
+                    });
+            var themeService = new SuperMap.REST.ThemeService(urlMap, {eventListeners:{"processCompleted": themeCompleted, "processFailed": themeFailed}});
+            themeService.processAsync(themeParameters);
+        }
+
+        function analystFailed(args) {
+            alert(args.error.errorMsg);
+        }
+        function themeCompleted(themeEventArgs) {
+            var id = themeEventArgs.result.resourceInfo.id;
+            if(id) {
+                resultLayer = imageryLayers.addImageryProvider(new Cesium.SuperMapImageryProvider({
+                    url : urlMap,
+                    layersID : id
+                }));
+            }
+        }
+        function themeFailed(serviceFailedEventArgs) {
+            alert(serviceFailedEventArgs.error.errorMsg);
+        }
+
+
+    }
+</script>
+</body>
+</html>

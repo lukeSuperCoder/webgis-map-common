@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+		<title>加载地形数据操作手册</title>
+		<link rel="shortcut icon" type="image/x-icon" href="../../web/img/favicon.ico"/>
+		<script type="text/javascript" include="jquery,bootstrap,template,admin-lte,jquery.scrollto,lazyload"
+				src="../js/include-web.js" from="doc"></script>
+		<link rel="stylesheet" href="../css/common.css"/>
+		<link rel="stylesheet" href="../css/header.css"/>
+		<link rel="stylesheet" href="../css/sideBar.css"/>
+		<link rel="stylesheet" href="../css/examples.css"/>
+		<link rel='stylesheet' href='../css/sm-extend.css'/>
+		<link rel='stylesheet' href='../css/sm-doc.css'/>
+
+	</head>
+	<body class="hold-transition skin-blue sidebar-mini" data-spy="scroll" data-target="#scrollSpy">
+		<!-- ./wrapper -->
+		<div class="wrapper"></div>
+		<div id='container' class='container' style="width: 90%; padding-top: 75px;">
+			<div class='page-header'>
+				<h1>加载地形数据操作手册</h1>
+				<hr/>
+				<h2 class="title">概述<a name="Summary"> </a></h2>
+				<p>SuperMap支持对栅格数据集生成三维地形缓存，即把地形数据处理为切片（Tile）文件，以优化地形数据在服务器端发布以及在客户端的浏览性能，这样SuperMap iClient3D for WebGL(以下简称：WebGL客户端)即可访问由SuperMap iServer发布三维服务，实现加载地形数据。</p>
+				<p>本文档主要阐述了WebGL客户端实现加载浏览地形数据的详细操作流程，其主要操作过程有以下：</p>
+				<ol>
+					<ol class="list">
+						<li><a href="#01CreatCache">生成缓存数据</a></li>
+						<li><a href="#02Publish3DService">发布三维服务</a></li>
+						<li><a href="#03BrowseTerrain">客户端加载地形数据</a></li>
+					</ol>
+				</ol>
+
+				<h2 class="title">操作流程<a name="OperationFlow"></a></h2>
+				<p>下面将以示例数 “珠穆朗玛峰” 作详细操作演示。</p>
+				<h3><a name="01CreatCache"></a>1.生成缓存数据</h3>
+				<h4>使用说明</h4><br>
+				<p>本操作步骤通过SuperMap iDesktop桌面产品将地形数据生成Tin类型的三维地形缓存（*.sct）。</p>
+				<h4>操作步骤</h4><br>
+				<p>(1).	打开SuperMap  iDesktop桌面产品，在“<strong>工作空间管理器</strong>”的“<strong>数据源</strong>”处右键“<strong>打开文件型数据源</strong>”。</p>
+				<div class="pageImage"><img src="../images/TopicDOC/OpenDatasource.png" width="267" height="226">
+					<p>图 1：打开数据源</p>
+				</div>
+				<p>(2).选中想要生成地形缓存的栅格数据集，右键点击“<strong>生成场景缓存</strong>”选项。 </p>
+				<div class="pageImage"><img src="../images/TopicDOC/LoadTerrain_CreatSceneCache.png" width="305" height="411"><br>
+					<p>图 2：选择“生成场景缓存”</p>
+				</div>
+				<p>(3).弹出“<strong>生成场景缓存</strong>”对话框，如下图所示。</p>
+				<div class="pageImage"><img src="../images/TopicDOC/LoadTerrain_CreatSceneCacheDialog.png" width="688" height="636"><br>
+					<p>图 3：“生成场景缓存”对话框</p>
+				</div>
+
+				<p>(4).	数据列表中为将要生成缓存的数据集，可点击“<strong>添加数据集</strong>”或删除图标来管理将要生成缓存的数据集，对生成缓存的数据集设置以下：</p>
+				<ul>
+					<ul class="disc">
+						<li><strong>缓存类型</strong>：选择“<strong>Tin</strong>”；</li>
+						<li><strong>剖分方式</strong>：选择“<strong>球面</strong>”。</li>
+					</ul>
+				</ul>
+				<p>(5).	在对话框的“<strong>参数设置</strong>”处，设置以下：</p>
+				<ul>
+					<ul class="disc">
+						<li><strong>缓存名称：</strong>输入缓存名称，默认为“数据集名称@数据源名称”；</li>
+						<li><strong>缓存路径：</strong>设置缓存的输出路径；</li>
+						<li><strong>开始层</strong>：设置开始生成缓存的层数； </li>
+						<li><strong>结束层</strong>：设置结束生成缓存的层数<strong>；</strong> </li>
+					</ul>
+				</ul>
+				<p>(6).“缓存范围”和“比例尺”相关信息可不作更改，点击“<strong>生成</strong>”按钮，等待生成完成。 </p>
+				<h4>操作结果</h4><br>
+				<p>缓存生成完成后，打开目标路径“Terrain”文件夹，存放着一个“<strong>info.sct</strong>”文件，它为地形数据的缓存配置文件，数字命名的文件夹则存储了不同层级的地形数据，如下图所示。</p>
+				<div class="pageImage"><img src="../images/TopicDOC/LoadTerrain_SceneCacheResult.png" width="460" height="222">
+					<p>图 4：生成场景缓存结果</p>
+				</div>
+				<h3><a name="02Publish3DService"></a>2. 发布三维服务</h3>
+				<h4>使用说明</h4><br>
+				<p>在上一步骤生成了地形的缓存数据，接下来将地形缓存以三维服务形式发布到本地或远程服务器上，便于WebGL客户端加载地形服务。</p>
+				<h4>操作步骤</h4><br>
+				<p>(1)在SuperMap iDesktop桌面产品的 “<strong>工作空间管理器</strong>”中，在“<strong>场景</strong>”下右键点击“<strong>新建球面场景</strong>”。 </p>
+				<div class="pageImage"><img src="../images/TopicDOC/LoadOblique_NewScene.png">
+					<p>图 5：新建球面场景</p>
+				</div>
+				<p>(2)“<strong>图层管理器</strong>”下选中“<strong>地形图层</strong>”，右键点击“<strong>添加地形缓存</strong>”，选择上一步骤生成的*.sct文件。 </p>
+				<div class="pageImage"><img src="../images/TopicDOC/LoadTerrain_AddTerrainCache.png" width="309" height="180"><br>
+					<p>图 6：向场景添加地形缓存</p>
+				</div>
+				<p>(3)	添加地形缓存后，保存场景和工作空间，该工作空间文件将用于发布工作空间类型的三维服务。</p>
+				<p>(4)	保存工作空间后，在 <strong>%SuperMap iServer_HOME%/bin</strong> 目录下，点击“<strong>startup.bat</strong>“批处理文件，启动SuperMap iServer服务。</p>
+				<p>(5)	打开浏览器，地址栏输入<a target="_blank" href="http://localhost:8090/iserver/manager"> <u>http://localhost:8090/iserver/manager</u></a> 进入“<strong>服务管理</strong>“页面，“<strong>首页</strong>”下点击“<strong>快速发布一个或一组服务</strong>“按钮。</p>
+				<div class="pageImage"><img src="../images/TopicDOC/PublishQuickly.png">
+					<p>图 7：快速发布一个或一组服务</p>
+				</div>
+				<p>(6)	弹出“<strong>快速发布服务-选择发布的数据来源</strong>”对话框，在”<strong>数据来源</strong>“处选择”<strong>工作空间</strong>“，点击”<strong>下一步</strong>“。</p>
+				<div class="pageImage"><img src="../images/TopicDOC/DataSource.png">
+					<p>图 8：数据来源选择工作空间</p>
+				</div>
+				<p>(7)	弹出“<strong>快速发布服务-配置数据</strong>“对话框，点击”<strong>远程浏览</strong>“按钮选择前述所保存的工作空间，点击”<strong>下一步</strong>“。</p>
+				<div class="pageImage"><img src="../images/TopicDOC/LoadTerrain_SelectWorkspace.png" width="728" height="278">
+					<p>图 9：选择工作空间配置数据</p>
+				</div>
+				<p>(8)	弹出“<strong>快速发布服务-选择发布的服务类型</strong>“对话框，勾选”<strong>REST-三维服务</strong>“，点击”<strong>下一步</strong>“。</p>
+				<div class="pageImage"><img src="../images/TopicDOC/Select3DService.png">
+					<p>图 10：勾选三维服务</p>
+				</div>
+				<p>至此，服务发布已配置完成，按照提示点击“<strong>完成</strong>“和”<strong>关闭</strong>“按钮。</p>
+
+				<h4>操作结果</h4><br>
+				<p>服务发布完成后，将在服务列表（<a target="_blank" href="http://localhost:8090/iserver/services">http://localhost:8090/iserver/services</a>）中显示该三维服务，如下图所示。</p>
+				<div class="pageImage"><img src="../images/TopicDOC/LoadTerrain_PublishServiceResult.png" width="248" height="281">
+					<p>图 11：三维服务下显示新发布的服务</p>
+				</div>
+				<h3><a name="03BrowseTerrain"></a>3. 客户端加载地形数据</h3>
+				<h4>使用说明</h4><br>
+				<p>发布了三维服务以后，在此步骤中便可通过WebGL客户端浏览地形数据。</p>
+				<p class="STYLE2">提示：在操作前请将WebGL产品包存放在<strong> %SuperMap iServer_HOME%/webapps</strong> 目录下。</p>
+				<h4>操作步骤</h4><br>
+				<p>(1)	获取三维数据url地址，按照如下顺序点击获取：</p>
+				<ul>
+					<ul class="disc">
+						<li>进入服务列表页面（<a target="_blank" href="http://localhost:8090/iserver/services"><u>http://localhost:8090/iserver/services</u></a>），找到并点击上一步骤所发布的三维服务；</li>
+						<li>进入“<strong>根目录</strong>“页面，点击”<strong>realspace</strong>“；</li>
+						<li>进入”<strong>三维服务根节点</strong><strong>(3D)</strong>“页面，点击“<strong>datas</strong>“；</li>
+						<li>进入”<strong>三维数据列表(datas)</strong>“页面，点击“<strong>三维数据集列表“</strong>下的链接；</li>
+						<li>进入“<strong>三维数据资源</strong><strong>(data)</strong>“页面，复制此时浏览器地址栏的<strong>url</strong><strong>地址</strong>。 </li>
+					</ul>
+				</ul>
+
+				<div class="pageImage"><img src="../images/TopicDOC/LoadTerrain_CopyConfig.png" width="758" height="64">
+					<p>图 12：复制url地址</p>
+				</div>
+				<p>(2)	进入WebGL产品包存放路径（<strong>%SuperMap iServer_HOME%/webapps</strong>），在“examples”文件夹下，文本方式打开“<strong>terrainAndImagery.html</strong>“范例，修改如下图的内容。</p>
+
+				<div class="pageImage"><img src="../images/TopicDOC/LoadTerrain_ModifySample.png" width="652" height="436">
+					<p>图 13：修改范例部分参数</p>
+				</div>
+
+				<p>(3)	以localhost方式打开“<strong>terrainAndImagery</strong>.html “网页，浏览器输入地址即为：<u>http://localhost:8090/%WebGL产品包%/examples/terrainAndImagery.html</u></p>
+				<h4>操作结果</h4><br>
+				<p>打开网页后，相机飞至地形数据所在位置，显示效果如下图：</p>
+				<div class="pageImage"><img src="../images/TopicDOC/LoadTerrain_BrowseResult.jpg" >
+					<p>图 14：WebGL浏览地形数据效果</p>
+				</div>
+				<p>注：上图效果为加载了影像数据和地形数据的效果，加载影像数据相关操作请参考 <a href="LoadImagery_OperateTopic.html" target="_blank"><strong>加载影像数据</strong> </a>操作文档。 </p>
+			</div>
+			<!--法律申明-->
+			<div class='footer'>
+				<p>版权所有&nbsp;&copy; 2000-2018. &nbsp;北京超图软件股份有限公司</p>
+			</div>
+		</div>
+		<script type="text/javascript" src="../js/utils.js"></script>
+		<script>
+			$('.wrapper').load("../template/example-pure.html", function () {
+				utils.loadTemplate(".icl-header", "../template/header-doc.html", {});
+				//var $body = $('body');
+				//$body.append("<script type='text/javascript' src='../js/common.js'><\/script>");
+			});
+		</script>
+	</body>
+</html>

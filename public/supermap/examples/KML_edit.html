@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>改变模型属性</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link href="./css/bootstrap.min.css" rel="stylesheet">
+    <link href="./css/pretty.css" rel="stylesheet">
+    <script type="text/javascript" src="./js/jquery.min.js"></script>
+    <script src="./js/slider.js"></script>
+    <script type="text/javascript" src="./js/saveKml.js"></script>
+    <script type="text/javascript" src="./js/sweetalert-dev.js"></script>
+    <link rel="stylesheet" href="./css/sweetalert.css">
+    <script src="./js/config.js"></script>
+    <script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+    <style>
+        input[type=range]{
+            width: 180px;
+        }
+    </style>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<div id='loadingbar' class="spinner">
+    <div class="spinner-container container1">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container2">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container3">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+</div>
+<div id="toolbar" class="param-container tool-bar">
+    <div style="margin: 10px 0px;">
+        <b>改变位置</b>
+        <input type="range" id="changePosition" min="0" max="13" value="0" >
+    </div>
+    <div style="margin: 10px 0px;">
+        <b>旋转角度</b>
+        <input type="range" id="rotate" min="0" max="60"  value="38" >
+    </div>
+    <div style="margin: 10px 0px;">
+        <b>模型大小</b>
+        <input type="range" id="setSize" min="1" max="8"  value="0">
+    </div>
+</div>
+<script>
+    var host = document.location.toString().match(/file:\/\//)?"http://localhost:8090":'http://' + document.location.host;
+    var nodeAnimationFlag = false;
+	function onload(Cesium) {
+        // 初始化viewer部件
+        var viewer = new Cesium.Viewer('cesiumContainer', {
+            shouldAnimate : true
+        });
+        viewer.imageryLayers.addImageryProvider(new Cesium.BingMapsImageryProvider({
+            url : 'https://dev.virtualearth.net',
+            mapStyle : Cesium.BingMapsStyle.AERIAL,
+            key : URL_CONFIG.BING_MAP_KEY
+        }));
+        $('#loadingbar').remove();
+        $('#toolbar').show();
+	    var scene = viewer.scene;
+	    var widget = viewer.cesiumWidget;
+	    try{
+            //添加S3M图层服务
+	        var promise = scene.open(URL_CONFIG.SCENE_JINJIANG);
+	        Cesium.when(promise,function(layers){
+                //设置相机视角
+                scene.camera.setView({
+                    // 将经度、纬度、高度的坐标转换为笛卡尔坐标
+                    destination : new Cesium.Cartesian3(-2766967.8696000027,5085877.1891168635,2675924.36658061),
+                    orientation : {
+                        heading : 3.565555409627933,
+                        pitch : -0.4710172758562683,
+                        roll : 6.085087989049498e-11
+                    }
+                });
+	        },function(e){
+	            if (widget._showRenderLoopErrors) {
+	                var title = '渲染时发生错误，已停止渲染。';
+	                widget.showErrorPanel(title, undefined, e);
+	            }
+	        });
+	    }
+	    catch(e){
+	        if (widget._showRenderLoopErrors) {
+	            var title = '渲染时发生错误，已停止渲染。';
+	            widget.showErrorPanel(title, undefined, e);
+	        }
+	    }
+
+
+		function createNodeAnimatinModel(line){
+  			var length = line._actualPositions.length;
+  			var start = Cesium.JulianDate.fromDate(new Date());
+  			var stop = Cesium.JulianDate.addSeconds(start, length*10 , new Cesium.JulianDate());
+  			viewer.clock.startTime = start.clone();
+  			viewer.clock.stopTime = stop.clone();
+  			viewer.clock.currentTime = start.clone();
+
+  			viewer.clock.multiplier = 2.5 ;
+  			var position = computeCirclularFlight(line,start,stop);
+
+  			if(typeof nodeAnimationModel !== "undefined"){
+  				nodeAnimationModel.show = true;
+  				nodeAnimationModel.availability = new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+  					start : start,
+  					stop : stop
+  				})]);
+  				nodeAnimationModel.position = position;
+  				nodeAnimationModel.orientation = new Cesium.VelocityOrientationProperty(position);
+  			}
+  			else{
+  				nodeAnimationModel = viewer.entities.add({
+  					availability : new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+  						start : start,
+  						stop : stop
+  					})]),
+  					position : position,
+  					orientation : new Cesium.VelocityOrientationProperty(position),
+  					model : {
+  						uri : './SampleData/models/CesiumGround/Cesium_Ground.gltf',
+  						minimumPixelSize : 16,
+  						maximumScale : 16
+  					}
+  				});
+  			}
+		}
+
+		var nodeAnimation = function(){
+  			var picDiv = document.getElementById("picNodeAnimation");
+  			if(!nodeAnimationFlag){
+  				if(typeof lineHandler === "undefined"){
+  					lineHandler = new Cesium.PolylineHandler(scene);
+  					lineHandler.drawCompletedEvent.addEventListener(function(line){
+  						createNodeAnimatinModel(line);
+  						nodeAnimationModel.show = true;
+  						nodeAnimationFlag = true;
+  					});
+  					lineHandler.activate();
+  				}
+  				else{
+  					lineHandler.activate();
+  				}
+  			}
+  			else{
+  				if(typeof nodeAnimationModel !== "undefined"){
+  					nodeAnimationModel.show = false;
+  				}
+  				lineHandler.deactivate();
+  				lineHandler.polylines.removeAll();
+  				nodeAnimationFlag = false;
+          delete nodeAnimationModel.currentPosition;
+  			}
+		}
+
+		function computeCirclularFlight(line,start,stop) {
+		    var length = line._actualPositions.length;
+		    var property = new Cesium.SampledPositionProperty();
+		    var point = [];
+			  var sum = 0;
+		    for (var i = 0; i < length; i ++) {
+				var position = line._actualPositions[i];
+				if(i > 0){
+					var prepostion = line._actualPositions[i-1];
+					var distance = Cesium.Cartesian3.distance(position, prepostion);
+				}
+				sum += distance || 0;
+				var time = Cesium.JulianDate.addSeconds(start, sum/20, new Cesium.JulianDate());
+				if(i === length - 1){
+		            viewer.clock.stopTime = time;
+		        }
+		        property.addSample(time, position);
+		    }
+		    return property;
+		}
+
+    var rotate = function(value){
+        if(viewer.dataSources.length === 0){
+            sweetAlert("error", "Please add KML file firstly", "error");
+            return ;
+        }
+        var entity = viewer.dataSources._dataSources[0]._entityCollection._entities._array[0];
+        if(!Cesium.defined(entity.currentPosition)){
+            var position = entity.position;
+            var time = position._composite.intervals._intervals[0].stop;
+            entity.currentPosition = position.getValue(time);
+        }
+        entity.orientation = Cesium.Transforms.headingPitchRollQuaternion(entity.currentPosition, new Cesium.HeadingPitchRoll(value/10, 0, 0));
+    }
+
+    var changePosition = function(value){
+        var sceme = viewer.scene;
+        if(viewer.dataSources.length === 0){
+            sweetAlert("error", "Please add KML file firstly", "error");
+            return ;
+        }
+        var entity = viewer.dataSources._dataSources[0]._entityCollection._entities._array[0];
+        if(!Cesium.defined(entity.currentPosition)){
+            var position = entity.position;
+            var time = position._composite.intervals._intervals[0].stop;
+            entity.currentPosition = position.getValue(time);
+        }
+        var coordinate = Cesium.Cartographic.fromCartesian(entity.currentPosition);
+        var longitude = Cesium.Math.toDegrees(coordinate.longitude);
+        var latitude = Cesium.Math.toDegrees(coordinate.latitude);
+        var height = coordinate.height;
+        longitude -= value/50000;
+        latitude -= value/50000;
+        var newPosition = Cesium.Cartesian3.fromDegrees(longitude, latitude, height);
+        entity.position = newPosition;
+    }
+
+    var bigger = function(){
+        if(viewer.dataSources.length === 0){
+            sweetAlert("error", "Please add KML file firstly", "error");
+            return ;
+        }
+        var entity = viewer.dataSources._dataSources[0]._entityCollection._entities._array[0];
+        if(!Cesium.defined(entity.model.scale)){
+            entity.model.scale = 1;
+        }
+        entity.model.scale = entity.model.scale._value + 1;
+    }
+
+    var smaller = function(){
+        if(viewer.dataSources.length === 0){
+            sweetAlert("error", "Please add KML file firstly", "error");
+            return ;
+        }
+        var entity = viewer.dataSources._dataSources[0]._entityCollection._entities._array[0];
+        if(!Cesium.defined(entity.model.scale)){
+            entity.model.scale = 1;
+        }
+        if(entity.model.scale._value > 1){
+            entity.model.scale = entity.model.scale._value - 1;
+        }
+    }
+
+    var setSize = function(size){
+        var entity = viewer.dataSources._dataSources[0]._entityCollection._entities._array[0];
+        entity.model.scale = size;
+    }
+    
+    viewer.dataSources.removeAll();
+    viewer.dataSources.add(Cesium.KmlDataSource.load('./SampleData/kml/model.kml',{
+        camera : viewer.scene.camera,
+        canvas : viewer.scene.canvas
+    })).then(function(dataSource){
+        viewer.clock.clockRange = Cesium.ClockRange.CLAMPED;
+    });
+
+    var saveAsKml = function(){
+        saveKml(Cesium, viewer);
+    }
+    
+    $('#rotate').bind('input propertychange',function(){
+        var value = Number($(this).val());
+        rotate(value);
+    });
+    $('#changePosition').bind('input propertychange',function(){
+        var value = Number($(this).val());
+        changePosition(value);
+    });
+    $('#setSize').bind('input propertychange',function(){
+        var value = Number($(this).val());
+        setSize(value);
+    });
+  }
+</script>
+</body>
+</html>

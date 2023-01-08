@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>热力图（几何对象）</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link href="./css/pretty.css" rel="stylesheet">
+    <script src="./js/jquery.min.js"></script>
+    <script src="./js/heatmap.min.js"></script>
+    <script src="./js/config.js"></script>
+    <script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<div id='loadingbar' class="spinner">
+    <div class="spinner-container container1">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container2">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container3">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+</div>
+<div class="heatmap" style="overflow: hidden; width: 840px;height: 400px;">
+    <div class="heatmap-canvas" width="800" height="400" >
+    </div>
+</div>
+<div class="heatmapBump" style="overflow: hidden; width: 840px;height: 400px;">
+    <div id="heatmapBump-canvas" width="800" height="400" >
+    </div>
+</div>
+<script>
+    var len = 200;
+    var points = [];
+    var max = 0;
+    var width = 800;
+    var height = 400;
+    while(len--) {
+        var val = Math.floor(Math.random()*100);
+        max = Math.max(max, val);
+        var point = {
+            x : Math.floor(Math.random()*width),
+            y : Math.floor(Math.random()*height),
+            value : val
+        };
+        points.push(point)
+    }
+    var data = {
+        max : max,
+        data : points
+    }
+
+    var heatmapInstance = h337.create({
+        container : document.querySelector('.heatmap'),
+        gradient: {
+            0.25: "rgb(0,0,255)", 0.55: "rgb(0,255,0)", 0.85: "yellow", 1.0: "rgb(255,0,0)"
+        }
+    });    
+    heatmapInstance.setData(data);
+    var mycanvas=document.getElementsByClassName("heatmap-canvas");
+    var imgData= mycanvas[1].toDataURL("image/png");
+
+    var heatmapInstance4Bump= h337.create({
+        container : document.querySelector('.heatmap'),
+        gradient: {
+            0.25: "rgb(0,0,0)", 0.55: "rgb(140,140,140)", 0.85: "rgb(216,216,216)", 1.0: "rgb(255,255,255)"
+        }
+    });
+    heatmapInstance4Bump.setData(data);
+
+    var mycanvasBump=document.getElementsByClassName("heatmap-canvas");
+    var imgDataBump= mycanvasBump[2].toDataURL("image/png");
+
+    function onload(Cesium) {
+        var viewer = new Cesium.Viewer('cesiumContainer');
+        viewer.imageryLayers.addImageryProvider(new Cesium.BingMapsImageryProvider({
+            url : 'https://dev.virtualearth.net',
+            mapStyle : Cesium.BingMapsStyle.AERIAL,
+            key : URL_CONFIG.BING_MAP_KEY
+        }));
+
+        var scene = viewer.scene;
+        var promise = scene.open(URL_CONFIG.SCENE_CBD);
+        Cesium.when(promise,function(layer){
+            //设置相机位置、视角，便于观察场景
+            scene.camera.setView({
+                destination : new Cesium.Cartesian3.fromDegrees(116.4599,39.8876,1185),
+                orientation : {
+                    heading : 5.9011296292912405,
+                    pitch : -0.406860014080324,
+                    roll : 6.281842489230373
+                }
+            });
+        },function(e){
+            if (widget._showRenderLoopErrors) {
+                var title = '加载SCP失败，请检查网络连接状态或者url地址是否正确？';
+                widget.showErrorPanel(title, undefined, e);
+            }
+        });
+
+        var renderstate = Cesium.RenderState.fromCache({
+            cull : {
+                enabled : true
+            },
+            depthTest : {
+                enabled : true
+            },
+            stencilTest : {
+                enabled : true,
+                frontFunction : Cesium.StencilFunction.ALWAYS,
+                frontOperation : {
+                    fail : Cesium.StencilOperation.KEEP,
+                    zFail : Cesium.StencilOperation.KEEP,
+                    zPass : Cesium.StencilOperation.REPLACE
+                },
+                backFunction : Cesium.StencilFunction.ALWAYS,
+                backOperation : {
+                    fail : Cesium.StencilOperation.KEEP,
+                    zFail : Cesium.StencilOperation.KEEP,
+                    zPass : Cesium.StencilOperation.REPLACE
+                },
+                reference : 0x2,
+                mask : 0x2
+            },
+            blending : Cesium.BlendingState.ALPHA_BLEND
+        });
+
+        var scene = viewer.scene;
+        var rectangle = scene.primitives.add(new Cesium.Primitive({
+            geometryInstances : new Cesium.GeometryInstance({
+                geometry : new Cesium.RectangleGeometry({
+                    rectangle : Cesium.Rectangle.fromDegrees(116.4463,39.8999,116.4563,39.9119),
+                    vertexFormat : Cesium.EllipsoidSurfaceAppearance.VERTEX_FORMAT,
+                    height : 500.0,
+                    granularity:Math.PI / (180.0*20000),
+                    outlineColor : Cesium.Color.RED,
+                    rotation:Math.PI/2
+                })
+            }),
+            appearance : new Cesium.EllipsoidSurfaceAppearance({
+                aboveGround : true,
+                renderState:renderstate,
+                vertexShaderSource:"attribute vec3 position3DHigh;\n\
+                                    attribute vec3 position3DLow;\n\
+                                    attribute vec2 st;\n\
+                                    attribute float batchId;\n\
+                                    uniform sampler2D bumpMap_3;\n\
+                                    varying vec3 v_positionMC;\n\
+                                    varying vec3 v_positionEC;\n\
+                                    varying vec2 v_st;\n\
+                                    void main()\n\
+                                    {\n\
+                                    vec4 p = czm_computePosition();\n\
+                                    v_positionMC = position3DHigh + position3DLow;\n\
+                                    v_positionEC = (czm_modelViewRelativeToEye * p).xyz;\n\
+                                    v_st = st;\n\
+                                    vec4 color = texture2D(bumpMap_3, v_st);\n\
+                                    float centerBump = color.r;\n\
+                                    vec3 normalPoint = czm_geodeticSurfaceNormal(p.xyz+czm_cameraPositionWC.xyz, vec3(0.0), vec3(1.0));\n\
+                                    vec3 result = normalPoint * centerBump * 61.8;\n\
+                                    p +=vec4(result.xyz,0.0);\n\
+                                    gl_Position = czm_modelViewProjectionRelativeToEye * p;\n\
+                                    }\n\
+                                    "
+            })
+        }));
+
+        rectangle.appearance.material = new Cesium.Material({
+            fabric : {
+                uniforms : {
+                    image : imgData,
+                    repeat : new Cesium.Cartesian2(1.0, 1.0),
+                    color: new Cesium.Color(1.0, 1.0, 1.0, 1.0),
+                    bumpMap:imgDataBump
+                },
+                components : {
+                    diffuse : 'texture2D(image, fract(repeat * materialInput.st)).rgb * color.rgb',
+                    alpha : 'texture2D(image, fract(repeat * materialInput.st)).a * color.a'
+                }
+            },
+            translucent : function(material) {
+                return true;
+            }
+        });
+        $('#loadingbar').remove();
+    }
+</script>
+</body>
+</html>

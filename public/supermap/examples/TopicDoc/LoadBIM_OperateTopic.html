@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<title>加载BIM及精细模型操作手册</title>
+		<link rel="shortcut icon" type="image/x-icon" href="../../web/img/favicon.ico"/>
+		<meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+		<script type="text/javascript" include="jquery,bootstrap,template,admin-lte,jquery.scrollto,lazyload"
+				src="../js/include-web.js" from="doc"></script>
+		<link rel="stylesheet" href="../css/common.css"/>
+		<link rel="stylesheet" href="../css/examples.css"/>
+		<link rel="stylesheet" href="../css/header.css"/>
+		<link rel='stylesheet' href='../css/sm-extend.css'/>
+		<link rel='stylesheet' href='../css/sm-doc.css' />
+	</head>
+	<body class="hold-transition skin-blue sidebar-mini" data-spy="scroll" data-target="#scrollSpy">
+
+		<!-- ./wrapper -->
+		<div class="wrapper"></div>
+
+		<div id='container' class='container' style="width: 90%; padding-top: 75px;">
+			<div class='page-header'>
+				<h1>加载BIM及精细模型操作手册</h1>
+				<hr/>
+				<h2 class="title">概述<a name="Summary"> </a></h2>
+				<p>SuperMap支持模型数据集、复合数据集生成三维切片缓存（OSGB），为了优化模型在网络环境中的传输和解析，SuperMap iClient3D  for WebGL(以下简称WebGL客户端)采用三维切片缓存（*.S3M）格式存储与发布模型数据，可提高浏览性能和效率。 </p>
+				<p>借鉴于“WebGL客户端加载倾斜摄影模型”思路，WebGL客户端加载BIM、精细模型亦可按同样过程处理，WebGL客户端实现浏览BIM模型及精细模型数据的大致操作流程有以下： </p>
+				<ol>
+					<ol class="list">
+						<li><a href="#01CreatCache">生成OSGB缓存</a></li>
+						<li><a href="#02CreatS3M">生成S3M数据</a></li>
+						<li><a href="#03Publish3DService">发布三维服务</a></li>
+						<li><a href="#04BrowseModel">客户端浏览三维模型</a></li>
+					</ol>
+				</ol>
+				<p>BIM或精细模型生成OSGB缓存后，第2-3步骤与倾斜摄影模型处理方法相同，此部分操作可直接参照<a href="LoadObliqueModel_OperateTopic.html" target="_blank"> WebGL加载倾斜摄影模型操作手册</a>。本文档主要阐述了BIM或精细模型如何生成OSGB缓存的操作过程。</p>
+				<h2 class="title">操作流程<a name="OperationFlow"></a></h2>
+				<p>下面将以示例数据“鸟巢五期”作详细操作演示。 </p>
+				<h3><a name="01CreatCache"></a>1.生成OSGB缓存</h3>
+				<h4>使用说明</h4><br>
+				<p>SuperMap支持模型数据集、复合数据集生成OSGB缓存，本操作所用数据为复合(CAD)数据集。</p>
+				<h4>操作步骤</h4><br>
+				<p>(1).打开SuperMap iDesktop桌面产品，打开数据源，将CAD数据集添加到新球面场景中。  </p>
+				<p>(2).在不选中任何对象时，在场景窗口中右键选择“<strong>生成场景缓存…</strong>”命令。 </p>
+				<div class="pageImage"><img src="../images/TopicDOC/LoadBIM_SelectCreatSceneCache.png" width="224" height="194">
+					<p>图 1：“生成倾斜摄影配置文件”对话框</p>
+				</div>
+				<p>(3).弹出“<strong>生成整个场景缓存</strong>”对话框，如下图所示：</p>
+				<div class="pageImage"><img src="../images/TopicDOC/LoadBIM_SceneCacheDialog.png" width="688" height="664">
+					<p>图 2：“生成整个场景缓存”对话框</p>
+				</div>
+				<p>(4).数据列表中为将要生成缓存的数据集，可点击“<strong>添加数据集</strong>”或删除图标来管理将要生成缓存的数据集，对生成缓存的数据集设置以下。 </p>
+				<ul>
+					<ul class="disc">
+						<li><strong>缓存类型</strong>：选择“<strong>OSGB模型</strong>”类型；</li>
+						<li><strong>场景类型</strong>：选择“<strong>球面</strong>”。 </li>
+					</ul>
+				</ul>
+				<p>(5).在对话框的“<strong>场景</strong>”处，设置以下： </p>
+				<ul>
+					<ul class="disc">
+						<li><strong>缓存用途：</strong>选择适用的设备类型；</li>
+						<li><strong>缓存名称：</strong>默认为“数据集名称@数据源名称”；</li>
+						<li><strong>缓存路径：</strong>设置缓存的输出路径；</li>
+						<li><strong>存储类型：</strong>选择“<strong>紧凑</strong>”方式；</li>
+						<li><strong>LOD</strong><strong>层级</strong>：根据需求设置LOD层级数及距离； </li>
+					</ul>
+				</ul>
+				<p>(6). 设置完毕，点击“<strong>生成</strong>”按钮，等待生成完成。 </p>
+				<h4>操作结果</h4><br>
+				<p>缓存生成后，在目标路径下保存了一个*.scp配置文件及多个存储了模型数据的文件夹，打开其中一个文件夹，存有多个*.OSGB文件，如下图所示。 </p>
+				<div class="pageImage"><img src="../images/TopicDOC/LoadBIM_SceneCacheResult.png" width="438" height="491">
+					<p>图 3：生成OSGB缓存结果</p>
+				</div>
+				<h3><a name="02CreatS3M"></a>2. 生成S3M数据</h3>
+				<h4>操作说明</h4>
+				<p>利用上一步骤生成的*scp配置文件，通过SuperMap iDesktop桌面的“生成S3M数据”工具将三维切片缓存（*.OSGB）转换为三维切片缓存（*.S3M）数据。</p>
+				<h4>操作步骤</h4>
+				<p>详细操作参考<a href="LoadObliqueModel_OperateTopic.html" target="_blank">WebGL加载倾斜摄影模型操作手册</a>。</p>
+				<h4>操作结果</h4>
+				<p>此步骤生成了与OSGB文件结构一致的目标文件夹，目标文件夹中也存在着一个scp文件，便于SuperMap产品加载模型数据。 </p>
+				<div class="pageImage"><img src="../images/TopicDOC/LoadBIM_OSGB2S3MResult.png" width="461" height="475">
+					<p>图 4：生成S3M数据结果</p>
+				</div>
+				<h3><a name="03Publish3DService"></a>3. 发布三维服务</h3>
+				<h4>使用说明</h4><br>
+				<p>此步骤将OSGB格式的模型以三维服务的形式发布到本地或远程服务器上。</p>
+				<h4>操作步骤</h4><br>
+				<p>详细操作请参照 <a href="LoadObliqueModel_OperateTopic.html" target="_blank">WebGL加载倾斜摄影模型操作手册</a>。</p>
+				<h4>操作结果</h4><br>
+				<p>本操作发布了一个名为“OSGB_niaocaoModel”的三维服务，见如下图的服务列表。 </p>
+				<div class="pageImage"><img src="../images/TopicDOC/LoadBIM_PublishResult.png" width="513" height="242">
+					<p>图 5：三维服务下显示新发布的服务</p>
+				</div>
+				<h3><a name="04BrowseModel"></a>4. 客户端浏览三维模型</h3>
+				<h4>使用说明</h4><br>
+				<p>发布三维服务后，修改WebGL产品包“<strong>examples</strong><strong>”</strong>文件夹下范例“<strong>S3MTiles.html</strong>“相关参数。</p>
+				<h4>操作步骤</h4><br>
+				<p>详细操作参考 <a href="LoadObliqueModel_OperateTopic.html" target="_blank">WebGL加载倾斜摄影模型操作手册</a>。 </p>
+				<h4>操作结果</h4><br>
+				<p>打开网页后，相机飞至精细模型所在位置，显示效果如下图： </p>
+				<div class="pageImage"><img src="../images/TopicDOC/LoadBIM_BrowseModel.jpg">
+					<p>图 6：WebGL浏览精细模型效果图</p>
+				</div>
+			</div>
+			<!--法律申明-->
+			<div class='footer'>
+				<p>版权所有&nbsp;&copy; 2000-2018. &nbsp;北京超图软件股份有限公司</p>
+			</div>
+		</div>
+		<script type="text/javascript" src="../js/utils.js"></script>
+		<script>
+			$('.wrapper').load("../template/example-pure.html", function () {
+				utils.loadTemplate(".icl-header", "../template/header-doc.html", {});
+				//var $body = $('body');
+				//$body.append("<script type='text/javascript' src='../js/common.js'><\/script>");
+			});
+		</script>
+	</body>
+</html>

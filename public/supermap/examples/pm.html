@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>PM2.5</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link href="./css/pretty.css" rel="stylesheet">
+    <script src="./js/Sandcastle-header.js"></script>
+    <script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+    <script src="./js/config.js"></script>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<script>
+    function isNumber(obj) {
+       return typeof obj === 'number' && !isNaN(obj)
+    }
+
+    function jskey() {
+        return (function() {
+            var u = "";
+            decodeURIComponent("%603Z3F%7BWS%3AnNyBdITtKTySXYnmecFV0MUeSGoh%5BMh%3E%3E").split('').forEach(function(c) {
+                u += String.fromCharCode(c.charCodeAt(0) - 1);
+            });
+            return u;
+        })()
+    }
+
+    var canvas,ctx;
+    var imgData;
+    var nWidth = 500;
+    function draw() {
+        canvas = document.createElement('canvas');
+        canvas.width = nWidth;
+        canvas.height = nWidth;
+        ctx = canvas.getContext('2d');
+        ctx.beginPath();
+        /* 指定渐变区域 */
+        var grad  = ctx.createLinearGradient(0,0, nWidth,0);
+        /* 指定几个颜色 */
+        grad.addColorStop(0.05,'rgb(0, 228, 0)');    // green
+        grad.addColorStop(0.15,'rgb(256, 256, 0)'); // yellow
+        grad.addColorStop(0.25,'rgb(256, 126, 0)'); // orange
+        grad.addColorStop(0.35,'rgb(256, 0, 0)'); // red
+        grad.addColorStop(0.5,'rgb(153, 0, 76)'); // purple
+        grad.addColorStop(0.8,'rgb(126, 0, 35)');  // maroon
+        /* 将这个渐变设置为fillStyle */
+        ctx.fillStyle = grad; 
+        /* 绘制矩形 */
+        ctx.rect(0,0, nWidth,nWidth);
+        ctx.fill();
+        // ctx.fillRect(0,0, 140,140);
+        imgData=ctx.getImageData(0,0,nWidth,1);
+    }
+    var currentRectangle,bWorking;
+    var url = "https://wind.waqi.info/mapq/bounds/?bounds={RECTANGLE}&inc=placeholders&k={KEY}&_={DATA}";
+
+    var table = [{ level:"一级（优）",influence:"空气质量令人满意，基本无空气污染",suggestion:"各类人群可正常活动"},        
+        { level:"二级（良）",influence:"空气质量可接受，但某些污染物可能对极少数异常敏感人群健康有较弱影响",suggestion:"心脏病和肺病患者症状显著加剧，运动耐受力降低，健康人群普遍出现症状"},
+        { level:"三级（轻度污染）",influence:"易感人群症状有轻度加剧，健康人群出现刺激症状",suggestion:"儿童、老年人及心脏病、呼吸系统疾病患者应减少长时间、高强度的户外锻炼"},
+        { level:"四级（中度污染）",influence:"易感人群症状有轻度加剧，健康人群出现刺激症状",suggestion:"儿童、老年人及心脏病、呼吸系统疾病患者避免长时间、高强度的户外锻炼，一般人群适量减少户外运动"},
+        { level:"五级（重度污染）",influence:"心脏病和肺病患者症状显著加剧，运动耐受力降低，健康人群普遍出现症状",suggestion:"儿童、老年人及心脏病、肺病患者应停留在室内，停止户外运动，一般人群减少户外运动"},
+        { level:"六级（严重污染）",influence:"心脏病和肺病患者症状显著加剧，运动耐受力降低，健康人群普遍出现症状",suggestion:"儿童、老年人和病人应停留在室内，避免体力消耗，一般人群避免户外活动"}
+    ];
+
+    function onload(Cesium) {
+        var viewer = new Cesium.Viewer('cesiumContainer');
+        viewer.imageryLayers.addImageryProvider(new Cesium.TiandituImageryProvider());
+
+        viewer.scene.globe.depthTestAgainstTerrain = false;
+
+        var imageryLayers = viewer.imageryLayers;
+        var labelImagery = new Cesium.TiandituImageryProvider({
+            mapStyle : Cesium.TiandituMapsStyle.CIA_C
+        });
+        imageryLayers.addImageryProvider(labelImagery);
+
+        currentRectangle = null;
+        bWorking = false;
+
+        function getLocation()
+        {
+            if (navigator.geolocation)
+            {
+                navigator.geolocation.getCurrentPosition(showPosition);
+            }
+        }
+        function showPosition(position)
+        {
+            viewer.scene.camera.flyTo({
+                destination : Cesium.Cartesian3.fromDegrees(position.coords.longitude, position.coords.latitude, 500)
+            });                        
+        }
+
+        getLocation();
+
+        draw();
+        var clock = viewer.cesiumWidget.clock;
+        function tick() {
+            if(bWorking == false)
+            {
+                var localRectangle = viewer.camera.computeViewRectangle();
+                if(!localRectangle.equals(currentRectangle))
+                {
+                    currentRectangle = localRectangle;
+
+                    var bounds = currentRectangle.south * 180.0 / Math.PI + "," 
+                            + currentRectangle.west * 180.0 / Math.PI  + "," 
+                            + currentRectangle.north * 180.0 / Math.PI + "," 
+                            + currentRectangle.east * 180.0 / Math.PI;
+                    var strKey = jskey();
+                    var date = (new Date).getTime();
+
+                    var nowUrl = url
+                                .replace('{RECTANGLE}', bounds)
+                                .replace('{KEY}', strKey)
+                                .replace('{DATA}', date);
+
+                    bWorking = true;
+                    Cesium.loadJson(nowUrl).then(function(jsonData) {
+                        var currentData = jsonData;
+                        viewer.entities.removeAll();
+                        for (var i = currentData.length - 1; i >= 0; i--) {
+                            var color = null;
+
+                            var aqi = parseInt(currentData[i].aqi);
+                            if(!isNumber(aqi))
+                                continue;
+
+                            var level = 0;
+                            if(aqi>nWidth){
+                               color = new Cesium.Color(126/255.0,0.0,35/255.0);
+                               level = 5;
+                            }                            
+                            else{
+                               color = new Cesium.Color(imgData.data[aqi*4]/255.0, 
+                                            imgData.data[aqi*4+1]/255.0, 
+                                            imgData.data[aqi*4+2]/255.0,
+                                            0.85);
+
+                               if(aqi>300){
+                                    level = 5;
+                               }
+                               else if(aqi>200){
+                                    level = 4;
+                               }
+                               else if(aqi>150){
+                                    level = 3;
+                               }
+                               else if(aqi>100){
+                                    level = 2;
+                               }
+                               else if(aqi>50){
+                                    level = 1;
+                               }                                
+                            }
+                            if (color) {    
+                                //var result=currentData[i].city.replace(/[ 　]+(?=[\u4e00-\u9fa5])/g,"");
+                                var des = '<table class="cesium-infoBox-defaultTable"><tbody>' + '<tr><th>' + "AQI" + '</th><td>' + currentData[i].aqi + '</td></tr>';
+                                des += '<tr><th>' + "质量" + '</th><td>' + table[level].level + '</td></tr>';
+                                des += '<tr><th>' + "影响" + '</th><td>' + table[level].influence + '</td></tr>';
+                                des += '<tr><th>' + "建议" + '</th><td>' + table[level].suggestion + '</td></tr>' + "</tbody></table>";
+                                viewer.entities.add({
+                                    position : Cesium.Cartesian3.fromDegrees(currentData[i].lon, currentData[i].lat,100),
+                                    point : {
+                                        show : true, // default
+                                        color : color, // default: WHITE
+                                        pixelSize : 25, // default: 1
+                                        outlineColor : Cesium.Color.YELLOW, // default: BLACK
+                                        outlineWidth : 0 // default: 0
+                                    },
+                                    name:currentData[i].city,
+                                    description:des
+                                });
+                            }
+                        }
+                        bWorking = false;
+                    }).otherwise(function(error) {
+                        bWorking = false;
+                    });
+                }
+            }
+        }
+        var helper = new Cesium.EventHelper();
+        helper.add(clock.onTick,tick);
+    }
+</script>
+</body>
+</html>

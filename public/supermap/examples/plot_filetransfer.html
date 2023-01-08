@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en" style="height: 100%">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <meta name="description" content="Test">
+    <meta name="cesium-sandcastle-labels" content="Geometries">
+    <title>Supermap 态势图</title>
+
+    <script type="text/javascript" src="../Build/Cesium/ThirdParty/Workers/PlotAlgo/PlotAlgoInclude.js"></script>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <script src="js/jquery.min.js"></script>
+    <link rel="stylesheet" type="text/css" media="screen,projection" href="css/jquery-sticklr.css"/>
+    <script src="js/plotPanelControl/PlottingUI.Include.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <link href="css/bootstrap-new.min.css" rel="stylesheet">
+    <script type="text/javascript" src="js/require.min.js" data-main="js/main"></script>
+    <script type="text/javascript" src="js/widgets.js"></script>
+    <script src="js/fileupLoad.js"></script>
+    <style type="text/css">
+
+        .panel {
+            height: 100%;
+        }
+
+        /*下拉框的高度*/
+        .combo-p {
+            height: 150px;
+        }
+
+        /*滚动条*/
+        .propertygrid {
+            overflow: auto;
+        }
+    </style>
+</head>
+<body class="sandcastle-loading" data-sandcastle-bucket="bucket-requirejs.html"
+      style="margin: 0px; overflow: hidden;background: #fff;height: 100%;">
+<div id="toolbar" class="panel panel-primary"
+     style=" position: absolute;top: 15px;left: 10px;width: 320px;text-align: center;z-index: 9999;border-radius: 4px; height: auto ">
+    <div class='panel-heading'>
+        <h5 class='panel-title text-center' style=" font-size: 16px;color: #ffffff;">态势图</h5></div>
+    <div class='panel-body content' style="border-bottom-left-radius: 4px;border-bottom-right-radius: 4px">
+        <input type="button" class="btn btn-default " value="保存" onclick="save()" style="height: 26px"/>
+        <input type="button" class="btn btn-default" value="另存为：" onclick="saveAsSmlFile()" style="height: 26px"/>
+        <input type="text" id="txt" class='form-control'
+               style="width: 120px;float: right;margin-right: 5px;height: 26px"/>
+        <div class='input-group' style="margin-top: 15px;margin-left: 10px;  margin-bottom: 10px;">
+            <input type="file" style='width:200px;float: left;' id="smlFile" name="smlFile"> </input>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            <input type="button" value="上传" onclick="uploadSmlFile()"/>
+        </div>&nbsp;&nbsp;
+        <div class='input-group' style="margin-left: 10px;  margin-bottom: 10px;">
+            文件URL:
+            <input type="text" readonly style='width:140px;' id="downloadUrl" name="downloadUrl" value=""> </input>&nbsp;
+            <input type="button" value="下载" onclick="downloadSmlFileOnServer()"/>
+        </div>
+        <div class='input-group' style="margin-left: 10px;margin-bottom: 15px;  margin-bottom: 10px;">
+            文件名称:
+            <input type="text" readonly style='width:140px;' id="smlFileName" name="smlFileName" value=""> </input>&nbsp;
+            <input type="button" value="删除" onclick="deleteSmlFileOnServer()"/>
+        </div>
+    </div>
+</div>
+<div id="popupWin" class="panel panel-primary popupWindow" o
+     style=" position: absolute;left: 10px;top: 250px;width: 320px;background: #FFF;z-index: 9999;display: block; height: auto">
+    <div class="winTitle" style=" background: #1E90FF;">
+        <span class="title_left">态势图文件列表</span>
+    </div>
+    <div id="filetree" class="winContent" style="  padding: 5px;height: 400px;"></div>
+</div>
+
+<div id="cesiumContainer" class="fullSize" style="position: relative;left: 0%;height: 100%;">
+    <script id="cesium_sandcastle_script">
+        var cesium, scene, viewer, serverUrl;
+        var sitDataManager, plottingLayer;
+        var plotEditControl = null;
+        var plotDrawControl = null;
+        var plotting;
+
+        function onload(Cesium) {
+            'use strict';
+            cesium = Cesium;
+           //若本地没有标绘相关服务则可访问支持中心的iserver
+           // var host = document.location.toString().match('/file:\/\//') ? 'http://localhost:8090' : 'http://' + document.location.host;
+            var host =  'http://support.supermap.com.cn:8090' ;
+            viewer = new Cesium.Viewer('cesiumContainer');
+            scene = viewer.scene;
+            scene.globe.depthTestAgainstTerrain = false;
+
+            serverUrl = host + '/iserver/services/plot-jingyong/rest/plot/';
+            InitPlot(viewer, serverUrl);
+        }
+
+        function InitPlot(viewer, serverUrl) {
+            if (!viewer) {
+                return;
+            }
+            plottingLayer = new cesium.PlottingLayer(scene, "plottingLayer");
+            scene.layers.add(plottingLayer);
+
+            plotting = cesium.Plotting.getInstance(serverUrl, scene);
+
+            plotEditControl = new cesium.PlotEditControl(scene, plottingLayer);//编辑控件
+            plotDrawControl = new cesium.PlotDrawControl(scene, plottingLayer);//绘制控件
+            plotDrawControl.drawFinishEvent.addEventListener(function () {
+                plotEditControl.activate();//标绘结束，激活编辑控件
+            });
+
+
+            sitDataManager = plotting.getSitDataManager();
+            sitDataManager.getSmlInfosCompleted.addEventListener(function (result) {
+                getSMLInfosSucess(result);
+            });
+
+            sitDataManager.openSmlFileCompleted.addEventListener(function (result) {
+                widgets.alert.clearAlert();
+                var layers = sitDataManager.getPlottingLayers();
+                if (0 !== layers.length) {
+                    var layer = layers[0];
+                    plottingLayer = layer;
+                    plotEditControl.setPlottingLayer(layer);
+                    plotDrawControl.setPlottingLayer(layer);
+                }
+                plotEditControl.activate();
+                widgets.alert.showAlert("加载态势图成功");
+            });
+
+            sitDataManager.saveSmlFileCompleted.addEventListener(function () {
+                widgets.alert.clearAlert();
+                getSmlInfos();
+                widgets.alert.showAlert("保存态势图成功!");
+            });
+
+            sitDataManager.saveSmlFileFailed.addEventListener(function () {
+                widgets.alert.clearAlert();
+                widgets.alert.showAlert("保存态势图失败");
+            });
+
+            sitDataManager.deleteSmlFileCompleted.addEventListener(function () {
+                document.getElementById("downloadUrl").value = null;
+                document.getElementById("smlFileName").value = null;
+                getSmlInfos();
+            });
+
+            getSmlInfos();
+            fileFilter();
+        }
+
+        function getSMLInfosSucess(evt) {
+            var result = evt;
+            var situationPanel = document.getElementById("filetree");
+            var treeNodeStyle = document.createElement("div");
+            treeNodeStyle.style.height = '100%';
+            treeNodeStyle.style.width = '100%';
+            treeNodeStyle.style.border = '1px solid #617775';
+            treeNodeStyle.style.overflow = 'scroll';
+            var treeNode = document.createElement("div");
+            treeNode.id = "ftree";
+            treeNode.className = "ztree";
+            treeNodeStyle.appendChild(treeNode);
+            situationPanel.appendChild(treeNodeStyle);
+
+            function beforeClickTreeNode(treeId, treeNode) {
+                var tree = $.fn.zTree.getZTreeObj(treeId);
+                if (treeNode.isParent) {
+                    tree.expandNode(treeNode);
+                    if (treeNode.pId === 1) {
+                        me.clickSmlFileName = treeNode.name;
+                        clickTreeNode(me.clickSmlFileName);
+                    }
+                    return false;
+                }
+            }
+
+            var me = this;
+            var setting = {
+                view: {
+                    dblClickExpand: false,
+                    showLine: true,
+                    selectedMulti: false,
+                    showIcon: false
+                },
+                data: {
+                    simpleData: {
+                        enable: true,
+                        idKey: "id",
+                        pIdKey: "pId",
+                        rootPId: 0
+                    }
+                },
+                callback: {
+                    beforeClick: beforeClickTreeNode
+
+                }
+            };
+            var symbolTreeData = analysisSMLInfos(result);
+            $.fn.zTree.init($("#ftree"), setting, symbolTreeData);
+        }
+
+        // 获取态势图列表
+        function getSmlInfos() {
+            sitDataManager.getSmlInfos(0, 10);
+        }
+
+        function analysisSMLInfos(smlInfos) {
+            var treeData = [];
+
+            var cellRootNode = new Object();
+            cellRootNode.id = 1;
+            cellRootNode.pId = 0;
+            cellRootNode.name = "态势图文件列表";
+            cellRootNode.fullName = "态势图文件列表" + "/";
+            treeData.push(cellRootNode);
+
+            var cellId = cellRootNode.id + 1;
+
+
+            var nid = cellId + 1;
+            for (var i = 0; i < smlInfos.length; i++) {
+
+
+                var result = smlInfos[i];
+
+                var rootNode = new Object();
+                rootNode.id = cellId++;
+                rootNode.pId = 1;
+                rootNode.name = smlInfos[i].SMLFileName;
+                treeData.push(rootNode);
+
+                cellId = rootNode.id + 1;
+
+                var key = ["SMLAuthor", "SMLDepat", "SMLDesc", "SMLName", "SMLSeclevel", "SMLTime"];
+                var value = [result.SMLAuthor, result.SMLDepat, result.SMLDesc, result.SMLName, result.SMLSeclevel, result.SMLTime];
+
+                for (var j = 0; j < 6; j++) {
+                    var chrootNode = new Object();
+                    chrootNode.id = cellId++;
+                    chrootNode.pId = rootNode.id;
+                    chrootNode.name = key[j] + ":" + value[j];
+
+                    treeData.push(chrootNode);
+                }
+            }
+
+            return treeData;
+        }
+
+        function clickTreeNode(clickSmlFileName) {
+            var result = sitDataManager.downloadSmlFileUrl(clickSmlFileName);
+            document.getElementById("downloadUrl").value = serverUrl + result;
+            document.getElementById("smlFileName").value = clickSmlFileName;
+            sitDataManager.openSmlFileOnServer(clickSmlFileName);
+        }
+
+        function save() {
+            sitDataManager.saveSmlFile();
+        }
+
+        function saveAsSmlFile() {
+            widgets.alert.clearAlert();
+            var smlName = document.getElementById("txt").value;
+            if (smlName.length !== 0) {
+                sitDataManager.saveAsSmlFile(smlName);
+            } else {
+                widgets.alert.showAlert("请输入另存为态势图的名称");
+            }
+        }
+
+        //上传态势图
+        function uploadSmlFile() {
+            widgets.alert.clearAlert();
+            sitDataManager.uploadSmlFile('smlFile', function (evt) {
+                if (evt.success) {
+                    getSmlInfos();
+                } else {
+
+                }
+            });
+        }
+
+        //下载态势图
+        function downloadSmlFileOnServer() {
+            window.open(document.getElementById("downloadUrl").value);
+        }
+
+        //删除态势图
+        function deleteSmlFileOnServer() {
+            var smlFileName = document.getElementById("smlFileName").value;
+            sitDataManager.deleteSmlFileOnServer(smlFileName);
+            var alertMessage = smlFileName + "删除成功!"
+            widgets.alert.showAlert(alertMessage);
+        }
+
+        function fileFilter() {
+            var file = document.getElementById('smlFile');
+            file.setAttribute("accept", ".sml");
+
+        }
+
+        //删除指定标号
+        function deleteSeleGeo() {
+            plottingLayer.removeGeoGraphicObject(plottingLayer.selectedFeature);
+        }
+
+        //“Delete”按键删除选中标号
+        $(document).keydown(function (event) {
+            if (event.keyCode === 46) {
+                deleteSeleGeo();
+            }
+        });
+    </script>
+</div>
+</body>
+</html>

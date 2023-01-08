@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>KML-北京地铁线路</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link href="./css/pretty.css" rel="stylesheet">
+    <script src="./js/jquery.min.js"></script>
+    <script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+    <script src="./js/config.js"></script>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<div id='loadingbar' class="spinner">
+    <div class="spinner-container container1">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container2">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container3">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+</div>
+<script>
+    function onload(Cesium) {
+        //初始化viewer部件，添加STK地形服务
+        var viewer = new Cesium.Viewer('cesiumContainer',{
+            infoBox : false,
+            selectionIndicator : false
+        });
+        viewer.imageryLayers.addImageryProvider(new Cesium.BingMapsImageryProvider({
+            url : 'https://dev.virtualearth.net',
+            mapStyle : Cesium.BingMapsStyle.AERIAL,
+            key : URL_CONFIG.BING_MAP_KEY
+        }));
+        //加载kml文件
+        viewer.dataSources.add(Cesium.KmlDataSource.load('./SampleData/kml/2015beijingsubway.kml',{
+            camera : viewer.scene.camera,
+            canvas : viewer.scene.canvas,
+            clampToGround: true
+        })).then(function(dataSource){
+            //设置相机视角
+            viewer.camera.setView({
+                destination : new Cesium.Cartesian3.fromDegrees(116.3679,39.7460,4692.906),
+                orientation: {
+                    heading : 6.255714027185674,
+                    pitch : -0.3054587954655701,
+                    roll : 6.283090080629748
+                }
+            });
+        });
+        $('#loadingbar').remove();
+    }
+
+</script>
+</body>
+</html>

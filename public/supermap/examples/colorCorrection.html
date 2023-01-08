@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>颜色校正</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link href="./css/pretty.css" rel="stylesheet">
+    <script src="./js/jquery.min.js"></script>
+    <script src="./js/bootstrap.min.js"></script>
+    <script src="./js/bootstrap-select.min.js"></script>
+    <script src="./js/tooltip.js"></script>
+    <script src="./js/slider.js"></script>
+    <script src="./js/config.js"></script>
+    <script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+</head>
+<body>
+<style>
+    input[type=range]{
+        width: 150px;
+        margin-right: 25px;
+    }
+    label {
+        display: inline-block;
+        width: 4rem;
+    }
+</style>
+<div id="cesiumContainer" class="fullSize"></div>
+<div id="toolbar" class="param-container tool-bar">
+    <div class="param-item">
+        <input type="checkbox" id = "show" checked>
+        <label>颜色校正</label>
+    </div>
+    <div class="param-item">
+        <label>亮度:</label>
+        <input type="range" min="0" max="1" step="0.02" id ="brightness" value="1.0">
+    </div>
+    <div class="param-item">
+        <label>对比度:</label>
+        <input type="range" min="0" max="1" step="0.02" id = "contrast" value="1.0">
+    </div>
+    <div class="param-item">
+        <label>色调:</label>
+        <input type="range" min="0" max="1" step="0.02" id = "hue" value="0.0">
+    </div>
+    <div class="param-item">
+        <label>饱和度:</label>
+        <input type="range" min="0" max="1" step="0.02" id = "saturation" value="1.0">
+    </div>
+    <div class="param-item">
+        <input type="button" value="重置" id="reset" class="button black">
+    </div>
+</div>
+<script>
+    /*示范代码说明：
+    *颜色校正
+    *
+    *主要涉及接口：
+    * colorCorrection
+    *
+    * 示范代码：
+    */
+    function onload(Cesium) {
+        var viewer = new Cesium.Viewer('cesiumContainer');
+        viewer.imageryLayers.addImageryProvider(new Cesium.BingMapsImageryProvider({
+            url : 'https://dev.virtualearth.net',
+            mapStyle : Cesium.BingMapsStyle.AERIAL,
+            key : URL_CONFIG.BING_MAP_KEY
+        }));
+        var scene = viewer.scene;
+        var correction = scene.colorCorrection;//创建颜色校正对象
+        correction.show = true;//开启颜色校正
+        var promise = scene.open(URL_CONFIG.SCENE_NIAOCHAO);
+        Cesium.when(promise,function(layers) {
+            scene.camera.setView({
+                destination: new Cesium.Cartesian3.fromDegrees(116.38621009526075, 39.98468016277832, 313.2286367219722),
+                orientation: {
+                    heading: 6.116051,
+                    pitch: -0.275007,
+                    roll: 6.283185
+                }
+            });
+        });
+
+        $('#show').click(function(evt){
+            correction.show  = this.checked;
+        });
+
+        $('#reset').click(function(evt){
+            $('#brightness').val(1.0);
+            $('#contrast').val(1.0);
+            $('#saturation').val(1.0);
+            $('#hue').val(0.0)
+            correction.brightness = 1.0;
+            correction.contrast = 1.0;
+            correction.saturation = 1.0;
+            correction.hue = 0.0;
+        });
+
+        // 图像亮度调节
+        $('#brightness').on('input propertychange',function(){
+              correction.brightness = parseFloat(this.value)
+        });
+
+        // 图像对比度调节
+        $('#contrast').on('input propertychange',function(){
+            correction.contrast = parseFloat(this.value)
+        });
+
+        // 图像色调调节
+        $('#hue').on('input propertychange',function(){
+            correction.hue = parseFloat(this.value)
+        });
+
+        // 图像饱和度调节
+        $('#saturation').on('input propertychange',function(){
+            correction.saturation = parseFloat(this.value)
+        });
+    }
+</script>
+</body>
+</html>

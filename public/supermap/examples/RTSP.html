@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+		<title>RTSP视频投放</title>
+		<link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+		<link href="./css/pretty.css" rel="stylesheet">
+		<script src="./js/echarts.min.js"></script>
+		<script src="js/polyfill.js"></script>
+		<script src="./js/jquery.min.js"></script>
+		<script src="./js/slider.js"></script>
+		<script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+		<script src="./js/config.js"></script>
+		<script src="./js/streamedian.js"></script>
+		<style>
+			#trailer {
+				width: 720px;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div id="cesiumContainer"></div>
+		<div id="toolbar" class="param-container tool-bar">
+			<button type="button" id="active" class="button black">视频投放</button>
+			<button type="button" id="clear" class="button black">清除</button><br />
+			<input type="checkbox" id="visibleLine" checked>
+			<b>视频投放线</b>
+			<video id="trailer" style="display: none" autoplay loop crossorigin controls>
+				<source src="rtsp://127.0.0.1:8554/test" type="application/x-rtsp">
+			</video>
+			<div style="margin: 10px 0px;">
+				<b>宽度：</b>
+				<input type="number" id="horizontal" min="1" step="1" value="20">
+			</div>
+			<div style="margin: 10px 0px;">
+				<b>高度：</b>
+				<input type="number" id="vertical" min="1" step="1" value="10">
+			</div>
+			<div style="margin: 10px 0px;">
+				<b>距离：</b>
+				<input type="number" id="distance" min="100" step="1" value="200">
+			</div>
+		</div>
+		</div>
+		<div style="position: absolute;right: 20px; top: 120px;">
+			<div id="msChart" style="width: 300px;height: 150px"></div>
+		</div>
+		<div style="position: absolute;right: 20px; top: 320px;">
+			<div id="fpsChart" style="width: 300px;height: 150px"></div>
+		</div>
+
+		<script type="text/javascript">
+			/*示范代码说明：
+			 *本示范程序为RTSP视频投放案列
+			 *
+			 *主要涉及接口：
+			 * ProjectionImage
+			 * DrawHandler
+			 *
+			 * 示范代码：
+			 */
+			function onload(Cesium) {
+				var viewer = new Cesium.Viewer('cesiumContainer');
+				viewer.imageryLayers.addImageryProvider(new Cesium.BingMapsImageryProvider({
+					url: 'https://dev.virtualearth.net',
+					mapStyle: Cesium.BingMapsStyle.AERIAL,
+					key: URL_CONFIG.BING_MAP_KEY
+				}));
+				var scene = viewer.scene;
+                var msData = [];
+				var fpsData = [];
+				var date = [];
+				var step = 0;
+				var myDate = new Date();
+				var msChart = echarts.init(document.getElementById('msChart'));
+				var fpsChart = echarts.init(document.getElementById('fpsChart'));
+				scene.debugShowFramesPerSecond = true;
+				setInterval(function() {
+					if(step <= 6) {
+						var ms = document.getElementsByClassName("cesium-performanceDisplay-ms")[0].innerHTML;
+						msData[step] = parseFloat(ms.substring(0, ms.length - 3));
+						var fps = document.getElementsByClassName("cesium-performanceDisplay-fps")[0].innerHTML
+						fpsData[step] = parseFloat(fps.substring(0, fps.length - 4));
+						date[step] = myDate.getMilliseconds();
+						step += 1;
+					} else {
+						step = 0;
+					}
+				}, 200);
+				setInterval(function() {
+					msChart.setOption({
+						title: {
+							text: '',
+							subtext: 'MS',
+							left: 'right',
+							subtextStyle: {
+
+							}
+						},
+						xAxis: {
+							type: 'category',
+							axisLabel: {
+								show: true,
+								textStyle: {
+									color: '#fff'
+								}
+							},
+							data: ['', '', '', '', '', '', '']
+						},
+						yAxis: {
+							type: 'value',
+							axisLabel: {
+								show: true,
+								textStyle: {
+									color: '#fff'
+								}
+							},
+
+						},
+						series: [{
+							data: msData,
+							type: 'line'
+						}],
+						grid: {
+							left: '0%',
+							right: '0%',
+							bottom: '0%',
+							top: '3%',
+							containLabel: true
+						},
+					});
+					fpsChart.setOption({
+						title: {
+							text: '',
+							subtext: 'FPS',
+							left: 'right',
+							subtextStyle: {
+
+							}
+						},
+						xAxis: {
+							type: 'category',
+							axisLabel: {
+								show: true,
+								textStyle: {
+									color: '#fff'
+								}
+							},
+							data: ['', '', '', '', '', '', '']
+						},
+						yAxis: {
+							type: 'value',
+							axisLabel: {
+								show: true,
+								textStyle: {
+									color: '#fff'
+								}
+							},
+						},
+						series: [{
+							data: fpsData,
+							type: 'line',
+							areaStyle: {}
+						}],
+						grid: {
+							left: '0%',
+							right: '0%',
+							bottom: '0%',
+							top: '3%',
+							containLabel: true
+						},
+					});
+
+				}, 1000);
+				if(!scene.pickPositionSupported) {
+					alert('不支持深度纹理,视频投放功能无法使用！');
+				}
+				
+				var groundPromise = scene.addS3MTilesLayerByScp(URL_CONFIG.SCP_CBD_GROUND1, {
+					name: 'ground1'
+				});
+				var buildPromise = scene.addS3MTilesLayerByScp(URL_CONFIG.SCP_CBD_BUILD, {
+					name: 'build'
+				});
+				Cesium.when.all([groundPromise, buildPromise], function(layers) {
+					//图层加载完成,设置相机位置
+					scene.camera.setView({
+						destination: Cesium.Cartesian3.fromDegrees(116.4486, 39.9092, 91.3293),
+						orientation: {
+							heading: 3.179304500963121,
+							pitch: -0.46239072362282485,
+							roll: 6.283185307179583
+						}
+					});
+				
+					for(var i = 0; i < layers.length; i++) {
+						layers[i].selectEnabled = false;
+					}
+					document.getElementsByClassName("cesium-performanceDisplay")[0].style.display = "none";
+
+					var videoElement = document.getElementById('trailer');
+
+					var projectionImage = new Cesium.ProjectionImage(scene);
+
+					var handler = new Cesium.DrawHandler(viewer, Cesium.DrawMode.Point);
+
+					handler.movingEvt.addEventListener(function(windowPosition) {
+						var last = scene.pickPosition(windowPosition);
+						var distance = Cesium.Cartesian3.distance(scene.camera.position, last);
+						if(distance > 0) {
+							var cartographic = Cesium.Cartographic.fromCartesian(last);
+							var longitude = Cesium.Math.toDegrees(cartographic.longitude);
+							var latitude = Cesium.Math.toDegrees(cartographic.latitude);
+							var height = cartographic.height;
+							projectionImage.setDistDirByPoint([longitude, latitude, height]);
+							projectionImage.distance = Number($("#distance").val());
+						}
+					});
+					$('#clear').click(function(evt) {
+						clearAndActive();
+						handler.clear();
+					});
+
+					function clearAndActive() {
+						projectionImage.distance = 0.1;
+						var wgsPosition = scene.camera.positionCartographic;
+						var longitude = Cesium.Math.toDegrees(wgsPosition.longitude);
+						var latitude = Cesium.Math.toDegrees(wgsPosition.latitude);
+						var height = wgsPosition.height;
+						projectionImage.viewPosition = [longitude, latitude, height];
+						projectionImage.horizontalFov = Number($("#horizontal").val());
+						projectionImage.verticalFov = Number($("#vertical").val());
+						projectionImage.setImage({
+							video: videoElement
+						});
+						if (videoElement.readyState > 2) { 
+                            projectionImage.setImage({ 
+                            video: videoElement 
+                        }); 
+                           projectionImage.build(); 
+                         }
+					}
+					//设置RTSP视频socket地址
+					Streamedian.player('trailer', {
+						socket: "wss://specforge.com/ws/"
+					});
+
+					$('#active').click(function(evt) {
+						clearAndActive();
+						handler.activate();
+					});
+
+					$('#horizontal').bind('input propertychange', function() {
+						var value = Number($(this).val());
+						projectionImage.horizontalFov = value;
+					});
+					$('#vertical').bind('input propertychange', function() {
+						var value = Number($(this).val());
+						projectionImage.verticalFov = value;
+					});
+					$('#distance').bind('input propertychange', function() {
+						var value = Number($(this).val());
+						projectionImage.distance = value;
+					});
+					$('#visibleLine').click(function(evt) {
+						projectionImage.hintLineVisible = this.checked;
+					});
+
+				}, function(e) {
+					if(widget._showRenderLoopErrors) {
+						var title = '加载SCP失败，请检查网络连接状态或者url地址是否正确？';
+						widget.showErrorPanel(title, undefined, e);
+					}
+				});
+			}
+		</script>
+	</body>
+
+</html>

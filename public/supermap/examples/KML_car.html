@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>KML</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link href="./css/pretty.css" rel="stylesheet">
+    <script src="./js/jquery.min.js"></script>
+    <script src="./js/config.js"></script>
+    <script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<div id='loadingbar' class="spinner">
+    <div class="spinner-container container1">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container2">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container3">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+</div>
+<script>
+    function onload(Cesium) {
+        //初始化viewer部件
+        var viewer = new Cesium.Viewer('cesiumContainer', {
+            shouldAnimate : true
+        });
+        viewer.imageryLayers.addImageryProvider(new Cesium.BingMapsImageryProvider({
+            url : 'https://dev.virtualearth.net',
+            mapStyle : Cesium.BingMapsStyle.AERIAL,
+            key : URL_CONFIG.BING_MAP_KEY
+        }));
+        var widget = viewer.cesiumWidget;
+        var scene = viewer.scene;
+        $('#loadingbar').remove();
+	    try{
+            //添加S3M图层服务
+	        var promise = scene.open(URL_CONFIG.SCENE_JINJIANG);
+	        Cesium.when(promise,function(layers){
+                //设置相机视角
+	            scene.camera.setView({
+                    destination : new Cesium.Cartesian3.fromDegrees(118.5486,24.8027,80),
+                    orientation : {
+                       heading : 5.295661577745349,
+                       pitch : -0.18831704619320822,
+                       roll : 0
+                   }
+	            });
+	        },function(e){
+	            if (widget._showRenderLoopErrors) {
+	                var title = '渲染时发生错误，已停止渲染。';
+	                widget.showErrorPanel(title, undefined, e);
+	            }
+	        }).then(function(){
+                //加载kml文件
+                viewer.dataSources.add(Cesium.KmlDataSource.load('./SampleData/kml/model.kml',{
+                    camera : scene.camera,
+                    canvas : scene.canvas
+                })).then(function(kmlDatasource){
+                    var entity = kmlDatasource.entities.values[0];
+                    if(entity.path){
+                        entity.path.show = false;
+                    }
+                });
+            });
+	    }
+	    catch(e){
+	        if (widget._showRenderLoopErrors) {
+	            var title = '渲染时发生错误，已停止渲染。';
+	            widget.showErrorPanel(title, undefined, e);
+	        }
+	    }
+    }
+
+</script>
+</body>
+</html>

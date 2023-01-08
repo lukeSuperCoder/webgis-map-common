@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>天地图影像</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link href="./css/bootstrap.min.css" rel="stylesheet">
+    <link href="./css/pretty.css" rel="stylesheet">
+    <script src="./js/jquery.min.js"></script>
+    <script src="./js/bootstrap.min.js"></script>
+    <script src="./js/bootstrap-select.min.js"></script>
+    <script src="./js/config.js"></script>
+    <script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<div id='loadingbar' class="spinner">
+    <div class="spinner-container container1">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container2">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container3">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+</div>
+<div style="position: absolute;left: 5px;top: 5px;">
+    <select id="imageryOptions" class="selectpicker show-tick form-control">
+        <!--<option disabled selected value>&#45;&#45;选择服务类型&#45;&#45;</option>-->
+        <option selected value="CIA_C">全球中文注记服务（经纬度投影）</option>
+        <option value="IMG_C">全球影像地图服务(经纬度)</option>
+        <option value="VEC_W">全球矢量地图服务(墨卡托)</option>
+        <option value="TER_W">全球地形晕渲服务(墨卡托)</option>
+        <option value="IMG_W">全球影像地图服务(墨卡托)</option>
+        <option value="VEC_C">全球矢量地图服务(经纬度)</option>
+        <option value="TER_C">全球地形晕渲服务(经纬度)</option>
+    </select>
+</div>
+
+<script>
+	function onload(Cesium) {
+        //初始化viewer部件
+		var viewer = new Cesium.Viewer('cesiumContainer');
+        viewer.imageryLayers.addImageryProvider(new Cesium.TiandituImageryProvider({
+            credit : new Cesium.Credit('天地图全球影像服务     数据来源：国家地理信息公共服务平台 & 四川省测绘地理信息局'),
+            token: URL_CONFIG.TOKEN_TIANDITU
+        }));
+        var imageryLayers = viewer.imageryLayers;
+        //初始化天地图全球中文注记服务，并添加至影像图层
+        var labelImagery = new Cesium.TiandituImageryProvider({
+            mapStyle : Cesium.TiandituMapsStyle.CIA_C, //天地图全球中文注记服务（经纬度投影）
+            token: URL_CONFIG.TOKEN_TIANDITU
+        });
+        imageryLayers.addImageryProvider(labelImagery);
+        $('#imageryOptions').change(function(){
+            var value = $(this).val();
+            var baseLayer = imageryLayers.get(1);
+            //添加新的天地图服务
+            imageryLayers.addImageryProvider(new Cesium.TiandituImageryProvider({
+                mapStyle : Cesium.TiandituMapsStyle[value],
+                token: URL_CONFIG.TOKEN_TIANDITU
+            }),1);
+            // 移除之前的图层
+            imageryLayers.remove(baseLayer);
+        });
+        $('#loadingbar').remove();
+	}
+</script>
+</body>
+</html>

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>专题图</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link href="./css/pretty.css" rel="stylesheet">
+    <script src="./js/jquery.min.js"></script>
+    <script src="./js/config.js"></script>
+    <script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+
+    <style>
+        html, body, #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000000;
+        }
+
+        #float {
+            position: fixed;
+        }
+    </style>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+
+
+<div id='toolbar' class="param-container tool-bar">
+    <div class="param-item">
+        <b>专题图：</b>
+        <select class="cesium-button" style="width: 100px">
+            <option value="none"> 无</option>
+            <option value="color" selected>颜色</option>
+            <option value="image">图片</option>
+        </select>
+    </div>
+</div>
+
+<div id='loadingbar' class="spinner">
+    <div class="spinner-container container1">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container2">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container3">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+</div>
+<script type="text/javascript">
+    function onload(Cesium) {
+        //初始化viewer部件
+        var viewer = new Cesium.Viewer('cesiumContainer');
+        //添加SuperMap iServer发布的影像服务
+        viewer.imageryLayers.addImageryProvider(new Cesium.BingMapsImageryProvider({
+            key: URL_CONFIG.BING_MAP_KEY,//可至官网（https://www.bingmapsportal.com/）申请key
+            url: URL_CONFIG.BINGMAP
+        }));
+        viewer.scene.logarithmicDepthBuffer = true;
+        var scene = viewer.scene;
+        var canvas = scene.canvas;
+        var widget = viewer.cesiumWidget;
+        $('#loadingbar').remove();
+
+        //添加S3M图层服务
+        var curlayer;
+        var promise = scene.open("http://www.supermapol.com/realspace/services/3D-five-vector/rest/realspace");
+        Cesium.when(promise, function (layers) {
+            curlayer = layers[0];
+            curlayer.refresh();
+            curlayer.themeStyle = colorByID();
+        });
+
+        $('.cesium-button').change(function () {
+            var value = $(this).val();
+            switch (value) {
+                case "color":
+                    curlayer.refresh();
+                    curlayer.themeStyle = colorByID();
+                    break;
+                case "image":
+                    curlayer.refresh();
+                    curlayer.themeStyle = imageByID();
+                    break;
+                default:
+                    curlayer.refresh();
+                    curlayer.themeStyle = [];
+                    break;
+            }
+        });
+
+        var imageUrl1 = '"./images/ZTT_images/1.jpg"';
+        var imageUrl2 = '"./images/ZTT_images/2.jpg"';
+        var imageUrl3 = '"./images/ZTT_images/3.jpg"';
+        var imageUrl4 = '"./images/ZTT_images/4.jpg"';
+        var imageUrl5 = '"./images/ZTT_images/5.jpg"';
+
+        var imageUrls = [imageUrl1, imageUrl2, imageUrl3, imageUrl4, imageUrl5];
+        var imageConditions = [];
+        for (var i = 1; i < 6; i++) {
+            var condition = [];
+            var idKey = "${id} === '" + i + "'";
+            var imageKey = imageUrls[i % 5];
+            condition.push(idKey);
+            condition.push(imageKey);
+            imageConditions.push(condition);
+        }
+
+        var colorValue1 = "rgb(45, 0, 75, 0.5)";
+        var colorValue2 = "rgb(102, 71, 151)";
+        var colorValue3 = "rgb(170, 162, 204)";
+        var colorValue4 = "rgb(224, 226, 238)";
+        var colorValue5 = "rgb(252, 230, 200)";
+        var colorValue6 = "rgb(127, 59, 8)";
+        var colorValues = [colorValue1, colorValue2, colorValue3, colorValue4, colorValue5];
+        var colorConditions = [];
+        for (var i = 1; i < 6; i++) {
+            var condition = [];
+            var idKey = "${id} === '" + i + "'";
+            var colorKey = colorValues[i % 5];
+            condition.push(idKey);
+            condition.push(colorKey);
+            colorConditions.push(condition);
+        }
+        colorConditions.push(["true", "rgb(127, 59, 8)"]);
+
+        function imageByID() {
+            var cesiumStyle = new Cesium.Cesium3DTileStyle({
+                image: {
+                    conditions: imageConditions
+                }
+            });
+            return cesiumStyle;
+        }
+
+        function colorByID() {
+            var cesiumStyle = new Cesium.Cesium3DTileStyle({
+                color: {
+                    conditions: colorConditions
+                }
+            });
+            return cesiumStyle;
+        }
+    }
+</script>
+</body>
+</html>

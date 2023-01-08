@@ -1,0 +1,35 @@
+{
+  "name": "mapboxgl_module",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/PIEMapboxGL.cjs.js",
+  "module": "dist/PIEMapboxGL.js",
+  "scripts": {
+    "build": "rollup -c",
+    "dev": "rollup -c -w",
+    "test": "ts-node test/test.ts",
+    "pretest": "npm run build"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^21.0.2",
+    "@rollup/plugin-node-resolve": "^13.1.3",
+    "@rollup/plugin-typescript": "^8.3.1",
+    "@types/mapbox-gl": "^2.6.3",
+    "@typescript-eslint/eslint-plugin": "^5.14.0",
+    "@typescript-eslint/parser": "^5.14.0",
+    "eslint": "^8.10.0",
+    "rollup-plugin-dts": "^4.2.0",
+    "rollup-plugin-sourcemaps": "^0.6.3",
+    "rollup-plugin-terser": "^7.0.2"
+  },
+  "dependencies": {
+    "@cgcs2000/mapbox-gl": "^1.3.1",
+    "@turf/turf": "^6.5.0",
+    "nanoid": "^3.3.1"
+  },
+  "files": [
+    "dist"
+  ]
+}

@@ -1,0 +1,40 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>SuperMap 3D-WebGL 示范程序</title>
+    <link rel="shortcut icon" type="image/x-icon" href=""/>
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+    <script type="text/javascript" include="jquery,bootstrap,template,admin-lte,jquery.scrollto,lazyload"
+            src="./js/include-web.js" from="examples"></script>
+    <link rel="stylesheet" href="./css/common.css">
+    <link rel="stylesheet" href="./css/header.css">
+    <link rel="stylesheet" href="./css/sideBar.css">
+    <link rel="stylesheet" href="./css/examples.css">
+</head>
+<body class="hold-transition skin-blue sidebar-mini" data-spy="scroll" data-target="#scrollSpy">
+
+    <!-- ./wrapper -->
+    <div class="wrapper"></div>
+    <script type="text/javascript" src="./js/utils.js"></script>
+    <script>
+        $('.wrapper').load("./template/example.html", function () {
+            utils.loadTemplate(".icl-header", "./template/header-examples.html", {});
+
+            var $body = $('body');
+            $body.append("<script type='text/javascript' src='./config.js'><\/script>");
+            //$body.append("<script type='text/javascript' src='./js/common.js'><\/script>");
+            $body.append("<script type='text/javascript' src='./js/sidebar.js'><\/script>");
+            $body.append("<script type='text/javascript' src='./js/example.js'><\/script>");
+        });
+    </script>
+
+    <!--footer-->
+    <script>
+        utils.loadTemplate(".icl-footer", "./template/footer.html");
+    </script>
+    <!--footer end-->
+
+</body>
+</html>

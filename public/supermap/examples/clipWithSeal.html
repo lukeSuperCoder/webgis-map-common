@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+		<title>裁剪封边</title>
+		<link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+		<link href="./css/bootstrap.min.css" rel="stylesheet">
+		<link href="./css/pretty.css" rel="stylesheet">
+		<script src="./js/jquery.min.js"></script>
+		<script src="./js/bootstrap.min.js"></script>
+		<script src="./js/bootstrap-select.min.js"></script>
+		<script src="./js/tooltip.js"></script>
+		<script src="./js/config.js"></script>
+		<script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+	</head>
+
+	<body>
+		<div id="cesiumContainer"></div>
+		<div id='loadingbar' class="spinner">
+			<div class="spinner-container container1">
+				<div class="circle1"></div>
+				<div class="circle2"></div>
+				<div class="circle3"></div>
+				<div class="circle4"></div>
+			</div>
+			<div class="spinner-container container2">
+				<div class="circle1"></div>
+				<div class="circle2"></div>
+				<div class="circle3"></div>
+				<div class="circle4"></div>
+			</div>
+			<div class="spinner-container container3">
+				<div class="circle1"></div>
+				<div class="circle2"></div>
+				<div class="circle3"></div>
+				<div class="circle4"></div>
+			</div>
+		</div>
+		<div id="toolbar" class="param-container tool-bar">
+			<button type="button" id="polygon" class="button black">绘制裁剪面</button>
+			<button type="button" id="clear" class="button black">清除</button>
+		</div>
+		<script type="text/javascript">
+			function onload(Cesium) {
+				//初始化viewer部件
+				var viewer = new Cesium.Viewer('cesiumContainer', {
+					infoBox: false,
+					selectionIndicator: false
+				});
+				viewer.imageryLayers.addImageryProvider(new Cesium.BingMapsImageryProvider({
+					url: 'https://dev.virtualearth.net',
+					mapStyle: Cesium.BingMapsStyle.AERIAL,
+					key: URL_CONFIG.BING_MAP_KEY
+				}));
+				var scene = viewer.scene;
+				var BIMLayer;
+				try {
+					//场景添加S3M图层服务
+					var promise = scene.open(URL_CONFIG.SCENE_CLIP);
+					Cesium.when(promise, function(layers) {
+						// 精准定位
+						scene.camera.setView({
+							destination: new Cesium.Cartesian3(-1340510.8772188171, 5352760.279613406, 3198715.615429587),
+							orientation: {
+								heading: 1.6868739698050241,
+								pitch: -0.2214176636323093,
+								roll: 5.9437033073095336e-9
+							}
+						});
+
+						var layer = scene.layers.find('model_10m_pixel2_5G');
+						layer.setObjsVisible([328, 329, 633, 634], false);
+						layer.selectEnabled = true;
+						//设置被裁剪对象的颜色
+						layer.clipLineColor = new Cesium.Color(1, 1, 1, 0);
+						BIMLayer = layer;
+						if(!scene.pickPositionSupported) {
+							alert('不支持深度纹理,无法拾取位置！');
+						}
+					}, function(e) {
+						if(widget._showRenderLoopErrors) {
+							var title = '加载SCP失败，请检查网络连接状态或者url地址是否正确？';
+							widget.showErrorPanel(title, undefined, e);
+						}
+					});
+				} catch(e) {
+					if(widget._showRenderLoopErrors) {
+						var title = '渲染时发生错误，已停止渲染。';
+						widget.showErrorPanel(title, undefined, e);
+					}
+				}
+				var clampMode = 0;
+				var tooltip = createTooltip(document.body);
+
+				var handlerPolygon = new Cesium.DrawHandler(viewer, Cesium.DrawMode.Polygon, clampMode);
+				handlerPolygon.activeEvt.addEventListener(function(isActive) {
+					if(isActive == true) {
+						viewer.enableCursorStyle = false;
+						viewer._element.style.cursor = '';
+						$('body').removeClass('drawCur').addClass('drawCur');
+					} else {
+						viewer.enableCursorStyle = true;
+						$('body').removeClass('drawCur');
+					}
+				});
+				handlerPolygon.movingEvt.addEventListener(function(windowPosition) {
+					if(handlerPolygon.isDrawing) {
+						tooltip.showAt(windowPosition, '<p>点击确定多边形中间点</p><p>绘制三点即可</p><p>右键单击结束绘制</p>');
+					} else {
+						tooltip.showAt(windowPosition, '<p>点击绘制第一个点</p>');
+					}
+				});
+				handlerPolygon.drawEvt.addEventListener(function(result) {
+					tooltip.setVisible(false);
+					handlerPolygon.polygon.show = false;
+					var positions = result.object.positions;
+					BIMLayer.clipPlaneColor = new Cesium.Color(1, 0, 0, 0.6);
+					//设置裁剪封边
+					BIMLayer.setCustomClipPlane(positions[0], positions[1], positions[2], 1);
+				});
+
+				$('#polygon').click(function() {
+					handlerPolygon.activate();
+				});
+
+				$('#clear').click(function() {
+					handlerPolygon.clear();
+					//清除裁剪结果
+					BIMLayer.clearCustomClipBox();
+				});
+				$('#toolbar').show();
+				$('#loadingbar').remove();
+				if(!scene.pickPositionSupported) {
+					alert('不支持深度拾取,无法进行鼠标交互绘制！');
+				}
+			}
+		</script>
+	</body>
+
+</html>

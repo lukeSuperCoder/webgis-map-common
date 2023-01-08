@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+    <title>飞行管理专题</title>
+    <link rel="shortcut icon" type="image/x-icon" href="../../web/img/favicon.ico"/>
+    <script type="text/javascript" include="jquery,bootstrap,template,admin-lte,jquery.scrollto,lazyload"
+            src="../js/include-web.js" from="doc"></script>
+    <link rel="stylesheet" href="../css/common.css">
+    <link rel="stylesheet" href="../css/examples.css">
+    <link rel="stylesheet" href="../css/header.css">
+    <link rel='stylesheet' href='../css/sm-extend.css'/>
+    <link rel='stylesheet' href='../css/sm-doc.css'/>
+
+</head>
+    <body class="hold-transition skin-blue sidebar-mini" data-spy="scroll" data-target="#scrollSpy">
+        <!-- ./wrapper -->
+        <div class="wrapper"></div>
+        <div id='container' class='container' style="width: 90%; padding-top: 75px;">
+            <div class='page-header'>
+                <h1>飞行管理专题</h1>
+                <hr/>
+                <h2 class="title">简介</h2>
+                <p>SuperMap iClient3D for WebGL提供了飞行管理模块，用于管理场景中的飞行浏览情景。</p>
+                <ul>
+                    <ul class="circle">
+                        <li>描述：飞行管理模块读取由SuperMap iDesktop编辑生成的fpf文件，构建路线和站点。</li>
+                        <li>应用场景：飞行管理模块非常适用于三维场景的自动浏览，以及浏览到相关景点的背景介绍，视觉效果震撼，体验流畅。</li>
+                    </ul>
+                </ul>
+                <h2 class="title">使用</h2>
+                <h3>1、生成fpf文件。</h3>
+                <p>
+                    使用Supermap iDesktop编辑每个站点（包括经纬度高程信息、相机heading pitch roll参数、站点等待时间、速度等）生成fpf文件。
+                </p>
+
+                <h3>2、创建一个路线集合对象</h3>
+                <p></p>
+                <p>
+                </p>
+                <p>
+                <pre>
+                    var routes = new Cesium.RouteCollection();</pre>
+                </p>
+
+                <h3>3、加载fpf文件</h3>
+                <p></p>
+                <p>
+                </p>
+                <p>
+                <pre>
+                    routes.fromFile(url);</pre>
+                </p>
+
+
+                <h3>4、创建飞行管理对象</h3>
+                <p></p>
+                <p>
+                </p>
+                <p>
+                <pre>
+                    var flyManager = new Cesium.FlyManager(scene,routes);</pre>
+                </p>
+
+                <h3>5、如果有需要，则添加相应的站点到达事件的监听</h3>
+                <p></p>
+                <p>
+                </p>
+                <p>
+                <pre>
+                    flyManager.stopArrived.addEventListener(function(routeStop){
+                            //to do
+                            //注：如果站点到达事件激活时做的异步处理，则应该使用routeStop.promise来处理，例如播放一段音频：
+                            audio.play();
+                            var defer = Cesium.when.defer();
+                            routeStop.promise = defer;
+                            audio.onended = function(){
+                                defer.resolve(true);
+                                routeStop.promise = undefined;
+                            };
+                            //如果是同步执行的事件，则顺序执行即可。
+                    });</pre>
+                </p>
+
+                <h3>6、开始飞行</h3>
+                <p></p>
+                <p>
+                    相机开始以站点中设定的参数飞行，根据fpf文件中的设定，每个站点可以有不同的速度和相机参数等，默认有两种飞行模式：定时飞行模式和定速飞行模式。
+                    定时模式：即相机在每两个站点之间的飞行间隔时间都是相同的，默认为10秒；
+                    定速模式：即相机在全程的飞行过程中速度始终保持一致，匀速飞行，速度由fpf文件中的设置来决定，也可以在飞行过程中实时调整。
+                </p>
+                <p>
+                <pre>
+                    flyManager.play();</pre>
+                </p>
+
+                <h3>7、暂停</h3>
+                <p></p>
+                <p>
+                    飞行过程中可以随时暂停，然后再执行flyManager.play()即可从当前暂停的位置继续飞行。
+                </p>
+                <p>
+                <pre>
+                     flyManager.pause();</pre>
+                </p>
+
+                <h3>8、停止</h3>
+                <p></p>
+                <p>
+                    飞行过程中可以随时停止飞行，然后再执行flyManager.stop()即可从起始位置重新开始飞行。
+                </p>
+                <p>
+                <pre>
+                     flyManager.stop();</pre>
+                </p>
+                <p>飞行效果如下图：</p>
+                <div class="pageImage">
+                    <img src="../images/TopicDOC/fly.gif">
+                </div>
+            </div>
+            <div class='footer'>
+                <p>版权所有&nbsp;&copy; 2000-2018 &nbsp;北京超图软件股份有限公司</p>
+            </div>
+        </div>
+        <script type="text/javascript" src="../js/utils.js"></script>
+        <script>
+            $('.wrapper').load("../template/example-pure.html", function () {
+                utils.loadTemplate(".icl-header", "../template/header-doc.html", {});
+                //var $body = $('body');
+                //$body.append("<script type='text/javascript' src='../js/common.js'><\/script>");
+            });
+        </script>
+    </body>
+</html>

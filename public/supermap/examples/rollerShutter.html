@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>模型卷帘</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link href="./css/pretty.css" rel="stylesheet">
+    <script src="./js/jquery.min.js"></script>
+    <script src="./js/config.js"></script>
+    <script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+</head>
+<body>
+<div id="cesiumContainer">
+    <div id="vertical-slider"></div>
+    <div id="horizontal-slider" style="display: none;"></div> <!-- 初始时用了左右卷帘 -->
+</div>
+<div id="tool-bar" class="param-container tool-bar">
+    <div>
+        <span>参与卷帘图层</span>
+        <ul id="layer-list" style="padding: 0;margin: 0.5rem 0;">
+        </ul>
+    </div>
+    <div class="divider"></div>
+    <div>
+        <span>卷帘模式</span>
+        <div style="padding: 0;margin: 0.5rem 0;">
+            <div style="margin: 0.2rem 0;">
+                <label><input type="checkbox" id="use-roller" style="vertical-align: middle;" checked/><span
+                        style="vertical-align: middle;">使用卷帘</span></label>
+            </div>
+            <div style="margin: 0.2rem 0;">
+                <label><input type="radio" name="roller-category" value="lr-roller" style="vertical-align: middle;"
+                              checked/><span style="vertical-align: middle;">左右卷帘</span></label>
+                <div style="text-indent: 1rem;" id="lr-roller-mode">
+                    <label><input type="radio" name="roller-mode" value="left-roller" style="vertical-align: middle;"
+                                  checked/><span style="vertical-align: middle;">屏蔽左侧</span></label>
+                    <label><input type="radio" name="roller-mode" value="right-roller" style="vertical-align: middle;"/><span
+                            style="vertical-align: middle;">屏蔽右侧</span></label>
+                </div>
+            </div>
+            <div style="margin: 0.2rem 0;">
+                <label><input type="radio" name="roller-category" value="tb-roller"
+                              style="vertical-align: middle;"/><span style="vertical-align: middle;">上下卷帘</span></label>
+                <div style="text-indent: 1rem; display: none;" id="tb-roller-mode">
+                    <label><input type="radio" name="roller-mode" value="top-roller"
+                                  style="vertical-align: middle;"/><span
+                            style="vertical-align: middle;">屏蔽上侧</span></label>
+                    <label><input type="radio" name="roller-mode" value="bottom-roller"
+                                  style="vertical-align: middle;"/><span
+                            style="vertical-align: middle;">屏蔽下侧</span></label>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    /* 示范代码说明：
+     * 水平和竖直卷帘。
+     *
+     * 主要涉及接口：
+     * S3MTilesLayer.prototype.splitDirection 卷帘分割方向
+     *      可取值： Cesium.SplitDirection.NONE 禁用卷帘
+     *              Cesium.SplitDirection.LEFT 屏蔽左侧
+     *              Cesium.SplitDirection.RIGHT 屏蔽右侧
+     *              Cesium.SplitDirection.TOP 屏蔽上方
+     *              Cesium.SplitDirection.BOTTOM 屏蔽下方
+     *
+     * S3MTilesLayer.prototype.splitPosition 卷帘分割位置，像素为单位
+     *
+     * 示范代码：
+     */
+    function onload(Cesium) {
+        let viewer = new Cesium.Viewer('cesiumContainer');
+        viewer.imageryLayers.addImageryProvider(new Cesium.BingMapsImageryProvider({
+            url: 'https://dev.virtualearth.net',
+            mapStyle: Cesium.BingMapsStyle.AERIAL,
+            key: URL_CONFIG.BING_MAP_KEY
+        }));
+        let scene = viewer.scene;
+        let widget = viewer.cesiumWidget;
+        try {
+            let promise = scene.open(URL_CONFIG.SCENE_CBD);
+            Cesium.when(promise, function (layers) {
+                scene.camera.setView({
+                    destination: new Cesium.Cartesian3(-2179147.1754770577, 4380398.6133004315, 4092339.895225123),
+                    orientation: {
+                        heading: 0.5500959500406575,
+                        pitch: -0.18431625594320877,
+                        roll: 1.0658141036401503e-14
+                    }
+                });
+                let windowWidth = $('body').width(); // 窗口宽度
+                let windowHeight = $('body').height(); // 窗口高度
+                let rollerShutterConfig = { // 卷帘配置参数，以对象方式实现地址传递
+                    splitDirection: Cesium.SplitDirection.LEFT,
+                    verticalSplitPosition: windowWidth / 2,
+                    horizontalSplitPosition: windowHeight / 2,
+                    splitLayers: [], // 参与卷帘的S3M图层名
+                    wholeLayers: [], // 所有S3M图层的名称
+                    latestSplitDirection: null // 用于在禁用卷帘后恢复之前的卷帘方向
+                };
+                for (var layer of layers) {
+                    // 添加图层列表 供选择参与卷帘的图层
+                    $("#layer-list").append(`<li style="margin: 0.2rem 0;"><label style="vertical-align: middle;"><input id=${layer.name} name="layer" type='checkbox' value=${layer.name} style="vertical-align: middle;" checked/>${layer.name}</label></li>`);
+
+                    rollerShutterConfig.splitLayers.push(layer.name); // 初始时所有S3M图层都参与卷帘
+                    rollerShutterConfig.wholeLayers.push(layer.name);
+                }
+                initRollerShutter(scene, rollerShutterConfig);
+            }, function (e) {
+                if (widget._showRenderLoopErrors) {
+                    var title = '加载SCP失败，请检查网络连接状态或者url地址是否正确？';
+                    widget.showErrorPanel(title, undefined, e);
+                }
+            });
+        }
+        catch (e) {
+            if (widget._showRenderLoopErrors) {
+                let title = '渲染时发生错误，已停止渲染。';
+                widget.showErrorPanel(title, undefined, e);
+            }
+        }
+    }
+    /**
+     * 初始化卷帘。设置分割条初始位置及绑定相关事件。
+     * @param scene 场景。
+     * @param rollerShutterConfig 卷帘配置参数。
+     */
+    function initRollerShutter(scene, rollerShutterConfig) {
+        setRollerShutterSplit(scene, rollerShutterConfig);
+        bindSliderEvt(scene, rollerShutterConfig);
+        $('input[type=radio][name="roller-mode"]').on('input propertychange', function () {
+            let splitDirectionCustomStr = $('input[type=radio][name="roller-mode"]:checked').val();
+            switch (splitDirectionCustomStr) {
+                case 'left-roller':
+                    rollerShutterConfig.splitDirection = Cesium.SplitDirection.LEFT;
+                    break;
+                case 'right-roller':
+                    rollerShutterConfig.splitDirection = Cesium.SplitDirection.RIGHT;
+                    break;
+                case 'top-roller':
+                    rollerShutterConfig.splitDirection = Cesium.SplitDirection.TOP;
+                    break;
+                case 'bottom-roller':
+                    rollerShutterConfig.splitDirection = Cesium.SplitDirection.BOTTOM;
+                    break;
+                default:
+                    break;
+            }
+            setRollerShutterSplit(scene, rollerShutterConfig);
+        });
+
+        // 在 “左右模式” 和 “上下模式” 之间切换
+        $('input[type=radio][name="roller-category"]').on("input propertychange", function () {
+            let splitDirectionCategory = $('input[type=radio][name="roller-category"]:checked').val();
+            let verticalSlider = document.getElementById('vertical-slider');
+            let horizontalSlider = document.getElementById('horizontal-slider');
+            switch (splitDirectionCategory) {
+                case 'lr-roller':
+                    verticalSlider.style.display = 'block';
+                    horizontalSlider.style.display = 'none';
+                    $("#lr-roller-mode").css("display", "block");
+                    $("#tb-roller-mode").css("display", "none");
+                    rollerShutterConfig.splitDirection = Cesium.SplitDirection.LEFT;
+                    $("input[type=radio][value='left-roller']").prop("checked", "checked");
+                    break;
+                case 'tb-roller':
+                    verticalSlider.style.display = 'none';
+                    horizontalSlider.style.display = 'block';
+                    $("#lr-roller-mode").css("display", "none");
+                    $("#tb-roller-mode").css("display", "block");
+                    rollerShutterConfig.splitDirection = Cesium.SplitDirection.TOP;
+                    $("input[type=radio][value='top-roller']").prop("checked", "checked");
+                    break;
+                default:
+                    break;
+            }
+            setRollerShutterSplit(scene, rollerShutterConfig);
+        });
+
+        // 控制图层是否参与卷帘
+        $('input[type=checkbox][name="layer"]').on("input propertychange", function () {
+            let operationLayerName = $(this).val();
+            if ($(this).prop("checked")) { // 图层参与卷帘
+                rollerShutterConfig.splitLayers.push(operationLayerName);
+            } else {
+                var index = rollerShutterConfig.splitLayers.indexOf(operationLayerName);
+                rollerShutterConfig.splitLayers.splice(index, 1);
+            }
+            setRollerShutterSplit(scene, rollerShutterConfig);
+        });
+
+        // 是否使用卷帘
+        $("#use-roller").on("input propertychange", function () {
+            let verticalSlider = document.getElementById('vertical-slider');
+            let horizontalSlider = document.getElementById('horizontal-slider');
+            if ($(this).prop("checked")) {
+                if (rollerShutterConfig.latestSplitDirection === Cesium.SplitDirection.LEFT ||
+                    rollerShutterConfig.latestSplitDirection === Cesium.SplitDirection.RIGHT) {
+                    verticalSlider.style.display = 'block';
+                    horizontalSlider.style.display = 'none';
+                } else {
+                    verticalSlider.style.display = 'none';
+                    horizontalSlider.style.display = 'block';
+                }
+                rollerShutterConfig.splitDirection = rollerShutterConfig.latestSplitDirection;
+            } else {
+                rollerShutterConfig.latestSplitDirection = rollerShutterConfig.splitDirection;
+                rollerShutterConfig.splitDirection = Cesium.SplitDirection.NONE;
+                verticalSlider.style.display = 'none';
+                horizontalSlider.style.display = 'none';
+            }
+            setRollerShutterSplit(scene, rollerShutterConfig);
+        });
+    }
+
+    /**
+     * 注册卷帘分割条的拖拽事件。
+     * @param scene 场景。
+     * @param rollerShutterConfig 卷帘配置参数。
+     */
+    function bindSliderEvt(scene, rollerShutterConfig) {
+        let verticalSlider = document.getElementById('vertical-slider'); // 垂直分割条
+        let horizontalSlider = document.getElementById('horizontal-slider'); // 水平分割条
+        verticalSlider.addEventListener('mousedown', mouseDown, false);
+        horizontalSlider.addEventListener('mousedown', mouseDown, false);
+        let windowWidth = $('body').width();
+        let windowHeight = $('body').height();
+        document.addEventListener('mouseup', mouseUp, false);
+        function mouseUp(e) {
+            document.removeEventListener('mousemove', sliderMove, false);
+        }
+        function mouseDown(e) {
+            document.addEventListener('mousemove', sliderMove, false);
+        }
+        function sliderMove(e) { // 鼠标拖拽时执行
+            // 解决拖拽鼠标粘滞的问题
+            if (e.preventDefault) {
+                e.preventDefault();
+            } else {
+                e.returnValue = false;
+            }
+            if (rollerShutterConfig.splitDirection === Cesium.SplitDirection.LEFT || rollerShutterConfig.splitDirection === Cesium.SplitDirection.RIGHT) {
+                verticalSlider.style.left = e.clientX + 'px';
+                rollerShutterConfig.verticalSplitPosition = e.clientX;
+            } else if (rollerShutterConfig.splitDirection === Cesium.SplitDirection.TOP || rollerShutterConfig.splitDirection === Cesium.SplitDirection.BOTTOM) {
+                let clientY = e.clientY;
+                if (clientY < 0) {
+                    clientY = 0;
+                } else if (clientY > windowHeight) {
+                    clientY = windowHeight - $('#horizontal-slider').height();
+                }
+                horizontalSlider.style.top = clientY + 'px';
+                rollerShutterConfig.horizontalSplitPosition = windowHeight - clientY;
+            }
+            setRollerShutterSplit(scene, rollerShutterConfig);
+        }
+    }
+
+    /**
+     * 设置卷帘的分割方向及分割条的位置。
+     * @param scene 场景。
+     * @param rollerShutterConfig 卷帘配置参数。
+     */
+    function setRollerShutterSplit(scene, rollerShutterConfig) {
+        let splitPosition = null;
+        if (rollerShutterConfig.splitDirection === Cesium.SplitDirection.LEFT || rollerShutterConfig.splitDirection === Cesium.SplitDirection.RIGHT) {
+            splitPosition = rollerShutterConfig.verticalSplitPosition;
+        } else if (rollerShutterConfig.splitDirection === Cesium.SplitDirection.TOP || rollerShutterConfig.splitDirection === Cesium.SplitDirection.BOTTOM) {
+            splitPosition = rollerShutterConfig.horizontalSplitPosition;
+        }
+        for (let layer of scene.layers.layerQueue) {
+            // 判断图层是否是参与卷帘的图层
+            if (rollerShutterConfig.splitLayers.indexOf(layer.name) != -1) {
+                layer.splitDirection = rollerShutterConfig.splitDirection;
+                if (splitPosition) { // 如果禁用卷帘就没有必要设置分割位置
+                    layer.splitPosition = splitPosition;
+                }
+            } else {
+                layer.splitDirection = Cesium.SplitDirection.NONE;
+            }
+        }
+    }
+</script>
+</body>
+</html>

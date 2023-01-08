@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+		<title>汽车灯光</title>
+		<link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+		<link href="./css/pretty.css" rel="stylesheet">
+		<script src="./js/jquery.min.js"></script>
+		<script src="./js/config.js"></script>
+		<script src="./js/supermap/SuperMap.Include.js"></script>
+		<script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+	</head>
+
+	<body class="loading">
+		<div id="cesiumContainer"></div>
+		<div class="params-setting-container">
+			<div class="params-setting-anchor" title="显示/隐藏参数面板"><span class="fui-expand"></span></div>
+			<div class="params-setting">
+				<div class="param-item">
+					<label for="bloomShow">开启泛光</label>
+					<input type="checkbox" id="bloomShow">
+				</div>
+				<div class="param-item">
+					<label>亮度阈值</label>
+					<input type="range" id="bloom-threshold" min="0" max="5" value="1" step="0.01" style="width: 170px">
+				</div>
+				<div class="param-item">
+					<label>泛光强度</label>
+					<input type="range" id="bloom-intensity" min="0" max="10" value="1" step="0.1" style="width: 170px">
+				</div>
+				<div class="param-item">
+					<label for="hdrShow">开启HDR</label>
+					<input type="checkbox" id="hdrShow">
+				</div>
+			</div>
+		</div>
+		<script>
+			function onload(Cesium) {
+				var viewer = new Cesium.Viewer('cesiumContainer');
+
+				var scene = viewer.scene;
+				var widget = viewer.cesiumWidget;
+				var timeInterval;
+				var spotLight, spotLight2;
+				var pointLight, pointLight2;
+				var position, targetposition;
+				var position2, targetposition2;
+				var state;
+				var promise = scene.open(URL_CONFIG.SCENE_OLYMPIC_NIGHT);
+				Cesium.when(promise, function(layer) {
+						var layerroad = scene.layers.find("road_texture@OlympicGreenNight");
+						layerroad.visible = false;
+						//设置相机位置，定位至模型
+						scene.camera.setView({
+							destination: new Cesium.Cartesian3(-2171664.8741194746, 4377389.9019098645, 4099245.3416801775),
+							orientation: {
+								heading: 3.6961245248819816,
+								pitch: -0.3768153879496654,
+								roll: 0.000004751516053502769
+							}
+						});
+						//初始化聚光源——车灯1
+						position = new Cesium.Cartesian3.fromDegrees(116.38595266195058, 39.989764392562876, 11.678446743473573);
+						targetposition = new Cesium.Cartesian3.fromDegrees(116.3859533091522, 39.98980911044773, 9.998900582600598);
+						var options = {
+							color: new Cesium.Color(1, 1, 1, 1), //光源颜色
+							distance: 20, //光照距离
+							decay: 0.5, //衰减大小
+							intensity: 7 //光照强度
+						};
+						spotLight = new Cesium.SpotLight(position, targetposition, options);
+						scene.addLightSource(spotLight);
+						//初始化聚光源——车灯2
+						position2 = new Cesium.Cartesian3.fromDegrees(116.38593911808594, 39.98976431698656, 11.678446743473573);
+						targetposition2 = new Cesium.Cartesian3.fromDegrees(116.38593684622647, 39.98981261507557, 9.99880055961605);
+						var options2 = {
+							color: new Cesium.Color(1, 1, 1, 1),
+							distance: 20,
+							decay: 0.5,
+							intensity: 7
+						};
+						spotLight2 = new Cesium.SpotLight(position2, targetposition2, options2);
+						scene.addLightSource(spotLight2);
+						//加载模型信息
+						var urls = [
+							'./data/car/qiche1.s3m'
+						];
+
+						var keymap = {};
+						var url = urls[0];
+						keymap[url] = [];
+						//创建动态图层
+						var layer = new Cesium.DynamicLayer3D(scene.context, urls);
+						scene.primitives.add(layer);
+
+						doSqlQuery();
+
+						//查询操作
+						function doSqlQuery() {
+							var getFeatureParam, getFeatureBySQLService, getFeatureBySQLParams;
+							getFeatureParam = new SuperMap.REST.FilterParameter({
+								attributeFilter: "SMID>0"
+							});
+							getFeatureBySQLParams = new SuperMap.REST.GetFeaturesBySQLParameters({
+								queryParameter: getFeatureParam,
+								toIndex: 0,
+								datasetNames: ["OlympicGreenNight:" + "car_roadline1"]
+							});
+							var url = 'http://www.supermapol.com/realspace/services/data-OlympicGreenNight/rest/data';
+							getFeatureBySQLService = new SuperMap.REST.GetFeaturesBySQLService(url, {
+								eventListeners: {
+									"processCompleted": onQueryComplete,
+									"processFailed": processFailed
+								}
+							});
+							getFeatureBySQLService.processAsync(getFeatureBySQLParams);
+						}
+
+						//查询成功后动态图层操作
+						function onQueryComplete(queryEventArgs) {
+							var airRoute = queryEventArgs.originResult.features;
+							var startLines = createCarLines(airRoute[0]); //获取车辆路线
+							var objects = [];
+							var urlcar = urls[0];
+							var pts = startLines[0];
+							var len = pts.length;
+							var index = 0;
+							var point = pts[0]; //起始点
+							//初始化动态图层状态
+							state = new Cesium.DynamicObjectState({
+								longitude: point.x,
+								latitude: point.y,
+								altitude: point.z,
+								scale: new Cesium.Cartesian3(1, 1, 1),
+
+							});
+							keymap[urlcar].push(state);
+							//保存状态和索引信息
+							objects.push({
+								state: state,
+								index: index,
+								origin: index
+							});
+
+							if(timeInterval) {
+								clearInterval(timeInterval);
+							}
+							timeInterval = setInterval(function() {
+								var obj = objects[0];
+								var pointPre = [];
+								var state = obj.state;
+								var point;
+								obj.index++;
+								point = pts[obj.index];
+								if(!point) {
+									layer.clearAllState();
+									obj.index = obj.origin;
+									point = pts[obj.index];
+								}
+								//更新state信 信息
+								state.longitude = point.x;
+								state.latitude = point.y;
+								state.altitude = point.z;
+								//state.heading = 1.6;
+								layer.updateObjectWithModel(urlcar, keymap[urlcar]); //实时更新模型空间属性
+							}, 600);
+							layer.updateInterval = 600;
+
+							//监听场景每一帧变化的回调函数
+							scene.postRender.addEventListener(function() {
+								var startpoint = pts[0];
+								//汽车位置和车灯的位置差值，用于更新车灯位置。
+								var divlongtitude1 = 116.38595266195058 - startpoint.x;
+								var divlatitude1 = 39.989764392562876 - startpoint.y;
+								var divlongtitude2 = 116.38593911808594 - startpoint.x;
+								var divlatitude2 = 39.98976431698656 - startpoint.y;
+								//移除当前聚光源
+								scene.removeLightSource(spotLight);
+								scene.removeLightSource(spotLight2);
+								//获取实时对象信息
+								var group = layer.group['./data/car/qiche1.s3m'];
+								var instanceList = group.instanceList;
+								var instance = instanceList._array[0];
+
+								if(instance) {
+									var cartographic = Cesium.Cartographic.fromCartesian(instance._prePosition);
+									var longitude = Cesium.Math.toDegrees(cartographic.longitude);
+									var latitude = Cesium.Math.toDegrees(cartographic.latitude);
+									//更新聚光源位置
+									position = new Cesium.Cartesian3.fromDegrees(longitude, latitude, 11.678446743473573);
+									targetposition = new Cesium.Cartesian3.fromDegrees(116.38558057500741, 39.99656902390711, 11.678446743473573);
+									spotLight = new Cesium.SpotLight(position, targetposition, options);
+									scene.addLightSource(spotLight);
+									//更新聚光源位置
+									position2 = new Cesium.Cartesian3.fromDegrees(longitude, latitude, 11.678446743473573);
+									targetposition2 = new Cesium.Cartesian3.fromDegrees(116.38558057500741, 39.99656902390711, 11.678446743473573);
+									spotLight2 = new Cesium.SpotLight(position2, targetposition2, options2);
+									scene.addLightSource(spotLight2);
+								}
+
+							});
+
+						};
+						//获取车辆路线
+						function createCarLines(route) {
+							var startLines = [];
+							var startPoints = [];
+							var point3ds = route.geometry.points;
+							startPoints.push(point3ds[0]);
+							startline = [].concat(point3ds);
+							startLines.push(startline);
+							return startLines;
+						}
+
+						function processFailed(queryEventArgs) {};
+
+						//泛光开关
+						$("#bloomShow").on("input change", function() {
+							viewer.scene.bloomEffect.show = this.checked;
+							viewer.scene.bloomEffect.threshold = $("#bloom-threshold").val();
+							viewer.scene.bloomEffect.bloomIntensity = $("#bloom-intensity").val();
+						});
+						//HDR开关
+						$("#hdrShow").on("input change", function() {
+							viewer.scene.hdrEnabled = this.checked;
+						});
+						//调节泛光阈值
+						$("#bloom-threshold").on("input change", function() {
+							$("#bloom-threshold-label").text(this.value);
+							viewer.scene.bloomEffect.threshold = this.value;
+						});
+						//调节泛光强度
+						$("#bloom-intensity").on("input change", function() {
+							$("#bloom-intensity-label").text(this.value);
+							viewer.scene.bloomEffect.bloomIntensity = this.value;
+						});
+						//设置功能面板显隐
+						$(".params-setting-anchor").click(function() {
+							$(".params-setting").toggleClass("params-setting-hide");
+						});
+					},
+					function() {
+						var title = '加载SCP失败，请检查网络连接状态或者url地址是否正确？';
+						widget.showErrorPanel(title, undefined, e);
+					});
+
+			}
+		</script>
+	</body>
+
+</html>

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>S3M缓存加密</title>
+    <link href="./css/widgets.css" rel="stylesheet">
+    <link href="./css/bootstrap.min.css" rel="stylesheet">
+    <link href="./css/pretty.css" rel="stylesheet">
+    <script src="./js/jquery.min.js"></script>
+    <script src="./js/bootstrap.min.js"></script>
+    <script src="./js/bootstrap-select.min.js"></script>
+    <script src="./js/jquery.colorpicker.js"></script>
+    <script src="./js/slider.js"></script>
+    <script src="./js/config.js"></script>
+    <link rel="stylesheet" href="./css/sweetalert.css">
+    <script type="text/javascript" src="./js/sweetalert-dev.js"></script>
+    <script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+    <style>
+        html,
+        body,
+        #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000000;
+        }
+    </style>
+</head>
+
+<body>
+<div id="cesiumContainer"></div>
+<div id="toolbar" class="param-container tool-bar">
+    <div class="param-item">
+        <input id="cacheKey" placeholder="输入缓存密码,添加图层">
+    </div>
+    <div class="param-item">
+        <button type="button" id="add_layer" class="button black">添加图层</button>
+        <button type="button" id="clear_layer" class="button black">清空图层</button>
+    </div>
+</div>
+<script>
+    function onload(Cesium) {
+        var viewer = new Cesium.Viewer('cesiumContainer');
+        viewer.imageryLayers.addImageryProvider(new Cesium.BingMapsImageryProvider({
+            url: 'https://dev.virtualearth.net',
+            mapStyle: Cesium.BingMapsStyle.AERIAL,
+            key: URL_CONFIG.BING_MAP_KEY
+        }));
+        var scene = viewer.scene;
+        var promise = [];
+        //设置相机位置、方向，定位至模型
+        scene.camera.setView({
+            destination: new Cesium.Cartesian3(-2179842.5244151726, 4382614.895477712, 4091343.6810761136),
+            orientation: {
+                heading: 0.37618302221530087,
+                pitch: -0.5853800962750686,
+                roll: 1.4348522370255523e-11
+            }
+        });
+
+        document.getElementById("add_layer").onclick = function () {
+            var cacheKey = $("#cacheKey").val();
+
+            promise[0] = scene.addS3MTilesLayerByScp(URL_CONFIG.SCP_CBD_BUILD, {
+                name: "building",
+                cacheKey: cacheKey
+            });
+            promise[1] = scene.addS3MTilesLayerByScp(URL_CONFIG.SCP_CBD_GROUND1, {
+                name: "groud_1",
+                cacheKey: cacheKey
+            });
+            promise[2] = scene.addS3MTilesLayerByScp(URL_CONFIG.SCP_CBD_GROUND2, {
+                name: "groud_2",
+                cacheKey: cacheKey
+            });
+            promise[3] = scene.addS3MTilesLayerByScp(URL_CONFIG.SCP_CBD_TREE, {
+                name: "tree",
+                cacheKey: cacheKey
+            });
+        };
+        document.getElementById("clear_layer").onclick = function () {
+            scene.layers.removeAll();
+        }
+    }
+</script>
+</body>
+
+</html>

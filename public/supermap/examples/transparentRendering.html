@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+		<title>透明渲染</title>
+		<link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+		<link href="./css/pretty.css" rel="stylesheet">
+		<script src="./js/jquery.min.js"></script>
+		<script src="./js/config.js"></script>
+		<script src="./js/bootstrap.min.js"></script>
+		<script src="./js/bootstrap-select.min.js"></script>
+		<script src="./js/bootstrap-treeview.js"></script>
+		<script src="./js/spectrum.js"></script>
+		<script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+	</head>
+
+	<body>
+		<div id="cesiumContainer"></div>
+		<div id="tool-bar" class="param-container tool-bar">
+			<button id="open" class="button black">开启透明渲染</button>
+			<button id="close" class="button black">关闭透明渲染</button>
+		</div>
+
+		<script type="text/javascript">
+			function onload(Cesium) {
+				// 初始化viewer部件
+				var viewer = new Cesium.Viewer('cesiumContainer');
+				viewer.imageryLayers.addImageryProvider(new Cesium.BingMapsImageryProvider({
+					url: 'https://dev.virtualearth.net',
+					mapStyle: Cesium.BingMapsStyle.AERIAL,
+					key: URL_CONFIG.BING_MAP_KEY
+				}));
+				var scene = viewer.scene;
+				scene.globe.show = false;
+				scene.camera.frustum.near = 0.01;
+				var widget = viewer.cesiumWidget;
+				try {
+					//场景添加S3M图层服务
+					var promise = scene.open(URL_CONFIG.SCENE_BIMBUILDING);
+					Cesium.when(promise, function(layers) {
+						//设置相机位置、方向，定位至模型
+						scene.camera.setView({
+							destination: new Cesium.Cartesian3(-2180753.065987198, 4379023.266141494, 4092583.575045952),
+							orientation: {
+								heading: 4.0392222751147955,
+								pitch: 0.010279641987852584,
+								roll: 1.240962888005015e-11
+							}
+						});
+						var layer = scene.layers.find('BIMbuilding');
+						//通过服务地址得到子图层信息
+						$("#open").click(function() {
+							var size = layers.length;
+							for(var i = 0; i < size; i++) {
+								var curlayer = layers[i];
+								curlayer.style3D.fillForeColor = new Cesium.Color(1.0, 1.0, 1.0, 0.5);
+							}
+						})
+						$("#close").click(function() {
+							var size = layers.length;
+							for(var i = 0; i < size; i++) {
+								var curlayer = layers[i];
+								curlayer.style3D.fillForeColor = new Cesium.Color(1.0, 1.0, 1.0, 1);
+							}
+						})
+					}, function(e) {
+						if(widget._showRenderLoopErrors) {
+							var title = '加载SCP失败，请检查网络连接状态或者url地址是否正确？';
+							widget.showErrorPanel(title, undefined, e);
+						}
+					});
+				} catch(e) {
+					if(widget._showRenderLoopErrors) {
+						var title = '渲染时发生错误，已停止渲染。';
+						widget.showErrorPanel(title, undefined, e);
+					}
+				}
+			}
+		</script>
+	</body>
+
+</html>

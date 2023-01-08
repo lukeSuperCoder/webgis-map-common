@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>时态图层</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link href="./css/pretty.css" rel="stylesheet">
+    <script type="text/javascript" src="./js/jquery.min.js"></script>
+    <script src="./js/config.js"></script>
+    <script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<div id='loadingbar' class="spinner">
+    <div class="spinner-container container1">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container2">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container3">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+</div>
+<div id="toolbar" style="position : absolute;left : 2%; top : 2%;display : none;" >
+    <div id="progressBar" class="jquery-ui-like"><div></div></div>
+</div>
+<script>
+    function onload(Cesium) {
+        //初始化viewer部件
+        var viewer = new Cesium.Viewer('cesiumContainer',{
+            animation: true, //创建动画部件
+            shouldAnimate : true
+        });
+        viewer.imageryLayers.addImageryProvider(Cesium.createOpenStreetMapImageryProvider({
+            url : 'https://a.tile.openstreetmap.org/'
+        }));
+        var num = 10;
+        $(".cesium-viewer-animationContainer").hide();
+
+        var imageryLayers = viewer.imageryLayers;
+        //依次利用图片服务url创建SuperMapImageryProvider实例
+        var imageryProvider0 = new Cesium.SuperMapImageryProvider({
+            url : URL_CONFIG.TENSE_IMG0
+        });
+        var imageryProvider1 = new Cesium.SuperMapImageryProvider({
+            url : URL_CONFIG.TENSE_IMG1
+        });
+        var imageryProvider2 = new Cesium.SuperMapImageryProvider({
+            url : URL_CONFIG.TENSE_IMG2
+        });
+        var imageryProvider3 = new Cesium.SuperMapImageryProvider({
+            url : URL_CONFIG.TENSE_IMG3
+        });
+        var imageryProvider4 = new Cesium.SuperMapImageryProvider({
+            url : URL_CONFIG.TENSE_IMG4
+        });
+        var imageryProvider5 = new Cesium.SuperMapImageryProvider({
+            url : URL_CONFIG.TENSE_IMG5
+        });
+        var imageryProvider6 = new Cesium.SuperMapImageryProvider({
+            url : URL_CONFIG.TENSE_IMG6
+        });
+        var imageryProvider7 = new Cesium.SuperMapImageryProvider({
+            url : URL_CONFIG.TENSE_IMG7
+        });
+        var imageryProvider8 = new Cesium.SuperMapImageryProvider({
+            url : URL_CONFIG.TENSE_IMG8
+        });
+        var imageryProvider9 = new Cesium.SuperMapImageryProvider({
+            url : URL_CONFIG.TENSE_IMG9
+        });
+        var imageryProvider10 = new Cesium.SuperMapImageryProvider({
+            url : URL_CONFIG.TENSE_IMG10
+        });
+        //先将第1、第2个provider添加到图层集合中，并将第2个图层设为完全透明
+        var layer0 = imageryLayers.addImageryProvider(imageryProvider0);
+        var layer1 = imageryLayers.addImageryProvider(imageryProvider1);
+        layer1.alpha = 0;
+
+        viewer.animation.viewModel.timeFormatter = function(date, viewModel) {
+            $(".cesium-viewer-bottom").css("left", "0");
+            //在layer0完全透明前，layer0透明度减少，layer1透明度增加
+            if(layer0.alpha >= 0 ) {
+                layer0.alpha -= 0.005;
+                layer1.alpha += 0.005;
+            }
+            if(layer0.alpha < 0) {
+                //当第一个图层完全透明,开始执行下一轮渐变
+                changeTimeFormatter(layer0, layer1, imageryProviders);
+            }
+        }
+
+
+        var n = 0;
+        //数组包含除了第1、第2的剩余provider的数组
+        imageryProviders = [imageryProvider2, imageryProvider3, imageryProvider4, imageryProvider5, imageryProvider6, imageryProvider7, imageryProvider8, imageryProvider9, imageryProvider10];
+        function changeTimeFormatter(layer0, layer1, imageryProviders) {
+            if(typeof imageryProviders[n] === "undefined") {
+                //数组中没有成员时,将此回调函数置为空
+                viewer.animation.viewModel.timeFormatter = function(){};
+                return ;
+            }
+            //移除掉已经不可见的图层
+            imageryLayers.remove(layer0);
+
+            //将layer0指向下一个图层,并将它先设置成完全透明
+            layer0 = imageryLayers.addImageryProvider(imageryProviders[n++]);
+            layer0.alpha = 0;
+
+            layer1.alpha = 1;
+
+            function progress(percent, $element) {
+                var progressBarWidth = percent * $element.width() / 100;
+                $element.find('div').animate({ width: progressBarWidth }, 10).html(percent + "% ");
+            }
+
+            //改变该回调函数，执行下一轮渐变
+            viewer.animation.viewModel.timeFormatter = function(date, viewModel) {
+                if(layer1.alpha >= 0 ) {
+                    layer1.alpha -= 0.005;
+                    layer0.alpha += 0.005;
+                    num += 0.05;
+                    progress(num.toFixed(1), $('#progressBar'));
+
+                }
+                if(layer1.alpha < 0) {
+                    //执行下一轮渐变
+                    changeTimeFormatter(layer1, layer0, imageryProviders);
+                }
+            }
+        }
+        viewer.flyTo(layer0);
+        $('#toolbar').show();
+        $('#loadingbar').remove();
+    }
+
+</script>
+</body>
+</html>

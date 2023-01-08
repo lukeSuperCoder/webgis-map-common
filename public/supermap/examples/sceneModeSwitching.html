@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta http-equiv="pragma" content="no-cache">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>平面场景</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link href="./css/bootstrap.min.css" rel="stylesheet">
+    <link href="./css/pretty.css" rel="stylesheet">
+    <script src="./js/jquery.min.js"></script>
+    <script src="./js/bootstrap.min.js"></script>
+    <script src="./js/bootstrap-select.min.js"></script>
+    <script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+    <script src="./js/config.js"></script>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<div id='loadingbar' class="spinner">
+    <div class="spinner-container container1">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container2">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container3">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+</div>
+<div id="toolbar" style="position: absolute;left: 5px;top: 5px;display: none;">
+    <select id="imageryOptions" class="selectpicker show-tick form-control">
+        <!--<option disabled selected value>&#45;&#45;选择服务类型&#45;&#45;</option>-->
+        <option selected value="WGS">自定义影像&地形</option>
+        <option value="MEC">倾斜数据</option>
+    </select>
+</div>
+<script>
+    function onload(Cesium) {
+        //初始化viewer部件
+        var viewer = new Cesium.Viewer('cesiumContainer', {
+            terrainProvider: new Cesium.CesiumTerrainProvider({
+                url: URL_CONFIG.ZF_TERRAIN,
+                isSct: true//地形服务源自SuperMap iServer发布时需设置isSct为true
+            }),
+            sceneModePicker: true,
+            navigation: false,
+        });
+        var layer = viewer.imageryLayers.addImageryProvider(new Cesium.SuperMapImageryProvider({
+            url: URL_CONFIG.ZF_IMG
+        }));
+
+        viewer.scene.camera.setView({
+            destination: new Cesium.Cartesian3(-1206939.1925299785, 5337998.241228442, 3286279.2424502545),
+            orientation: {
+                heading: 1.4059101895600987,
+                pitch: -0.20917672793046682,
+                roll: 2.708944180085382e-13
+            }
+        });
+        viewer.scene.mode = Cesium.SceneMode.COLUMBUS_VIEW;
+        //viewer.scene.mode = Cesium.SceneMode.SCENE2D;
+        var imageryLayers = viewer.imageryLayers;
+
+        var scene = viewer.scene;
+        var promise = scene.open(URL_CONFIG.SCENE_JINJIANG);
+
+        //添加下拉菜单，点击选项切换地图服务
+        $('#imageryOptions').change(function () {
+            var value = $(this).val();
+            if (value == 'WGS') {
+                viewer.camera.setView({
+                    destination: new Cesium.Cartesian3(-1206939.1925299785, 5337998.241228442, 3286279.2424502545),
+                    orientation: {
+                        heading: 1.4059101895600987,
+                        pitch: -0.20917672793046682,
+                        roll: 2.708944180085382e-13
+                    }
+                });
+            }
+            else if (value == 'MEC') {
+                Cesium.when(promise, function (layers) {
+                    //设置相机位置，定位至模型
+                    scene.camera.setView({
+                        //将经度、纬度、高度的坐标转换为笛卡尔坐标
+                        destination: Cesium.Cartesian3.fromDegrees(118.54909017414182, 24.80259473610606, 105.40531821331771),
+                        orientation: {
+                            heading: 5.154573786584606,
+                            pitch: -0.14229615865957967,
+                            roll: 3.2294167340296553e-12
+                        }
+                    });
+                });
+            }
+        });
+        $('#toolbar').show();
+        $('#loadingbar').remove();
+
+
+    }
+</script>
+</body>
+</html>

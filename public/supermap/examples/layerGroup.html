@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>图层分组</title>
+    <link href="css/widgets.css" rel="stylesheet">
+    <link href="./css/bootstrap.min.css" rel="stylesheet">
+    <link href="./css/flat-ui.css" rel="stylesheet">
+    <link href="./css/pretty.css" rel="stylesheet">
+    <link href="./css/se.css" rel="stylesheet">
+    <script src="./js/jquery.min.js"></script>
+    <script src="./js/config.js"></script>
+    <script src="./js/bootstrap.min.js"></script>
+    <script src="./js/bootstrap-treeview.js"></script>
+    <script src="./js/bootstrap-select.min.js"></script>
+    <script type="text/javascript" src="./js/sweetalert-dev.js"></script>
+    <link rel="stylesheet" href="./css/sweetalert.css">
+    <script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<div id='toolbar' class='btn-group' style='position: absolute;left: 5px;top:3px;display: none;'>
+    <a data-toggle='dropdown' id='layerMangerBtn' title='图层管理' class='btn btn-inverse' style="width: 50px;height: 50px">
+        <span style='font-size : 23px;' class='smicon-layerlist'></span>
+        <div class="dropDown-container" id="treeContainer" style="overflow: auto;max-height: 800px;">
+            <div id='layerTree'></div>
+        </div>
+    </a>
+    <a class='btn btn-inverse' style='padding : 10px 0px;'><span style='border-left : 1px solid #dddddd;'></span></a>
+</div>
+<script>
+    function onload(Cesium) {
+        var viewer = new Cesium.Viewer('cesiumContainer');
+        viewer.imageryLayers.addImageryProvider(new Cesium.BingMapsImageryProvider({
+            url: 'https://dev.virtualearth.net',
+            mapStyle: Cesium.BingMapsStyle.AERIAL,
+            key: URL_CONFIG.BING_MAP_KEY
+        }));
+        var scene = viewer.scene;
+        $("#toolbar").show();
+        var promises = scene.open('http://localhost:8090/iserver/services/3D-layerGroup/rest/realspace');
+        Cesium.when(promises, function (layers) {
+            scene.camera.setView({
+                destination: new Cesium.Cartesian3(-2179842.5244151726, 4382614.895477712, 4091343.6810761136),
+                orientation: {
+                    heading: 0.37618302221530087,
+                    pitch: -0.5853800962750686,
+                    roll: 1.4348522370255523e-11
+                }
+            });
+            $.ajax({
+                //获取分组名称
+                url: 'http://localhost:8090/iserver/services/3D-layerGroup/rest/realspace/scenes/group.json',
+                method: "GET"
+            }).done(function (data) {
+                datainfo(data);
+            });
+
+            //初始化树形菜单
+            var $tree = $('#layerTree').treeview({
+                data: [{text: "分组名称", selectable: false}],
+                showIcon: false,
+                showCheckbox: true,
+                backColor: 'transparent',
+                color: '#fff',
+                //通过NodeChecked状态设置子图层的显示与隐藏的切换
+                onNodeChecked: function (evt, node) {
+                    checkAllSon(node);
+                    $.ajax({
+                        //获取分组名称
+                        url: 'http://localhost:8090/iserver/services/3D-layerGroup/rest/realspace/scenes/group.json',
+                        method: "GET"
+                    }).done(function (data) {
+                        for (var i = 0; i < data.layers.length; i++) {
+                            if (data.layers[i].parentLayerName == node.text) {
+                                scene.addS3MTilesLayerByScp('http://localhost:8090/iserver/services/3D-layerGroup/rest/realspace/datas/' + data.layers[i].name + '/config', {name: data.layers[i].name});
+                            } else if (node.text == data.layers[i].name) {
+                                scene.addS3MTilesLayerByScp('http://localhost:8090/iserver/services/3D-layerGroup/rest/realspace/datas/' + data.layers[i].name + '/config', {name: data.layers[i].name});
+                            }
+                        }
+                    });
+                },
+                onNodeUnchecked: function (evt, node) {
+                    uncheckAllSon(node);
+                    $.ajax({
+                        //获取分组名称
+                        url: 'http://localhost:8090/iserver/services/3D-layerGroup/rest/realspace/scenes/group.json',
+                        method: "GET"
+                    }).done(function (data) {
+                        console.log(data);
+                        for (var i = 0; i < data.layers.length; i++) {
+                            if (data.layers[i].parentLayerName == node.text) {
+                                scene.layers.remove(data.layers[i].name);
+                            } else if (node.text == data.layers[i].name) {
+                                scene.layers.remove(data.layers[i].name);
+                            }
+                        }
+                    });
+                },
+            });
+            var rootNode = $tree.treeview('getNode', 0);
+            var childNode;
+
+            //加载子图层
+            function datainfo(data) {
+                var parentLayerName = [];
+                for (var i = 0; i < data.layers.length; i++) {
+                    if (parentLayerName.indexOf(data.layers[i].parentLayerName) != -1) {
+                        $tree.treeview('addNode', [childNode, {
+                            text: data.layers[i].name,
+                            showDel: true,
+                            fontSize: '10pt',
+                            state: {checked: true}
+                        }]);
+                    }
+                    else {
+                        childNode = $tree.treeview('addNode', [rootNode, {
+                            text: data.layers[i].parentLayerName,
+                            showDel: true,
+                            fontSize: '10pt',
+                            state: {checked: true}
+                        }]);
+                        $tree.treeview('addNode', [childNode, {
+                            text: data.layers[i].name,
+                            showDel: true,
+                            fontSize: '10pt',
+                            state: {checked: true}
+                        }]);
+                    }
+                    parentLayerName.push(data.layers[i].parentLayerName);
+                }
+            }
+        }, function (e) {
+            if (widget._showRenderLoopErrors) {
+                var title = '加载SCP失败，请检查网络连接状态或者url地址是否正确？';
+                widget.showErrorPanel(title, undefined, e);
+            }
+        });
+        //级联选中所有子节点
+        function checkAllSon(node) {
+            $('#layerTree').treeview('checkNode', node.nodeId, {silent: true});
+            if (node.nodes != null && node.nodes.length > 0) {
+                for (var i in node.nodes) {
+                    checkAllSon(node.nodes[i]);
+                }
+            }
+        }
+        //级联取消选中所有子节点
+        function uncheckAllSon(node) {
+            $('#layerTree').treeview('uncheckNode', node.nodeId, {silent: true});
+            if (node.nodes != null && node.nodes.length > 0) {
+                for (var i in node.nodes) {
+                    uncheckAllSon(node.nodes[i]);
+                }
+            }
+        }
+
+        //图层列表的隐藏显示
+        $(document).on('click.dropDown-container touchstart.dropDown-container', '[data-toggle=dropdown]', function (evt) {
+            evt.stopPropagation();
+            var target = evt.target;
+            if (!target.contains(evt.currentTarget) && target.tagName != 'SPAN') {
+                return;
+            }
+            var $this = $(this), $parent, isActive;
+            var $target = $this.children('div.dropDown-container');
+            if ($target.length == 0) {
+                $('.dropDown-container').removeClass('dropDown-visible');
+                return;
+            }
+            isActive = $target.hasClass('dropDown-visible');
+            $('.dropDown-container').removeClass('dropDown-visible');
+            if (!isActive) {
+                $target.addClass('dropDown-visible');
+            }
+            return false;
+        });
+        //设置列表框高度
+        var height = $('body').height() * 0.6 + 'px';
+        $('#treeContainer').css({'height': height, 'min-width': '260px', 'text-align': 'left'});
+
+    }
+</script>
+</body>
+</html>

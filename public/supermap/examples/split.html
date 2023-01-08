@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>分割条</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link href="./css/pretty.css" rel="stylesheet">
+    <script src="./js/jquery.min.js"></script>
+    <script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+    <script src="./js/config.js"></script>
+    <style>
+        #slider {
+            position: absolute;
+            left: 50%;
+            top: 0px;
+            background-color: #D3D3D3;
+            width: 5px;
+            height: 100%;
+            z-index: 9999;
+        }
+        #slider:hover {
+            cursor: ew-resize;
+        }
+    </style>
+</head>
+<body>
+<div id='loadingbar' class="spinner">
+    <div class="spinner-container container1">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container2">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container3">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+</div>
+<div id="cesiumContainer" class="fullSize">
+    <div id="slider" style="display: none;"></div>
+</div>
+    <p id="left" style="display: none; position: absolute; left: 20px;top: 50%; color: #ffffff;">BingMaps影像服务</p>
+    <p id="right" style="display: none; position: absolute; right: 20px;top: 50%; color: #ffffff">天地图全球矢量地图服务（墨卡托投影）</p>
+<script>
+ function onload(Cesium) {
+     //初始化viewer部件，并添加BingMaps影像服务
+     var viewer = new Cesium.Viewer('cesiumContainer');
+     viewer.imageryLayers.addImageryProvider(new Cesium.BingMapsImageryProvider({
+         url : 'https://dev.virtualearth.net',
+         mapStyle : Cesium.BingMapsStyle.AERIAL,
+         key : URL_CONFIG.BING_MAP_KEY
+     }));
+     var layers = viewer.imageryLayers;
+     var tdtLayer = layers.addImageryProvider(new Cesium.TiandituImageryProvider({
+         mapStyle : Cesium.TiandituMapsStyle.VEC_W//天地图全球矢量地图服务（墨卡托投影）
+     }),1);
+     tdtLayer.splitDirection = Cesium.ImagerySplitDirection.RIGHT; // 新添加的影像图层只显示在滑块右侧
+
+     //分割条位置与slider同步
+     var slider = document.getElementById('slider');
+     viewer.scene.imagerySplitPosition = 0.5;
+
+     var dragStartX = 0;
+
+     document.getElementById('slider').addEventListener('mousedown', mouseDown, false);
+     window.addEventListener('mouseup', mouseUp, false);
+
+     function mouseUp() {
+         window.removeEventListener('mousemove', sliderMove, true);
+     }
+
+     function mouseDown(e) {
+         var slider = document.getElementById('slider');
+         dragStartX = e.clientX - slider.offsetLeft;
+         window.addEventListener('mousemove', sliderMove, true);
+     }
+
+     function sliderMove(e) {
+         //解决拖拽鼠标粘滞的bug
+         if(e.preventDefault){
+            e.preventDefault();
+         }else{
+            e.returnValue=false;
+         }
+
+         var slider = document.getElementById('slider');
+         var splitPosition = (e.clientX - dragStartX) / slider.parentElement.offsetWidth;
+         slider.style.left = 100.0 * splitPosition + "%";
+         viewer.scene.imagerySplitPosition = splitPosition;
+     }
+     $('#left').show();
+     $('#right').show();
+     $('#slider').show();
+     $('#loadingbar').remove();
+ }
+</script>
+</body>
+</html>

@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en" style="height: 100%">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <meta name="description" content="Test">
+    <meta name="cesium-sandcastle-labels" content="Geometries">
+    <title>查询标号</title>
+
+    <script type="text/javascript" src="../Build/Cesium/ThirdParty/Workers/PlotAlgo/PlotAlgoInclude.js"></script>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link rel="stylesheet" href="./css/sideBar.css">
+    <script src="js/jquery.min.js"></script>
+    <link rel="stylesheet" type="text/css" media="screen,projection" href="css/jquery-sticklr.css"/>
+    <script src="js/plotPanelControl/PlottingUI.Include.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <link href="css/bootstrap-new.min.css" rel="stylesheet">
+    <script type="text/javascript" src="js/widgets.js"></script>
+    <script type="text/javascript" src="js/require.min.js" data-main="js/main"></script>
+
+</head>
+
+<body class="sandcastle-loading" data-sandcastle-bucket="bucket-requirejs.html"
+      style="margin: 0px; overflow: hidden;background: #fff;height: 100%;">
+
+<div id="toolbar" class="panel panel-primary"
+     style="position: absolute;top: 10px;left: 10px;width: 300px;text-align: center;z-index: 9999;border-radius: 4px;">
+    <div class='panel-heading'>
+        <h5 class='panel-title text-center'>查询标号</h5></div>
+    <div class='panel-body content'>
+        <div class='panel'>
+            <div class='input-group'>
+                <span class='input-group-addon'>关键字：</span>
+                <input class='form-control' id='queryCriteria' value=''/>
+            </div>
+        </div>
+        <input type="button" value="查询" onclick="querySymbolLib()"/>&nbsp;
+        <input type="button" value="清空图层" onclick="clearLayers()"/>&nbsp;
+
+    </div>
+    <div id="popupWin" class="popupWindow" style=" background: #FFF;z-index: 9999;display: block;">
+        <div class='panel'>
+            <div class='input-group'>
+                <div class="winTitle" style="  margin-left: 20px;font-size: 14px;font-weight: bold;">
+                    <span class="title_left">查询结果:</span>
+                </div>
+            </div>
+        </div>
+        <div id="queryResult" class="winContent" style=" padding: 5px;overflow-y: auto;height: 220px;"></div>
+    </div>
+</div>
+
+<div id="cesiumContainer" class="fullSize"
+     style="position: relative;left: 0%;height: 100%;border: 1px solid #3473b7;"></div>
+<script id="cesium_sandcastle_script">
+    var cesium, scene, viewer, serverUrl;
+    var plottingLayer;
+    var symbolLibManager, loadSymbolComplete = false;
+    var plotting, plotEditControl, plotDrawControl;
+
+    function onload(Cesium) {
+        'use strict';
+        cesium = Cesium;
+        //若本地没有标绘相关服务则可访问支持中心的iserver
+        // var host = document.location.toString().match('/file:\/\//') ? 'http://localhost:8090' : 'http://' + document.location.host;
+        var host =  'http://support.supermap.com.cn:8090' ;
+        viewer = new Cesium.Viewer('cesiumContainer');
+        scene = viewer.scene;
+        scene.globe.depthTestAgainstTerrain = false;
+        serverUrl = host + '/iserver/services/plot-jingyong/rest/plot';
+        InitPlot(viewer, serverUrl);
+        loadSymbolLib();
+    }
+
+    function InitPlot(viewer, serverUrl) {
+        if (!viewer) {
+            return;
+        }
+        plottingLayer = new cesium.PlottingLayer(scene, "plottingLayer");
+        scene.layers.add(plottingLayer);
+
+        plotting = cesium.Plotting.getInstance(serverUrl, scene);
+
+        plotEditControl = new cesium.PlotEditControl(scene, plottingLayer);//编辑控件
+        plotEditControl.activate();
+        plotDrawControl = new cesium.PlotDrawControl(scene, plottingLayer);//绘制控件
+        plotDrawControl.drawFinishEvent.addEventListener(function () {//标绘结束，激活编辑控件
+            plotEditControl.activate();
+        });
+
+    }
+
+    function loadSymbolLib() {
+        symbolLibManager = plotting.getSymbolLibManager();
+        if (symbolLibManager.isInitializeOK()) {
+            return;
+        } else {
+            symbolLibManager.initializecompleted.addEventListener(function (result) {
+                loadSymbolComplete = true;
+            });
+            symbolLibManager.initializeAsync();
+        }
+    }
+
+    function querySymbolLib() {
+        if (!loadSymbolComplete) {
+            return;
+        }
+        var key = document.getElementById("queryCriteria").value;
+        if ("" === key) {
+            return;
+        }
+
+        var result = [];
+        for (var i = 0; i < symbolLibManager.getSymbolLibNumber(); i++) {
+            var symbolLib = symbolLibManager.getSymbolLibByIndex(i);
+            if (null !== symbolLib) {
+                var tempResult = symbolLib.querySymbolbyKey(key);
+                for (var j = 0; j < tempResult.length; j++) {
+                    result.push(tempResult[j]);
+                }
+            }
+        }
+
+        showResult(result);
+    }
+
+    function showResult(queryResult) {
+        document.all.queryResult.innerHTML = "";
+        if (0 === queryResult.length) {
+            var text = document.getElementById("queryCriteria").value;
+            var message = text + " not exist! ";
+            widgets.alert.showAlert(message, true);
+            return;
+        }
+        //获取选中的对象
+        var container = document.getElementById("queryResult");
+        var table = document.createElement("table");
+        drawNodeClick = function () {
+            plotDrawControl.libID = this.libID;
+            plotDrawControl.code = this.symbolCode;
+            plotDrawControl.activate();
+			plotEditControl.deactivate();//绘制结束后再激活
+
+
+        }
+        var i = 0;
+        var rowLength = (queryResult.length % 3 === 0) ? queryResult.length / 3 : queryResult.length / 3 + 1;
+        for (var j = 0; j < rowLength; j++) {
+            var tr = document.createElement("tr");
+            for (var k = 0; k < 3; k++) {
+                if (queryResult[i]) {
+                    //存储菜单信息
+                    var td = document.createElement("td");
+                    var drawNode = document.createElement("div");
+                    drawNode.onclick = drawNodeClick;
+                    drawNode.style.textAlign = "center";//字体居中
+                    //设置标号的字体居中显示
+                    drawNode.style.color = "#000000";//字体颜色
+                    //设置标号画上的id属性
+                    drawNode.id = queryResult[i].libID + "_" + queryResult[i].symbolCode;
+                    drawNode.libID = queryResult[i].libID;
+                    drawNode.symbolCode = queryResult[i].symbolCode;
+                    drawNode.serverUrl = serverUrl;
+                    var img = document.createElement("img");
+                    //查询symbol的title
+                    img.title = queryResult[i].symbolName + "_" + queryResult[i].symbolCode;
+                    img.src = queryResult[i].icon;
+                    //文本
+                    var text = document.createElement("div");
+                    //标号的SymbolName
+                    text.innerHTML = queryResult[i].symbolName;
+                    drawNode.appendChild(img);
+                    drawNode.appendChild(text);
+                    td.appendChild(drawNode);
+
+                    tr.appendChild(td);
+                }
+                i++;
+            }
+            table.appendChild(tr);
+        }
+        container.appendChild(table);
+    }
+
+    //删除指定标号
+    function deleteSeleGeo() {
+        plottingLayer.removeGeoGraphicObject(plottingLayer._selectedFeature);
+    }
+
+    function clearLayers() {
+        plottingLayer.removeAll();
+    }
+
+    //“Delete”按键删除选中标号
+    //"Enter"按键搜索标号
+    $(document).keydown(function (event) {
+        if (event.keyCode === 46) {
+            deleteSeleGeo();
+        } else if (event.keyCode === 13) {
+            querySymbolLib();
+        }
+    });
+
+</script>
+</body>
+</html>

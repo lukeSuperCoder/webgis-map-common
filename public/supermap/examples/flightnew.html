@@ -1,0 +1,2323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title></title>    
+    <link rel="stylesheet" href="css/liMarquee.css" />
+    <link rel="stylesheet" href="css/InfoGrid.css" />
+    <script src="js/js/jquery-2.1.1.min.js"></script>
+    <script src="js/js/jquery.liMarquee.js"></script>
+    <script src="js/jquery.flip.min.js"></script>
+   <script src="js/echarts.js"></script>
+   <script type="text/javascript" src="js/ecStat.min.js"></script>
+   <script type="text/javascript" src="js/dataTool.min.js"></script>
+   <script type="text/javascript" src="js/china.js"></script>
+   <script type="text/javascript" src="js/world.js"></script>
+   <script type="text/javascript" src="js/bmap.min.js"></script>
+    <script src="js/Sandcastle-header.js"></script>
+    <script src="./js/config.js"></script>
+    <script src="./js/supermap/SuperMap.Include.js"></script>
+    <script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+    <script type="text/javascript" src="./js/airportGPS.js"></script>
+    <script type="text/javascript" src="js/addairport.js"></script>
+    <script type="text/javascript" src="data/flightairport.js"></script>
+    <script src="js/loadmin.js"></script>
+    <script src="js/Echartsadd.js"></script>
+    
+	<link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet"> 
+    <style>
+        html, body, #cesiumContainer {
+            width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;
+        }
+        body {
+            background: #000;
+            color: #eee;
+            font-family: sans-serif;
+            font-size: 9pt;
+            padding: 0;
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        #loadingOverlay {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            opacity: 0.9;
+            width: 100%;
+            height: 10%;
+            display: none;
+        }
+
+        #loadingOverlay h1 {
+            text-align: center;
+            position: relative;
+            top: 50%;
+            margin-top: -0.5em;
+        }
+       
+
+        .loading #loadingOverlay {
+            display: block;
+        }
+        .includeSlider:after{
+            left: -37%;
+        }
+        #toolbar{
+            margin: 5px;
+            padding: 2px 5px;
+            position: absolute;
+            left: 0px;
+            top: 0px;
+            background: rgba(42, 42, 42, 0.8);
+            padding: 4px;
+            border-radius: 4px;
+            color: #ffffff;
+            display: none;
+        }
+        #toolbar input {
+            vertical-align: middle;
+            padding-top: 2px;
+            padding-bottom: 2px;
+        } 
+        #echarts{
+        	top:1.5%;
+        	width: 400px;
+        	height: 450px;
+        }
+        #echarts2{
+        	top:45%;
+        	width: 400px;
+        	height: 400px;
+        }
+        #graToolBar{
+        	top:1%;
+        }
+    </style>
+</head>
+<body class="loading" onload="onload(Cesium)">	
+<div id="cesiumContainer"></div>
+ <div id="echarts" ></div>
+ <div id="echarts2"></div>
+<div id="loadingOverlay"><h1>Loading data...</h1></div>
+<div id="toolbar">
+</div>
+<div id="graToolBar">
+	<input id="type1" class="gratype" type="button" value="1-20" onclick="grabuttonOnclick(20)"/>
+	<input id="type2" class="gratype" type="button" value="21-40" onclick="grabuttonOnclick(40)"/>	
+	<input id="type3" class="gratype" type="button" value="41-60" onclick="grabuttonOnclick(60)"/>	
+</div>
+<div id='flightInfotool'>
+<input id="1" class="flightInfotoolbutton" type="button" value="1-3月 / Jan-Mar" onclick="updataliMarquee(this)"/>	
+<input id="2" class="flightInfotoolbutton" type="button" value="4-6月 / Apr-Jun" onclick="updataliMarquee(this)"/>	
+<input id="3" class="flightInfotoolbutton" type="button" value="7-9月 / Jul-Sep" onclick="updataliMarquee(this)"/>	
+<input id="4" class="flightInfotoolbutton" type="button" value="10-12月 / Oct-Dec" onclick="updataliMarquee(this)"/>	
+</div>
+<div id="flightinfo">
+<div id="flightInfoAll11"style="">
+ <div id="infoID">
+        <div id="ceshi" class="">
+            <p>序号</p>
+            <p>ID</p>
+        </div>
+        <div id="ceshi1" class="" >
+            <p>1</p>
+        </div>
+        <div id="ceshi2" class="" >
+            <p>2</p>
+        </div>
+        <div id="ceshi3" class="" >
+            <p>3</p>
+        </div>
+        <div id="ceshi4" class="" >
+            <p>4</p>
+        </div>
+        <div id="ceshi5" class="" >
+            <p>5</p>
+        </div>
+        <div id="ceshi6" class="" >
+            <p>6</p>
+        </div>
+        <div id="ceshi7" class="" >
+            <p>7</p>
+        </div>
+        <div id="ceshi8" class="" >
+            <p>8</p>
+        </div>
+        <div id="ceshi9" class="" >
+            <p>9</p>
+        </div>
+        <div id="ceshi10" class="" >
+            <p>10</p>
+        </div>
+    </div>
+    <div id="fligheInfo">
+        <div id="ceshi" class="" >
+            <p>热门航班</p>
+            <p>Fight</p>
+        </div>
+        <div id="ceshi1" class="str1 str_wrap" >
+            <p>KAL86</p>
+            <p>KAL86</p>
+        </div>
+        <div id="ceshi2" class="str1 str_wrap" >
+            <p>THA916</p>
+            <p>THA916</p>
+        </div>
+        <div id="ceshi3" class="str1 str_wrap" >
+            <p>CES216</p>
+            <p>CES216</p>
+        </div>
+        <div id="ceshi4" class="str1 str_wrap" >
+            <p>CAL5107</p>
+            <p>CAL5107</p>
+        </div>
+        <div id="ceshi5" class="str1 str_wrap" >
+            <p>CPA897</p>
+            <p>CPA897</p>
+        </div>
+        <div id="ceshi6" class="str1 str_wrap" >
+            <p >AAL72</p>
+            <p >AAL72</p>
+        </div>
+        <div id="ceshi7" class="str1 str_wrap" >
+            <p>BAW28</p>
+            <p>BAW28</p>
+        </div>
+        <div id="ceshi8" class="str1 str_wrap" >
+            <p>CKK222</p>
+            <p>CKK222</p>
+        </div>
+        <div id="ceshi9" class="str1 str_wrap" >
+            <p>AAR201</p>
+            <p>AAR201</p>
+        </div>
+        <div id="ceshi10" class="str1 str_wrap" >
+            <p>BAW12</p>
+            <p>BAW12</p>
+        </div>
+    </div>
+
+    <div id="fligheStart">
+        <div id="ceshi" class="" >
+            <p>始发站</p>
+            <p>From</p>
+        </div>
+        <div id="ceshi1" class="str1 str_wrap" >
+            <p>肯尼迪</p>
+            <p>JFK</p>
+        </div>
+
+        <div id="ceshi2" class="str1 str_wrap" >
+            <p>曼谷</p>
+            <p>BKK</p>
+        </div>
+        <div id="ceshi3" class="str1 str_wrap" >
+            <p>温哥华</p>
+            <p>YVR</p>
+        </div>
+        <div id="ceshi4" class="str1 str_wrap" >
+            <p>旧金山</p>
+            <p>SFO</p>
+        </div>
+        <div id="ceshi5" class="str1 str_wrap" >
+            <p>洛杉矶</p>
+            <p>LAX</p>
+        </div>
+        <div id="ceshi6" class="str1 str_wrap" >
+            <p>悉尼</p>
+            <p>SYD</p>
+        </div>
+
+        <div id="ceshi7" class="str1 str_wrap" >
+            <p>香港赤鱲角</p>
+            <p>HKG</p>
+        </div>
+        <div id="ceshi8" class="str1 str_wrap" >
+            <p>洛杉矶</p>
+            <p>LAX</p>
+        </div>
+        <div id="ceshi9" class="str1 str_wrap" >
+            <p>洛杉矶</p>
+            <p>LAX</p>
+        </div>
+        <div id="ceshi10" class="str1 str_wrap" >
+            <p>樟宜</p>
+            <p>SIN</p>
+        </div>
+    </div>
+    <div id="fligheEnd">
+        <div id="ceshi" class="" >
+            <p>目的地</p>
+            <p>TO</p>
+        </div>
+        <div id="ceshi1" class="str1 str_wrap" >
+            <p>首尔仁川</p>
+            <p>ICN</p>
+        </div>
+        <div id="ceshi2" class="str1 str_wrap" >
+            <p>伦敦希思罗</p>
+            <p>LHR</p>
+        </div>
+        <div id="ceshi3" class="str1 str_wrap" >
+            <p>香港赤鱲角</p>
+            <p>HKG</p>
+        </div>
+        <div id="ceshi4" class="str1 str_wrap" >
+            <p>台北桃园</p>
+            <p>TPE</p>
+        </div>
+        <div id="ceshi5" class="str1 str_wrap" >
+            <p>香港赤鱲角</p>
+            <p>HKG</p>
+        </div>
+        <div id="ceshi6" class="str1 str_wrap" >
+            <p>洛杉矶</p>
+            <p>LAX</p>
+        </div>
+        <div id="ceshi7" class="str1 str_wrap" >
+            <p>伦敦希思罗</p>
+            <p>LHR</p>
+        </div>
+        <div id="ceshi8" class="str1 str_wrap" >
+            <p>上海浦东</p>
+            <p>PVG</p>
+        </div>
+        <div id="ceshi9" class="str1 str_wrap" >
+            <p>首尔仁川</p>
+            <p>ICN</p>
+        </div>
+        <div id="ceshi10" class="str1 str_wrap" >
+            <p>伦敦希思罗</p>
+            <p>LHR</p>
+        </div>
+    </div>
+
+    <div id="fligheStartTime">
+        <div id="ceshi" class="" >
+            <p>预计起飞</p>
+            <p>STA</p>
+        </div>
+        <div id="ceshi1" class="str1 str_wrap" >
+            <p>13:12</p>
+            <p>13:12:</p>
+        </div>
+        <div id="ceshi2" class="str1 str_wrap" >
+            <p>14:03</p>
+            <p>14:03</p>
+        </div>
+        <div id="ceshi3" class="str1 str_wrap" >
+            <p>03:54</p>
+            <p>03:54</p>
+        </div>
+        <div id="ceshi4" class="str1 str_wrap" >
+            <p>08:46</p>
+            <p>08:46</p>
+        </div>
+        <div id="ceshi5" class="str1 str_wrap" >
+            <p>01:04</p>
+            <p>01:04</p>
+        </div>
+        <div id="ceshi6" class="str1 str_wrap" >
+            <p>08:56</p>
+            <p>08:56</p>
+        </div>
+        <div id="ceshi7" class="str1 str_wrap" >
+            <p>23:29</p>
+            <p>23:29</p>
+        </div>
+        <div id="ceshi8" class="str1 str_wrap" >
+            <p>04:49</p>
+            <p>04:49</p>
+        </div>
+        <div id="ceshi9" class="str1 str_wrap" >
+            <p>04:02</p>
+            <p>04:02</p>
+        </div>
+        <div id="ceshi10" class="str1 str_wrap" >
+            <p>23:31</p>
+            <p>23:31</p>
+        </div>
+    </div>
+
+    <div id="fligheEndTime">
+        <div id="ceshi" class="" >
+            <p>预计达到</p>
+            <p>ETA</p>
+        </div>
+        <div id="ceshi1" class="str1 str_wrap" >
+            <p>03:17</p>
+            <p>03:17</p>
+        </div>
+        <div id="ceshi2" class="str1 str_wrap" >
+            <p>02:33</p>
+            <p>02:33</p>
+        </div>
+        <div id="ceshi3" class="str1 str_wrap" >
+            <p>17:56</p>
+            <p>17:56</p>
+        </div>
+        <div id="ceshi4" class="str1 str_wrap" >
+            <p>22:20</p>
+            <p>22:20</p>
+        </div>
+        <div id="ceshi5" class="str1 str_wrap" >
+            <p>16:17</p>
+            <p>16:17</p>
+        </div>
+        <div id="ceshi6" class="str1 str_wrap" >
+            <p>22:33</p>
+            <p>22:33</p>
+        </div>
+        <div id="ceshi7" class="str1 str_wrap" >
+            <p>14:20</p>
+            <p>14:20</p>
+        </div>
+        <div id="ceshi8" class="str1 str_wrap" >
+            <p>01:42</p>
+            <p>01:42</p>
+        </div>
+        <div id="ceshi9" class="str1 str_wrap" >
+            <p>17:25</p>
+            <p>17:25</p>
+        </div>
+        <div id="ceshi10" class="str1 str_wrap" >
+            <p>13:34</p>
+            <p>13:34</p>
+        </div>
+    </div>
+</div>
+<div id="flightInfoAll12" style="display: none;">
+     <div id="infoID">
+        <div id="ceshi" class="" >
+            <p>序号</p>
+            <p>ID</p>
+        </div>
+        <div id="ceshi11" class="" >
+            <p>11</p>
+        </div>
+        <div id="ceshi12" class="" >
+            <p>12</p>
+        </div>
+        <div id="ceshi13" class="" >
+            <p>13</p>
+        </div>
+        <div id="ceshi14" class="" >
+            <p>14</p>
+        </div>
+        <div id="ceshi15" class="" >
+            <p>15</p>
+        </div>
+        <div id="ceshi16" class="" >
+            <p>16</p>
+        </div>
+        <div id="ceshi17" class="" >
+            <p>17</p>
+        </div>
+        <div id="ceshi18" class="" >
+            <p>18</p>
+        </div>
+        <div id="ceshi19" class="" >
+            <p>19</p>
+        </div>
+        <div id="ceshi20" class="" >
+            <p>20</p>
+        </div>
+    </div>
+
+    <div id="fligheInfo">
+        <div id="ceshi" class="" >
+            <p>热门航班</p>
+            <p>Fight</p>
+        </div>
+        <div id="ceshi11" class="str1 str_wrap" >
+            <p>CPA879</p>
+            <p>CPA879</p>
+        </div>
+        <div id="ceshi12" class="str1 str_wrap" >
+            <p>BAW31</p>
+            <p>BAW31</p>
+        </div>
+        <div id="ceshi13" class="str1 str_wrap" >
+            <p>AAR211</p>
+            <p>AAR211</p>
+        </div>
+        <div id="ceshi14" class="str1 str_wrap" >
+            <p>CES718</p>
+            <p>CES718</p>
+        </div>
+        <div id="ceshi15" class="str1 str_wrap" >
+            <p>IBE6845</p>
+            <p>IBE6845</p>
+        </div>
+        <div id="ceshi16" class="str1 str_wrap" >
+            <p>UAL881</p>
+            <p>UAL881</p>
+        </div>
+        <div id="ceshi17" class="str1 str_wrap" >
+            <p>BAW15</p>
+            <p>BAW15</p>
+        </div>
+        <div id="ceshi18" class="str1 str_wrap" >
+            <p>EVA5</p>
+            <p>EVA5</p>
+        </div>
+        <div id="ceshi19" class="str1 str_wrap" >
+            <p>CPA898</p>
+            <p>CPA898</p>
+        </div>
+        <div id="ceshi20" class="str1 str_wrap" >
+            <p>UAL839</p>
+            <p>UAL839</p>
+        </div>
+    </div>
+
+    <div id="fligheStart">
+        <div id="ceshi" class="" >
+            <p>始发站</p>
+            <p>From</p>
+        </div>
+        <div id="ceshi11" class="str1 str_wrap" >
+            <p>旧金山</p>
+            <p>SFO</p>
+        </div>
+        <div id="ceshi12" class="str1 str_wrap" >
+            <p>伦敦希思罗</p>
+            <p>LHR</p>
+        </div>
+        <div id="ceshi13" class="str1 str_wrap" >
+            <p>旧金山</p>
+            <p>SFO</p>
+        </div>
+
+        <div id="ceshi14" class="str1 str_wrap" >
+            <p>芝加哥</p>
+            <p>ORD</p>
+        </div>
+        <div id="ceshi15" class="str1 str_wrap" >
+            <p>马德里</p>
+            <p>MAD</p>
+        </div>
+        <div id="ceshi16" class="str1 str_wrap" >
+            <p>芝加哥</p>
+            <p>ORD</p>
+        </div>
+        <div id="ceshi17" class="str1 str_wrap" >
+            <p>伦敦希思罗</p>
+            <p>LHR</p>
+        </div>
+        <div id="ceshi18" class="str1 str_wrap" >
+            <p>洛杉矶</p>
+            <p>LAX</p>
+        </div>
+        <div id="ceshi19" class="str1 str_wrap" >
+            <p>香港赤鱲角</p>
+            <p>HKG</p>
+        </div>
+        <div id="ceshi20" class="str1 str_wrap" >
+            <p>洛杉矶</p>
+            <p>LAX</p>
+        </div>
+    </div>
+
+    <div id="fligheEnd">
+    	<div id="ceshi" class="" >
+            <p>目的地</p>
+            <p>TO</p>
+        </div>
+        <div id="ceshi11" class="str1 str_wrap" >
+            <p>香港赤鱲角</p>
+            <p>HKG</p>
+        </div>
+        <div id="ceshi12" class="str1 str_wrap" >
+            <p>香港赤鱲角</p>
+            <p>HKG</p>
+        </div>
+        <div id="ceshi13" class="str1 str_wrap" >
+            <p>首尔仁川</p>
+            <p>ICN</p>
+        </div>
+        <div id="ceshi14" class="str1 str_wrap" >
+            <p>上海浦东</p>
+            <p>PVG</p>
+        </div>
+        <div id="ceshi15" class="str1 str_wrap" >
+            <p>埃塞萨</p>
+            <p>EZE</p>
+        </div>
+        <div id="ceshi16" class="str1 str_wrap" >
+            <p>东京成田</p>
+            <p>NRT</p>
+        </div>
+        <div id="ceshi17" class="str1 str_wrap" >
+            <p>樟宜</p>
+            <p>SIN</p>
+        </div>
+        <div id="ceshi18" class="str1 str_wrap" >
+            <p>台北桃园</p>
+            <p>TPE</p>
+        </div>
+        <div id="ceshi19" class="str1 str_wrap" >
+            <p>洛杉矶</p>
+            <p>LAX</p>
+        </div>
+        <div id="ceshi20" class="str1 str_wrap" >
+            <p>悉尼</p>
+            <p>SYD</p>
+        </div>
+    </div>
+
+    <div id="fligheStartTime">
+        <div id="ceshi" class="" >
+            <p>预计起飞</p>
+            <p>STA</p>
+        </div>
+        <div id="ceshi11" class="str1 str_wrap" >
+            <p>04:51</p>
+            <p>04:51</p>
+        </div>
+        <div id="ceshi12" class="str1 str_wrap" >
+            <p>02:07</p>
+            <p>02:07</p>
+        </div>
+        <div id="ceshi13" class="str1 str_wrap" >
+            <p>04:10</p>
+            <p>04:10</p>
+        </div>
+        <div id="ceshi14" class="str1 str_wrap" >
+            <p>04:13</p>
+            <p>04:13</p>
+        </div>
+        <div id="ceshi15" class="str1 str_wrap" >
+            <p>18:08</p>
+            <p>18:08</p>
+        </div>
+        <div id="ceshi16" class="str1 str_wrap" >
+            <p>01:53</p>
+            <p>01:53</p>
+        </div>
+        <div id="ceshi17" class="str1 str_wrap" >
+            <p>05:07</p>
+            <p>05:07</p>
+        </div>
+        <div id="ceshi18" class="str1 str_wrap" >
+            <p>03:46</p>
+            <p>03:46</p>
+        </div>
+        <div id="ceshi19" class="str1 str_wrap" >
+            <p>10:42</p>
+            <p>10:42</p>
+        </div>
+        <div id="ceshi20" class="str1 str_wrap" >
+            <p>14:24</p>
+            <p>14:24</p>
+        </div>
+    </div>
+
+    <div id="fligheEndTime">
+        <div id="ceshi" class="" >
+            <p>预计达到</p>
+            <p>ETA</p>
+        </div>
+
+        <div id="ceshi11" class="str1 str_wrap" >
+            <p>19:48</p>
+            <p>19:48</p>
+        </div>
+        <div id="ceshi12" class="str1 str_wrap" >
+            <p>14:21</p>
+            <p>14:21</p>
+        </div>
+        <div id="ceshi13" class="str1 str_wrap" >
+            <p>17:00</p>
+            <p>17:00</p>
+        </div>
+        <div id="ceshi14" class="str1 str_wrap" >
+            <p>18:44</p>
+            <p>18:44</p>
+        </div>
+        <div id="ceshi15" class="str1 str_wrap" >
+            <p>06:52</p>
+            <p>06:52</p>
+        </div>
+        <div id="ceshi16" class="str1 str_wrap" >
+            <p>18:07</p>
+            <p>18:07</p>
+        </div>
+        <div id="ceshi17" class="str1 str_wrap" >
+            <p>17:59</p>
+            <p>17:59</p>
+        </div>
+        <div id="ceshi18" class="str1 str_wrap" >
+            <p>17:56</p>
+            <p>17:56</p>
+        </div>
+        <div id="ceshi19" class="str1 str_wrap" >
+            <p>23:15</p>
+            <p>23:15</p>
+        </div>
+        <div id="ceshi20" class="str1 str_wrap" >
+            <p>05:26</p>
+            <p>05:26</p>
+        </div>
+    </div>
+</div>
+<div id="flightInfoAll21"style="display: none;">
+    <div id="infoID">
+        <div id="ceshi" class="">
+            <p>序号</p>
+            <p>ID</p>
+        </div>
+        <div id="ceshi1" class="" >
+            <p>1</p>
+        </div>
+        <div id="ceshi2" class="" >
+            <p>2</p>
+        </div>
+        <div id="ceshi3" class="" >
+            <p>3</p>
+        </div>
+        <div id="ceshi4" class="" >
+            <p>4</p>
+        </div>
+        <div id="ceshi5" class="" >
+            <p>5</p>
+        </div>
+        <div id="ceshi6" class="" >
+            <p>6</p>
+        </div>
+        <div id="ceshi7" class="" >
+            <p>7</p>
+        </div>
+        <div id="ceshi8" class="" >
+            <p>8</p>
+        </div>
+        <div id="ceshi9" class="" >
+            <p>9</p>
+        </div>
+        <div id="ceshi10" class="" >
+            <p>10</p>
+        </div>
+    </div>
+    <div id="fligheInfo">
+        <div id="ceshi" class="" >
+            <p>热门航班</p>
+            <p>Fight</p>
+        </div>
+        <div id="ceshi1" class="str1 str_wrap" >
+            <p >UAL862</p>
+            <p >UAL862</p>
+        </div>
+        <div id="ceshi2" class="str1 str_wrap" >
+            <p>AFR117</p>
+            <p>AFR117</p>
+        </div>
+        <div id="ceshi3" class="str1 str_wrap" >
+            <p>KAL85</p>
+            <p>KAL85</p>
+        </div>
+        <div id="ceshi4" class="str1 str_wrap" >
+            <p>BAW28</p>
+            <p>BAW28</p>
+        </div>
+        <div id="ceshi5" class="str1 str_wrap" >
+            <p>CKK222</p>
+            <p>CKK222</p>
+        </div>
+        <div id="ceshi6" class="str1 str_wrap" >
+            <p >AAR201</p>
+            <p >AAR201</p>
+        </div>
+        <div id="ceshi7" class="str1 str_wrap" >
+            <p>BAW12</p>
+            <p>BAW12</p>
+        </div>
+        <div id="ceshi8" class="str1 str_wrap" >
+            <p>QFA9</p>
+            <p>QFA9</p>
+        </div>
+        <div id="ceshi9" class="str1 str_wrap" >
+            <p>CPA830</p>
+            <p>CPA830</p>
+        </div>
+        <div id="ceshi10" class="str1 str_wrap" >
+            <p>AAL83</p>
+            <p>AAL83</p>
+        </div>
+    </div>
+
+    <div id="fligheStart">
+        <div id="ceshi" class="" >
+            <p>始发站</p>
+            <p>From</p>
+        </div>
+        <div id="ceshi1" class="str1 str_wrap" >
+            <p>香港赤鱲角</p>
+            <p>HKG</p>
+        </div>
+
+        <div id="ceshi2" class="str1 str_wrap" >
+            <p>上海浦东</p>
+            <p>PVG</p>
+        </div>
+        <div id="ceshi3" class="str1 str_wrap" >
+            <p>首尔仁川</p>
+            <p>ICN</p>
+        </div>
+        <div id="ceshi4" class="str1 str_wrap" >
+            <p>香港赤鱲角</p>
+            <p>HKG</p>
+        </div>
+        <div id="ceshi5" class="str1 str_wrap" >
+            <p>洛杉矶</p>
+            <p>LAX</p>
+        </div>
+        <div id="ceshi6" class="str1 str_wrap" >
+            <p>洛杉矶</p>
+            <p>LAX</p>
+        </div>
+
+        <div id="ceshi7" class="str1 str_wrap" >
+            <p>樟宜</p>
+            <p>SIN</p>
+        </div>
+        <div id="ceshi8" class="str1 str_wrap" >
+            <p>墨尔本</p>
+            <p>MEL</p>
+        </div>
+        <div id="ceshi9" class="str1 str_wrap" >
+            <p>香港赤鱲角</p>
+            <p>HKG</p>
+        </div>
+        <div id="ceshi10" class="str1 str_wrap" >
+            <p>洛杉矶</p>
+            <p>LAX</p>
+        </div>
+    </div>
+    <div id="fligheEnd">
+        <div id="ceshi" class="" >
+            <p>目的地</p>
+            <p>TO</p>
+        </div>
+        <div id="ceshi1" class="str1 str_wrap" >
+            <p>旧金山</p>
+            <p>SFO</p>
+        </div>
+        <div id="ceshi2" class="str1 str_wrap" >
+            <p>戴高乐</p>
+            <p>CDG</p>
+        </div>
+        <div id="ceshi3" class="str1 str_wrap" >
+            <p>肯尼迪</p>
+            <p>JFK</p>
+        </div>
+        <div id="ceshi4" class="str1 str_wrap" >
+            <p>伦敦希思罗</p>
+            <p>LHR</p>
+        </div>
+        <div id="ceshi5" class="str1 str_wrap" >
+            <p>上海浦东</p>
+            <p>PVG</p>
+        </div>
+        <div id="ceshi6" class="str1 str_wrap" >
+            <p>首尔仁川</p>
+            <p>ICN</p>
+        </div>
+        <div id="ceshi7" class="str1 str_wrap" >
+            <p>伦敦希思罗</p>
+            <p>LHR</p>
+        </div>
+        <div id="ceshi8" class="str1 str_wrap" >
+            <p>迪拜</p>
+            <p>DXB</p>
+        </div>
+        <div id="ceshi9" class="str1 str_wrap" >
+            <p>肯尼迪</p>
+            <p>JFK</p>
+        </div>
+        <div id="ceshi10" class="str1 str_wrap" >
+            <p>奥克兰</p>
+            <p>AKL</p>
+        </div>
+    </div>
+
+    <div id="fligheStartTime">
+        <div id="ceshi" class="" >
+            <p>预计起飞</p>
+            <p>STA</p>
+        </div>
+        <div id="ceshi1" class="str1 str_wrap" >
+            <p>11:29</p>
+            <p>11:29</p>
+        </div>
+        <div id="ceshi2" class="str1 str_wrap" >
+            <p>10:46</p>
+            <p>10:46</p>
+        </div>
+        <div id="ceshi3" class="str1 str_wrap" >
+            <p>18:48</p>
+            <p>18:48</p>
+        </div>
+        <div id="ceshi4" class="str1 str_wrap" >
+            <p>23:29</p>
+            <p>23:29</p>
+        </div>
+        <div id="ceshi5" class="str1 str_wrap" >
+            <p>04:49</p>
+            <p>04:49</p>
+        </div>
+        <div id="ceshi6" class="str1 str_wrap" >
+            <p>04:02</p>
+            <p>04:02</p>
+        </div>
+        <div id="ceshi7" class="str1 str_wrap" >
+            <p>23:31</p>
+            <p>23:31</p>
+        </div>
+        <div id="ceshi8" class="str1 str_wrap" >
+            <p>21:15</p>
+            <p>21:15</p>
+        </div>
+        <div id="ceshi9" class="str1 str_wrap" >
+            <p>17:13</p>
+            <p>17:13</p>
+        </div>
+        <div id="ceshi10" class="str1 str_wrap" >
+            <p>15:06</p>
+            <p>15:06</p>
+        </div>
+    </div>
+
+    <div id="fligheEndTime">
+        <div id="ceshi" class="" >
+            <p>预计达到</p>
+            <p>ETA</p>
+        </div>
+        <div id="ceshi1" class="str1 str_wrap" >
+            <p>23:48</p>
+            <p>23:48</p>
+        </div>
+        <div id="ceshi2" class="str1 str_wrap" >
+            <p>23:00</p>
+            <p>23:00</p>
+        </div>
+        <div id="ceshi3" class="str1 str_wrap" >
+            <p>09:08</p>
+            <p>09:08</p>
+        </div>
+        <div id="ceshi4" class="str1 str_wrap" >
+            <p>14:20</p>
+            <p>14:20</p>
+        </div>
+        <div id="ceshi5" class="str1 str_wrap" >
+            <p>01:42</p>
+            <p>01:42</p>
+        </div>
+        <div id="ceshi6" class="str1 str_wrap" >
+            <p>17:25</p>
+            <p>17:25</p>
+        </div>
+        <div id="ceshi7" class="str1 str_wrap" >
+            <p>13:34</p>
+            <p>13:34</p>
+        </div>
+        <div id="ceshi8" class="str1 str_wrap" >
+            <p>11:10</p>
+            <p>11:10</p>
+        </div>
+        <div id="ceshi9" class="str1 str_wrap" >
+            <p>09:19</p>
+            <p>09:19</p>
+        </div>
+        <div id="ceshi10" class="str1 str_wrap" >
+            <p>03:49</p>
+            <p>03:49</p>
+        </div>
+    </div>
+</div>
+<div id="flightInfoAll22" style="display: none;">
+  <div id="infoID">
+        <div id="ceshi" class="" >
+            <p>序号</p>
+            <p>ID</p>
+        </div>
+        <div id="ceshi11" class="" >
+            <p>11</p>
+        </div>
+        <div id="ceshi12" class="" >
+            <p>12</p>
+        </div>
+        <div id="ceshi13" class="" >
+            <p>13</p>
+        </div>
+        <div id="ceshi14" class="" >
+            <p>14</p>
+        </div>
+        <div id="ceshi15" class="" >
+            <p>15</p>
+        </div>
+        <div id="ceshi16" class="" >
+            <p>16</p>
+        </div>
+        <div id="ceshi17" class="" >
+            <p>17</p>
+        </div>
+        <div id="ceshi18" class="" >
+            <p>18</p>
+        </div>
+        <div id="ceshi19" class="" >
+            <p>19</p>
+        </div>
+        <div id="ceshi20" class="" >
+            <p>20</p>
+        </div>
+    </div>
+    <div id="fligheInfo">
+        <div id="ceshi" class="" >
+            <p>热门航班</p>
+            <p>Fight</p>
+        </div>
+        <div id="ceshi11" class="str1 str_wrap" >
+            <p>BAW15</p>
+            <p>BAW15</p>
+        </div>
+        <div id="ceshi12" class="str1 str_wrap" >
+            <p>EVA5</p>
+            <p>EVA5</p>
+        </div>
+        <div id="ceshi13" class="str1 str_wrap" >
+            <p>CPA898</p>
+            <p>CPA898</p>
+        </div>
+        <div id="ceshi14" class="str1 str_wrap" >
+            <p>UAL839</p>
+            <p>UAL839</p>
+        </div>
+        <div id="ceshi15" class="str1 str_wrap" >
+
+            <p>UAE413</p>
+            <p>UAE413</p>
+        </div>
+        <div id="ceshi16" class="str1 str_wrap" >
+            <p>QFA10</p>
+            <p>QFA10</p>
+        </div>
+        <div id="ceshi17" class="str1 str_wrap" >
+            <p>QFA2</p>
+            <p>QFA2</p>
+        </div>
+        <div id="ceshi18" class="str1 str_wrap" >
+            <p>CPA831</p>
+            <p>CPA831</p>
+        </div>
+        <div id="ceshi19" class="str1 str_wrap" >
+            <p>MAS2</p>
+            <p>MAS2</p>
+        </div>
+        <div id="ceshi20" class="str1 str_wrap" >
+            <p>UAL98</p>
+            <p>UAL98</p>
+        </div>
+    </div>
+
+    <div id="fligheStart">
+        <div id="ceshi" class="" >
+            <p>始发站</p>
+            <p>From</p>
+        </div>
+        <div id="ceshi11" class="str1 str_wrap" >
+            <p>伦敦希思罗</p>
+            <p>LHR</p>
+        </div>
+        <div id="ceshi12" class="str1 str_wrap" >
+            <p>洛杉矶</p>
+            <p>LAX</p>
+        </div>
+        <div id="ceshi13" class="str1 str_wrap" >
+            <p>香港赤鱲角</p>
+            <p>HKG</p>
+        </div>
+
+        <div id="ceshi14" class="str1 str_wrap" >
+            <p>洛杉矶</p>
+            <p>LAX</p>
+        </div>
+        <div id="ceshi15" class="str1 str_wrap" >
+
+            <p>悉尼</p>
+            <p>SYD</p>
+        </div>
+        <div id="ceshi16" class="str1 str_wrap" >
+            <p>迪拜</p>
+            <p>DXB</p>
+        </div>
+        <div id="ceshi17" class="str1 str_wrap" >
+            <p>迪拜</p>
+            <p>DXB</p>
+        </div>
+        <div id="ceshi18" class="str1 str_wrap" >
+            <p>肯尼迪</p>
+            <p>JFK</p>
+        </div>
+        <div id="ceshi19" class="str1 str_wrap" >
+            <p>吉隆坡</p>
+            <p>KUL</p>
+        </div>
+        <div id="ceshi20" class="str1 str_wrap" >
+            <p>洛杉矶</p>
+            <p>LAX</p>
+        </div>
+    </div>
+
+    <div id="fligheEnd">
+    	<div id="ceshi" class="" >
+            <p>目的地</p>
+            <p>TO</p>
+        </div>
+        <div id="ceshi11" class="str1 str_wrap" >
+            <p>樟宜</p>
+            <p>SIN</p>
+        </div>
+        <div id="ceshi12" class="str1 str_wrap" >
+            <p>台北桃园</p>
+            <p>TPE</p>
+        </div>
+        <div id="ceshi13" class="str1 str_wrap" >
+            <p>洛杉矶</p>
+            <p>LAX</p>
+        </div>
+        <div id="ceshi14" class="str1 str_wrap" >
+            <p>悉尼</p>
+            <p>SYD</p>
+        </div>
+        <div id="ceshi15" class="str1 str_wrap" >
+
+            <p>迪拜</p>
+            <p>DXB</p>
+        </div>
+        <div id="ceshi16" class="str1 str_wrap" >
+            <p>墨尔本</p>
+            <p>MEL</p>
+        </div>
+        <div id="ceshi17" class="str1 str_wrap" >
+            <p>悉尼</p>
+            <p>SYD</p>
+        </div>
+        <div id="ceshi18" class="str1 str_wrap" >
+            <p>香港赤鱲角</p>
+            <p>HKG</p>
+        </div>
+        <div id="ceshi19" class="str1 str_wrap" >
+            <p>伦敦希思罗</p>
+            <p>LHR</p>
+        </div>
+        <div id="ceshi20" class="str1 str_wrap" >
+            <p>墨尔本</p>
+            <p>MEL</p>
+        </div>
+    </div>
+
+    <div id="fligheStartTime">
+        <div id="ceshi" class="" >
+            <p>预计起飞</p>
+            <p>STA</p>
+        </div>
+        <div id="ceshi11" class="str1 str_wrap" >
+            <p>05:07</p>
+            <p>05:07</p>
+        </div>
+        <div id="ceshi12" class="str1 str_wrap" >
+            <p>03:46</p>
+            <p>03:46</p>
+        </div>
+        <div id="ceshi13" class="str1 str_wrap" >
+            <p>10:42</p>
+            <p>10:42</p>
+        </div>
+        <div id="ceshi14" class="str1 str_wrap" >
+            <p>14:24</p>
+            <p>14:24</p>
+        </div>
+        <div id="ceshi15" class="str1 str_wrap" >
+            <p>19:27</p>
+            <p>19:27</p>
+        </div>
+        <div id="ceshi16" class="str1 str_wrap" >
+            <p>05:47</p>
+            <p>05:47</p>
+        </div>
+        <div id="ceshi17" class="str1 str_wrap" >
+            <p>14:11</p>
+            <p>14:11</p>
+        </div>
+        <div id="ceshi18" class="str1 str_wrap" >
+            <p>03:15</p>
+            <p>03:15</p>
+        </div>
+        <div id="ceshi19" class="str1 str_wrap" >
+            <p>00:03</p>
+            <p>00:03</p>
+        </div>
+        <div id="ceshi20" class="str1 str_wrap" >
+            <p>14:15</p>
+            <p>14:15</p>
+        </div>
+    </div>
+
+    <div id="fligheEndTime">
+        <div id="ceshi" class="" >
+            <p>预计达到</p>
+            <p>ETA</p>
+        </div>
+
+        <div id="ceshi11" class="str1 str_wrap" >
+            <p>17:59</p>
+            <p>17:59</p>
+        </div>
+        <div id="ceshi12" class="str1 str_wrap" >
+            <p>17:56</p>
+            <p>17:56</p>
+        </div>
+        <div id="ceshi13" class="str1 str_wrap" >
+            <p>23:15</p>
+            <p>23:15</p>
+        </div>
+        <div id="ceshi14" class="str1 str_wrap" >
+            <p>05:26</p>
+            <p>05:26</p>
+        </div>
+        <div id="ceshi15" class="str1 str_wrap" >
+            <p>09:39</p>
+            <p>09:39</p>
+        </div>
+        <div id="ceshi16" class="str1 str_wrap" >
+            <p>19:07</p>
+            <p>19:07</p>
+        </div>
+        <div id="ceshi17" class="str1 str_wrap" >
+            <p>04:13</p>
+            <p>04:13</p>
+        </div>
+        <div id="ceshi18" class="str1 str_wrap" >
+            <p>18:47</p>
+            <p>18:47</p>
+        </div>
+        <div id="ceshi19" class="str1 str_wrap" >
+            <p>13:15</p>
+            <p>13:15</p>
+        </div>
+        <div id="ceshi20" class="str1 str_wrap" >
+            <p>05:49</p>
+            <p>05:49</p>
+        </div>
+    </div>
+</div>
+<div id="flightInfoAll31"style="display: none;">
+    <div id="infoID">
+        <div id="ceshi" class="">
+            <p>序号</p>
+            <p>ID</p>
+        </div>
+        <div id="ceshi1" class="" >
+            <p>1</p>
+        </div>
+        <div id="ceshi2" class="" >
+            <p>2</p>
+        </div>
+        <div id="ceshi3" class="" >
+            <p>3</p>
+        </div>
+        <div id="ceshi4" class="" >
+            <p>4</p>
+        </div>
+        <div id="ceshi5" class="" >
+            <p>5</p>
+        </div>
+        <div id="ceshi6" class="" >
+            <p>6</p>
+        </div>
+        <div id="ceshi7" class="" >
+            <p>7</p>
+        </div>
+        <div id="ceshi8" class="" >
+            <p>8</p>
+        </div>
+        <div id="ceshi9" class="" >
+            <p>9</p>
+        </div>
+        <div id="ceshi10" class="" >
+            <p>10</p>
+        </div>
+    </div>
+    <div id="fligheInfo">
+        <div id="ceshi" class="" >
+            <p>热门航班</p>
+            <p>Fight</p>
+        </div>
+        <div id="ceshi1" class="str1 str_wrap" >
+            <p >ARG1132</p>
+            <p >ARG1132</p>
+        </div>
+        <div id="ceshi2" class="str1 str_wrap" >
+            <p>QFA93</p>
+            <p>QFA93</p>
+        </div>
+        <div id="ceshi3" class="str1 str_wrap" >
+            <p>BAW28</p>
+            <p>BAW28</p>
+        </div>
+        <div id="ceshi4" class="str1 str_wrap" >
+            <p>CKK222</p>
+            <p>CKK222</p>
+        </div>
+        <div id="ceshi5" class="str1 str_wrap" >
+            <p>BAW160</p>
+            <p>BAW160</p>
+        </div>
+        <div id="ceshi6" class="str1 str_wrap" >
+            <p >CES590</p>
+            <p >CES590</p>
+        </div>
+        <div id="ceshi7" class="str1 str_wrap" >
+            <p>AAR201</p>
+            <p>AAR201</p>
+        </div>
+        <div id="ceshi8" class="str1 str_wrap" >
+            <p>BAW12</p>
+            <p>BAW12</p>
+        </div>
+        <div id="ceshi9" class="str1 str_wrap" >
+            <p>EVA29</p>
+            <p>EVA29</p>
+        </div>
+        <div id="ceshi10" class="str1 str_wrap" >
+            <p>CES717</p>
+            <p>CES717</p>
+        </div>
+    </div>
+
+    <div id="fligheStart">
+        <div id="ceshi" class="" >
+            <p>始发站</p>
+            <p>From</p>
+        </div>
+        <div id="ceshi1" class="str1 str_wrap" >
+            <p>埃塞萨</p>
+            <p>EZE</p>
+        </div>
+
+        <div id="ceshi2" class="str1 str_wrap" >
+            <p>墨尔本</p>
+            <p>MEL</p>
+        </div>
+        <div id="ceshi3" class="str1 str_wrap" >
+            <p>香港赤鱲角</p>
+            <p>HKG</p>
+        </div>
+        <div id="ceshi4" class="str1 str_wrap" >
+            <p>洛杉矶</p>
+            <p>LAX</p>
+        </div>
+        <div id="ceshi5" class="str1 str_wrap" >
+            <p>上海浦东</p>
+            <p>PVG</p>
+        </div>
+        <div id="ceshi6" class="str1 str_wrap" >
+            <p>旧金山</p>
+            <p>SFO</p>
+        </div>
+
+        <div id="ceshi7" class="str1 str_wrap" >
+            <p>洛杉矶</p>
+            <p>LAX</p>
+        </div>
+        <div id="ceshi8" class="str1 str_wrap" >
+            <p>樟宜</p>
+            <p>SIN</p>
+        </div>
+        <div id="ceshi9" class="str1 str_wrap" >
+            <p>肯尼迪</p>
+            <p>JFK</p>
+        </div>
+        <div id="ceshi10" class="str1 str_wrap" >
+            <p>上海浦东</p>
+            <p>PVG</p>
+        </div>
+    </div>
+    <div id="fligheEnd">
+        <div id="ceshi" class="" >
+            <p>目的地</p>
+            <p>TO</p>
+        </div>
+        <div id="ceshi1" class="str1 str_wrap" >
+            <p>马德里</p>
+            <p>MAD</p>
+        </div>
+        <div id="ceshi2" class="str1 str_wrap" >
+            <p>洛杉矶</p>
+            <p>LAX</p>
+        </div>
+        <div id="ceshi3" class="str1 str_wrap" >
+            <p>伦敦希思罗</p>
+            <p>LHR</p>
+        </div>
+        <div id="ceshi4" class="str1 str_wrap" >
+            <p>上海浦东</p>
+            <p>PVG</p>
+        </div>
+        <div id="ceshi5" class="str1 str_wrap" >
+            <p>伦敦希思罗</p>
+            <p>LHR</p>
+        </div>
+        <div id="ceshi6" class="str1 str_wrap" >
+            <p>上海浦东</p>
+            <p>PVG</p>
+        </div>
+        <div id="ceshi7" class="str1 str_wrap" >
+            <p>首尔仁川</p>
+            <p>ICN</p>
+        </div>
+        <div id="ceshi8" class="str1 str_wrap" >
+            <p>伦敦希思罗</p>
+            <p>LHR</p>
+        </div>
+        <div id="ceshi9" class="str1 str_wrap" >
+            <p>台北桃园</p>
+            <p>TPE</p>
+        </div>
+        <div id="ceshi10" class="str1 str_wrap" >
+            <p>芝加哥</p>
+            <p>ORD</p>
+        </div>
+    </div>
+
+    <div id="fligheStartTime">
+        <div id="ceshi" class="" >
+            <p>预计起飞</p>
+            <p>STA</p>
+        </div>
+        <div id="ceshi1" class="str1 str_wrap" >
+            <p>11:03</p>
+            <p>11:03</p>
+        </div>
+        <div id="ceshi2" class="str1 str_wrap" >
+            <p>07:30</p>
+            <p>07:30</p>
+        </div>
+        <div id="ceshi3" class="str1 str_wrap" >
+            <p>23:29</p>
+            <p>23:29</p>
+        </div>
+        <div id="ceshi4" class="str1 str_wrap" >
+            <p>04:49</p>
+            <p>04:49</p>
+        </div>
+        <div id="ceshi5" class="str1 str_wrap" >
+            <p>00:56</p>
+            <p>00:56</p>
+        </div>
+        <div id="ceshi6" class="str1 str_wrap" >
+            <p>03:47</p>
+            <p>03:47</p>
+        </div>
+        <div id="ceshi7" class="str1 str_wrap" >
+            <p>04:02</p>
+            <p>04:02</p>
+        </div>
+        <div id="ceshi8" class="str1 str_wrap" >
+            <p>23:31</p>
+            <p>23:31</p>
+        </div>
+        <div id="ceshi9" class="str1 str_wrap" >
+            <p>01:21</p>
+            <p>01:21</p>
+        </div>
+        <div id="ceshi10" class="str1 str_wrap" >
+            <p>12:12</p>
+            <p>12:12</p>
+        </div>
+    </div>
+
+    <div id="fligheEndTime">
+        <div id="ceshi" class="" >
+            <p>预计达到</p>
+            <p>ETA</p>
+        </div>
+        <div id="ceshi1" class="str1 str_wrap" >
+            <p>23:02</p>
+            <p>23:02</p>
+        </div>
+        <div id="ceshi2" class="str1 str_wrap" >
+            <p>21:32</p>
+            <p>21:32</p>
+        </div>
+        <div id="ceshi3" class="str1 str_wrap" >
+            <p>14:20</p>
+            <p>14:20</p>
+        </div>
+        <div id="ceshi4" class="str1 str_wrap" >
+            <p>01:42</p>
+            <p>01:42</p>
+        </div>
+        <div id="ceshi5" class="str1 str_wrap" >
+            <p>13:09</p>
+            <p>13:09</p>
+        </div>
+        <div id="ceshi6" class="str1 str_wrap" >
+            <p>16:23</p>
+            <p>16:23</p>
+        </div>
+        <div id="ceshi7" class="str1 str_wrap" >
+            <p>17:25</p>
+            <p>17:25</p>
+        </div>
+        <div id="ceshi8" class="str1 str_wrap" >
+            <p>13:34</p>
+            <p>13:34</p>
+        </div>
+        <div id="ceshi9" class="str1 str_wrap" >
+            <p>17:13</p>
+            <p>17:13</p>
+        </div>
+        <div id="ceshi10" class="str1 str_wrap" >
+            <p>02:16</p>
+            <p>02:16</p>
+        </div>
+    </div>
+</div>
+<div id="flightInfoAll32" style="display: none;">
+ <div id="infoID">
+        <div id="ceshi" class="" >
+            <p>序号</p>
+            <p>ID</p>
+        </div>
+        <div id="ceshi11" class="" >
+            <p>11</p>
+        </div>
+        <div id="ceshi12" class="" >
+            <p>12</p>
+        </div>
+        <div id="ceshi13" class="" >
+            <p>13</p>
+        </div>
+        <div id="ceshi14" class="" >
+            <p>14</p>
+        </div>
+        <div id="ceshi15" class="" >
+            <p>15</p>
+        </div>
+        <div id="ceshi16" class="" >
+            <p>16</p>
+        </div>
+        <div id="ceshi17" class="" >
+            <p>17</p>
+        </div>
+        <div id="ceshi18" class="" >
+            <p>18</p>
+        </div>
+        <div id="ceshi19" class="" >
+            <p>19</p>
+        </div>
+        <div id="ceshi20" class="" >
+            <p>20</p>
+        </div>
+    </div>
+
+    <div id="fligheInfo">
+        <div id="ceshi" class="" >
+            <p>热门航班</p>
+            <p>Fight</p>
+        </div>
+        <div id="ceshi11" class="str1 str_wrap" >
+            <p>CAL12</p>
+            <p>CAL12</p>
+        </div>
+        <div id="ceshi12" class="str1 str_wrap" >
+
+            <p>AAR521</p>
+            <p>AAR521</p>
+        </div>
+        <div id="ceshi13" class="str1 str_wrap" >
+            <p>BAW15</p>
+            <p>BAW15</p>
+        </div>
+        <div id="ceshi14" class="str1 str_wrap" >
+
+            <p>EVA5</p>
+            <p>EVA5</p>
+        </div>
+        <div id="ceshi15" class="str1 str_wrap" >
+            <p>MAS3</p>
+            <p>MAS3</p>
+        </div>
+        <div id="ceshi16" class="str1 str_wrap" >
+            <p>CHH497</p>
+            <p>CHH497</p>
+        </div>
+        <div id="ceshi17" class="str1 str_wrap" >
+            <p>CPA898</p>
+            <p>CPA898</p>
+        </div>
+        <div id="ceshi18" class="str1 str_wrap" >
+            <p>UAL839</p>
+            <p>UAL839</p>
+        </div>
+        <div id="ceshi19" class="str1 str_wrap" >
+            <p>AAL82</p>
+            <p>AAL82</p>
+        </div>
+        <div id="ceshi20" class="str1 str_wrap" >
+            <p>SIA325</p>
+            <p>SIA325</p>
+        </div>
+    </div>
+
+    <div id="fligheStart">
+        <div id="ceshi" class="" >
+            <p>始发站</p>
+            <p>From</p>
+        </div>
+        <div id="ceshi11" class="str1 str_wrap" >
+            <p>台北桃园</p>
+            <p>TPE</p>
+        </div>
+        <div id="ceshi12" class="str1 str_wrap" >
+
+            <p>首尔仁川</p>
+            <p>ICN</p>
+        </div>
+        <div id="ceshi13" class="str1 str_wrap" >
+            <p>伦敦希思罗</p>
+            <p>LHR</p>
+        </div>
+
+        <div id="ceshi14" class="str1 str_wrap" >
+            <p>洛杉矶</p>
+            <p>LAX</p>
+        </div>
+        <div id="ceshi15" class="str1 str_wrap" >
+            <p>伦敦希思罗</p>
+            <p>LHR</p>
+        </div>
+        <div id="ceshi16" class="str1 str_wrap" >
+            <p>北京首都</p>
+            <p>PEK</p>
+        </div>
+        <div id="ceshi17" class="str1 str_wrap" >
+            <p>香港赤鱲角</p>
+            <p>HKG</p>
+        </div>
+        <div id="ceshi18" class="str1 str_wrap" >
+            <p>洛杉矶</p>
+            <p>LAX</p>
+        </div>
+        <div id="ceshi19" class="str1 str_wrap" >
+            <p>奥克兰</p>
+            <p>AKL</p>
+        </div>
+        <div id="ceshi20" class="str1 str_wrap" >
+            <p>法兰克福</p>
+            <p>FRA</p>
+        </div>
+    </div>
+
+    <div id="fligheEnd">
+    	<div id="ceshi" class="" >
+            <p>目的地</p>
+            <p>TO</p>
+        </div>
+        <div id="ceshi11" class="str1 str_wrap" >
+            <p>肯尼迪</p>
+            <p>JFK</p>
+        </div>
+        <div id="ceshi12" class="str1 str_wrap" >
+
+            <p>伦敦希思罗</p>
+            <p>LHR</p>
+        </div>
+        <div id="ceshi13" class="str1 str_wrap" >
+            <p>樟宜</p>
+            <p>SIN</p>
+        </div>
+        <div id="ceshi14" class="str1 str_wrap" >
+
+            <p>台北桃园</p>
+            <p>TPE</p>
+        </div>
+        <div id="ceshi15" class="str1 str_wrap" >
+            <p>吉隆坡</p>
+            <p>KUL</p>
+        </div>
+        <div id="ceshi16" class="str1 str_wrap" >
+            <p>芝加哥</p>
+            <p>ORD</p>
+        </div>
+        <div id="ceshi17" class="str1 str_wrap" >
+            <p>洛杉矶</p>
+            <p>LAX</p>
+        </div>
+        <div id="ceshi18" class="str1 str_wrap" >
+            <p>悉尼</p>
+            <p>SYD</p>
+        </div>
+        <div id="ceshi19" class="str1 str_wrap" >
+            <p>洛杉矶</p>
+            <p>LAX</p>
+        </div>
+        <div id="ceshi20" class="str1 str_wrap" >
+            <p>樟宜</p>
+            <p>SIN</p>
+        </div>
+    </div>
+
+    <div id="fligheStartTime">
+        <div id="ceshi" class="" >
+            <p>预计起飞</p>
+            <p>STA</p>
+        </div>
+        <div id="ceshi11" class="str1 str_wrap" >
+            <p>18:11</p>
+            <p>18:11</p>
+        </div>
+        <div id="ceshi12" class="str1 str_wrap" >
+            <p>14:14</p>
+            <p>14:14</p>
+        </div>
+        <div id="ceshi13" class="str1 str_wrap" >
+            <p>05:07</p>
+            <p>05:07</p>
+        </div>
+        <div id="ceshi14" class="str1 str_wrap" >
+            <p>03:46</p>
+            <p>03:46</p>
+        </div>
+        <div id="ceshi15" class="str1 str_wrap" >
+            <p>18:01</p>
+            <p>18:01</p>
+        </div>
+        <div id="ceshi16" class="str1 str_wrap" >
+            <p>14:33</p>
+            <p>14:33</p>
+        </div>
+        <div id="ceshi17" class="str1 str_wrap" >
+            <p>10:42</p>
+            <p>10:42</p>
+        </div>
+        <div id="ceshi18" class="str1 str_wrap" >
+            <p>14:24</p>
+            <p>14:24</p>
+        </div>
+        <div id="ceshi19" class="str1 str_wrap" >
+            <p>09:11</p>
+            <p>09:11</p>
+        </div>
+        <div id="ceshi20" class="str1 str_wrap" >
+            <p>04:24</p>
+            <p>04:24</p>
+        </div>
+    </div>
+
+    <div id="fligheEndTime">
+        <div id="ceshi" class="" >
+            <p>预计达到</p>
+            <p>ETA</p>
+        </div>
+
+        <div id="ceshi11" class="str1 str_wrap" >
+            <p>08:51</p>
+            <p>08:51</p>
+        </div>
+        <div id="ceshi12" class="str1 str_wrap" >
+            <p>02:14</p>
+            <p>02:14</p>
+        </div>
+        <div id="ceshi13" class="str1 str_wrap" >
+            <p>17:59</p>
+            <p>17:59</p>
+        </div>
+        <div id="ceshi14" class="str1 str_wrap" >
+            <p>17:56</p>
+            <p>17:56</p>
+        </div>
+        <div id="ceshi15" class="str1 str_wrap" >
+            <p>06:51</p>
+            <p>06:51</p>
+        </div>
+        <div id="ceshi16" class="str1 str_wrap" >
+            <p>03:12</p>
+            <p>03:12</p>
+        </div>
+        <div id="ceshi17" class="str1 str_wrap" >
+            <p>23:15</p>
+            <p>23:15</p>
+        </div>
+        <div id="ceshi18" class="str1 str_wrap" >
+            <p>05:26</p>
+            <p>05:26</p>
+        </div>
+        <div id="ceshi19" class="str1 str_wrap" >
+            <p>20:46</p>
+            <p>20:46</p>
+        </div>
+        <div id="ceshi20" class="str1 str_wrap" >
+            <p>16:31</p>
+            <p>16:31</p>
+        </div>
+    </div>
+</div>
+<div id="flightInfoAll41"style="display: none;">
+    <div id="infoID">
+        <div id="ceshi" class="">
+            <p>序号</p>
+            <p>ID</p>
+        </div>
+        <div id="ceshi1" class="" >
+            <p>1</p>
+        </div>
+        <div id="ceshi2" class="" >
+            <p>2</p>
+        </div>
+        <div id="ceshi3" class="" >
+            <p>3</p>
+        </div>
+        <div id="ceshi4" class="" >
+            <p>4</p>
+        </div>
+        <div id="ceshi5" class="" >
+            <p>5</p>
+        </div>
+        <div id="ceshi6" class="" >
+            <p>6</p>
+        </div>
+        <div id="ceshi7" class="" >
+            <p>7</p>
+        </div>
+        <div id="ceshi8" class="" >
+            <p>8</p>
+        </div>
+        <div id="ceshi9" class="" >
+            <p>9</p>
+        </div>
+        <div id="ceshi10" class="" >
+            <p>10</p>
+        </div>
+    </div>
+    <div id="fligheInfo">
+        <div id="ceshi" class="" >
+            <p>热门航班</p>
+            <p>Fight</p>
+        </div>
+        <div id="ceshi1" class="str1 str_wrap" >
+            <p >ACA15</p>
+            <p >ACA15</p>
+        </div>
+        <div id="ceshi2" class="str1 str_wrap" >
+            <p>BAW28</p>
+            <p>BAW28</p>
+        </div>
+        <div id="ceshi3" class="str1 str_wrap" >
+            <p>AAR201</p>
+            <p>AAR201</p>
+        </div>
+        <div id="ceshi4" class="str1 str_wrap" >
+            <p>CCA988</p>
+            <p>CCA988</p>
+        </div>
+        <div id="ceshi5" class="str1 str_wrap" >
+            <p>LAN704</p>
+            <p>LAN704</p>
+        </div>
+        <div id="ceshi6" class="str1 str_wrap" >
+            <p >AAR201</p>
+            <p >AAR201</p>
+        </div>
+        <div id="ceshi7" class="str1 str_wrap" >
+            <p>BAW12</p>
+            <p>BAW12</p>
+        </div>
+        <div id="ceshi8" class="str1 str_wrap" >
+            <p>AFR185</p>
+            <p>AFR185</p>
+        </div>
+        <div id="ceshi9" class="str1 str_wrap" >
+            <p>SIA32</p>
+            <p>SIA32</p>
+        </div>
+        <div id="ceshi10" class="str1 str_wrap" >
+            <p>UAL48</p>
+            <p>UAL48</p>
+        </div>
+    </div>
+
+    <div id="fligheStart">
+        <div id="ceshi" class="" >
+            <p>始发站</p>
+            <p>From</p>
+        </div>
+        <div id="ceshi1" class="str1 str_wrap" >
+            <p>多伦多</p>
+            <p>YYZ</p>
+        </div>
+
+        <div id="ceshi2" class="str1 str_wrap" >
+            <p>香港赤鱲角</p>
+            <p>HKG</p>
+        </div>
+        <div id="ceshi3" class="str1 str_wrap" >
+            <p>洛杉矶</p>
+            <p>LAX</p>
+        </div>
+        <div id="ceshi4" class="str1 str_wrap" >
+            <p>洛杉矶</p>
+            <p>LAX</p>
+        </div>
+        <div id="ceshi5" class="str1 str_wrap" >
+            <p>阿图罗</p>
+            <p>SCL</p>
+        </div>
+        <div id="ceshi6" class="str1 str_wrap" >
+            <p>洛杉矶</p>
+            <p>LAX</p>
+        </div>
+
+        <div id="ceshi7" class="str1 str_wrap" >
+            <p>樟宜</p>
+            <p>SIN</p>
+        </div>
+        <div id="ceshi8" class="str1 str_wrap" >
+            <p>香港赤鱲角</p>
+            <p>HKG</p>
+        </div>
+        <div id="ceshi9" class="str1 str_wrap" >
+            <p>樟宜</p>
+            <p>SIN</p>
+        </div>
+        <div id="ceshi10" class="str1 str_wrap" >
+            <p>纽瓦克</p>
+            <p>EWR</p>
+        </div>
+    </div>
+    <div id="fligheEnd">
+        <div id="ceshi" class="" >
+            <p>目的地</p>
+            <p>TO</p>
+        </div>
+        <div id="ceshi1" class="str1 str_wrap" >
+            <p>香港赤鱲角</p>
+            <p>HKG</p>
+        </div>
+        <div id="ceshi2" class="str1 str_wrap" >
+            <p>伦敦希思罗</p>
+            <p>LHR</p>
+        </div>
+        <div id="ceshi3" class="str1 str_wrap" >
+            <p>上海浦东</p>
+            <p>PVG</p>
+        </div>
+        <div id="ceshi4" class="str1 str_wrap" >
+            <p>北京首都</p>
+            <p>PEK</p>
+        </div>
+        <div id="ceshi5" class="str1 str_wrap" >
+            <p>马德里</p>
+            <p>MAD</p>
+        </div>
+        <div id="ceshi6" class="str1 str_wrap" >
+            <p>首尔仁川</p>
+            <p>ICN</p>
+        </div>
+        <div id="ceshi7" class="str1 str_wrap" >
+            <p>伦敦希思罗</p>
+            <p>LHR</p>
+        </div>
+        <div id="ceshi8" class="str1 str_wrap" >
+            <p>戴高乐</p>
+            <p>CDG</p>
+        </div>
+        <div id="ceshi9" class="str1 str_wrap" >
+            <p>旧金山</p>
+            <p>SFO</p>
+        </div>
+        <div id="ceshi10" class="str1 str_wrap" >
+            <p>孟买</p>
+            <p>BOM</p>
+        </div>
+    </div>
+
+    <div id="fligheStartTime">
+        <div id="ceshi" class="" >
+            <p>预计起飞</p>
+            <p>STA</p>
+        </div>
+        <div id="ceshi1" class="str1 str_wrap" >
+            <p>22:13</p>
+            <p>22:13</p>
+        </div>
+        <div id="ceshi2" class="str1 str_wrap" >
+            <p>23:29</p>
+            <p>23:29</p>
+        </div>
+        <div id="ceshi3" class="str1 str_wrap" >
+            <p>04:49</p>
+            <p>4:49</p>
+        </div>
+        <div id="ceshi4" class="str1 str_wrap" >
+            <p>05:49</p>
+            <p>05:49</p>
+        </div>
+        <div id="ceshi5" class="str1 str_wrap" >
+            <p>06:43</p>
+            <p>06:43</p>
+        </div>
+        <div id="ceshi6" class="str1 str_wrap" >
+            <p>04:02</p>
+            <p>04:02</p>
+        </div>
+        <div id="ceshi7" class="str1 str_wrap" >
+            <p>23:31</p>
+            <p>23:31</p>
+        </div>
+        <div id="ceshi8" class="str1 str_wrap" >
+            <p>23:04</p>
+            <p>23:04</p>
+        </div>
+        <div id="ceshi9" class="str1 str_wrap" >
+            <p>09:44</p>
+            <p>09:44</p>
+        </div>
+        <div id="ceshi10" class="str1 str_wrap" >
+            <p>08:32</p>
+            <p>08:32</p>
+        </div>
+    </div>
+
+    <div id="fligheEndTime">
+        <div id="ceshi" class="" >
+            <p>预计达到</p>
+            <p>ETA</p>
+        </div>
+        <div id="ceshi1" class="str1 str_wrap" >
+            <p>13:21</p>
+            <p>13:21</p>
+        </div>
+        <div id="ceshi2" class="str1 str_wrap" >
+            <p>14:20</p>
+            <p>14:20</p>
+        </div>
+        <div id="ceshi3" class="str1 str_wrap" >
+            <p>01:42</p>
+            <p>01:42</p>
+        </div>
+        <div id="ceshi4" class="str1 str_wrap" >
+            <p>18:32</p>
+            <p>18:32</p>
+        </div>
+        <div id="ceshi5" class="str1 str_wrap" >
+            <p>19:49</p>
+            <p>19:49</p>
+        </div>
+        <div id="ceshi6" class="str1 str_wrap" >
+            <p>17:25</p>
+            <p>17:25</p>
+        </div>
+        <div id="ceshi7" class="str1 str_wrap" >
+            <p>13:34</p>
+            <p>13:34</p>
+        </div>
+        <div id="ceshi8" class="str1 str_wrap" >
+            <p>12:02</p>
+            <p>12:02</p>
+        </div>
+        <div id="ceshi9" class="str1 str_wrap" >
+            <p>00:36</p>
+            <p>00:36</p>
+        </div>
+        <div id="ceshi10" class="str1 str_wrap" >
+            <p>23:09</p>
+            <p>23:09</p>
+        </div>
+    </div>
+</div>
+<div id="flightInfoAll42" style="display: none;">
+ <div id="infoID">
+        <div id="ceshi" class="" >
+            <p>序号</p>
+            <p>ID</p>
+        </div>
+        <div id="ceshi11" class="" >
+            <p>11</p>
+        </div>
+        <div id="ceshi12" class="" >
+            <p>12</p>
+        </div>
+        <div id="ceshi13" class="" >
+            <p>13</p>
+        </div>
+        <div id="ceshi14" class="" >
+            <p>14</p>
+        </div>
+        <div id="ceshi15" class="" >
+            <p>15</p>
+        </div>
+        <div id="ceshi16" class="" >
+            <p>16</p>
+        </div>
+        <div id="ceshi17" class="" >
+            <p>17</p>
+        </div>
+        <div id="ceshi18" class="" >
+            <p>18</p>
+        </div>
+        <div id="ceshi19" class="" >
+            <p>19</p>
+        </div>
+        <div id="ceshi20" class="" >
+            <p>20</p>
+        </div>
+    </div>
+
+    <div id="fligheInfo">
+        <div id="ceshi" class="" >
+            <p>热门航班</p>
+            <p>Fight</p>
+        </div>
+        <div id="ceshi11" class="str1 str_wrap" >
+            <p>JAL43</p>
+            <p>JAL43</p>
+        </div>
+        <div id="ceshi12" class="str1 str_wrap" >
+            <p>BAW15</p>
+            <p>BAW15</p>
+        </div>
+        <div id="ceshi13" class="str1 str_wrap" >
+            <p>EVA5</p>
+            <p>EVA5</p>
+        </div>
+        <div id="ceshi14" class="str1 str_wrap" >
+            <p>AEA75</p>
+            <p>AEA75</p>
+        </div>
+        <div id="ceshi15" class="str1 str_wrap" >
+            <p>LAN705</p>
+            <p>LAN705</p>
+        </div>
+        <div id="ceshi16" class="str1 str_wrap" >
+            <p>CPA898</p>
+            <p>CPA898</p>
+        </div>
+        <div id="ceshi17" class="str1 str_wrap" >
+            <p>UAL839</p>
+            <p>UAL839</p>
+        </div>
+        <div id="ceshi18" class="str1 str_wrap" >
+            <p>KAL931</p>
+            <p>KAL931</p>
+        </div>
+        <div id="ceshi19" class="str1 str_wrap" >
+            <p>CCA983</p>
+            <p>CCA983</p>
+        </div>
+        <div id="ceshi20" class="str1 str_wrap" >
+            <p>KAL130</p>
+            <p>KAL130</p>
+        </div>
+    </div>
+
+    <div id="fligheStart">
+        <div id="ceshi" class="" >
+            <p>始发站</p>
+            <p>From</p>
+        </div>
+        <div id="ceshi11" class="str1 str_wrap" >
+            <p>东京羽田</p>
+            <p>HND</p>
+        </div>
+        <div id="ceshi12" class="str1 str_wrap" >
+            <p>伦敦希思罗</p>
+            <p>LHR</p>
+        </div>
+        <div id="ceshi13" class="str1 str_wrap" >
+            <p>洛杉矶</p>
+            <p>LAX</p>
+        </div>
+
+        <div id="ceshi14" class="str1 str_wrap" >
+            <p>马德里</p>
+            <p>MAD</p>
+        </div>
+        <div id="ceshi15" class="str1 str_wrap" >
+            <p>马德里</p>
+            <p>MAD</p>
+        </div>
+        <div id="ceshi16" class="str1 str_wrap" >
+            <p>香港赤鱲角</p>
+            <p>HKG</p>
+        </div>
+        <div id="ceshi17" class="str1 str_wrap" >
+            <p>洛杉矶</p>
+            <p>LAX</p>
+        </div>
+        <div id="ceshi18" class="str1 str_wrap" >
+            <p>首尔仁川</p>
+            <p>ICN</p>
+        </div>
+        <div id="ceshi19" class="str1 str_wrap" >
+            <p>北京首都</p>
+            <p>PKK</p>
+        </div>
+        <div id="ceshi20" class="str1 str_wrap" >
+            <p>奥克兰</p>
+            <p>AKL</p>
+        </div>
+    </div>
+
+    <div id="fligheEnd">
+    	<div id="ceshi" class="" >
+            <p>目的地</p>
+            <p>TO</p>
+        </div>
+        <div id="ceshi11" class="str1 str_wrap" >
+            <p>伦敦希思罗</p>
+            <p>LHR</p>
+        </div>
+        <div id="ceshi12" class="str1 str_wrap" >
+            <p>樟宜</p>
+            <p>SIN</p>
+        </div>
+        <div id="ceshi13" class="str1 str_wrap" >
+            <p>台北桃园</p>
+            <p>TPE</p>
+        </div>
+        <div id="ceshi14" class="str1 str_wrap" >
+            <p>利马</p>
+            <p>LIM</p>
+        </div>
+        <div id="ceshi15" class="str1 str_wrap" >
+            <p>阿图罗</p>
+            <p>SCL</p>
+        </div>
+        <div id="ceshi16" class="str1 str_wrap" >
+            <p>洛杉矶</p>
+            <p>LAX</p>
+        </div>
+        <div id="ceshi17" class="str1 str_wrap" >
+            <p>悉尼</p>
+            <p>SYD</p>
+        </div>
+        <div id="ceshi18" class="str1 str_wrap" >
+            <p>菲乌米奇诺</p>
+            <p>FCO</p>
+        </div>
+        <div id="ceshi19" class="str1 str_wrap" >
+            <p>洛杉矶</p>
+            <p>LAX</p>
+        </div>
+        <div id="ceshi20" class="str1 str_wrap" >
+            <p>首尔仁川</p>
+            <p>ICN</p>
+        </div>
+    </div>
+
+    <div id="fligheStartTime">
+        <div id="ceshi" class="" >
+            <p>预计起飞</p>
+            <p>STA</p>
+        </div>
+        <div id="ceshi11" class="str1 str_wrap" >
+            <p>10:39</p>
+            <p>10:39</p>
+        </div>
+        <div id="ceshi12" class="str1 str_wrap" >
+            <p>05:07</p>
+            <p>05:07</p>
+        </div>
+        <div id="ceshi13" class="str1 str_wrap" >
+            <p>03:46</p>
+            <p>03:46</p>
+        </div>
+        <div id="ceshi14" class="str1 str_wrap" >
+            <p>06:41</p>
+            <p>06:41</p>
+        </div>
+        <div id="ceshi15" class="str1 str_wrap" >
+            <p>06:47</p>
+            <p>06:47</p>
+        </div>
+        <div id="ceshi16" class="str1 str_wrap" >
+            <p>10:42</p>
+            <p>10:42</p>
+        </div>
+        <div id="ceshi17" class="str1 str_wrap" >
+            <p>14:24</p>
+            <p>14:24</p>
+        </div>
+        <div id="ceshi18" class="str1 str_wrap" >
+            <p>13:03</p>
+            <p>13:03</p>
+        </div>
+        <div id="ceshi19" class="str1 str_wrap" >
+            <p>21:14</p>
+            <p>21:14</p>
+        </div>
+        <div id="ceshi20" class="str1 str_wrap" >
+            <p>05:08</p>
+            <p>05:08</p>
+        </div>
+    </div>
+
+    <div id="fligheEndTime">
+        <div id="ceshi" class="" >
+            <p>预计达到</p>
+            <p>ETA</p>
+        </div>
+
+        <div id="ceshi11" class="str1 str_wrap" >
+            <p>22:59</p>
+            <p>22:59</p>
+        </div>
+        <div id="ceshi12" class="str1 str_wrap" >
+            <p>17:59</p>
+            <p>17:59</p>
+        </div>
+        <div id="ceshi13" class="str1 str_wrap" >
+            <p>17:56</p>
+            <p>17:56</p>
+        </div>
+        <div id="ceshi14" class="str1 str_wrap" >
+            <p>18:33</p>
+            <p>18:33</p>
+        </div>
+        <div id="ceshi15" class="str1 str_wrap" >
+            <p>20:11</p>
+            <p>20:11</p>
+        </div>
+        <div id="ceshi16" class="str1 str_wrap" >
+            <p>23:15</p>
+            <p>23:15</p>
+        </div>
+        <div id="ceshi17" class="str1 str_wrap" >
+            <p>05:26</p>
+            <p>05:26</p>
+        </div>
+        <div id="ceshi18" class="str1 str_wrap" >
+            <p>01:33</p>
+            <p>01:33</p>
+        </div>
+        <div id="ceshi19" class="str1 str_wrap" >
+            <p>09:38</p>
+            <p>09:38</p>
+        </div>
+        <div id="ceshi20" class="str1 str_wrap" >
+            <p>16:52</p>
+            <p>16:52</p>
+        </div>
+    </div>
+</div>
+	
+</div>
+
+</body>
+</html>

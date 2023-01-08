@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>人口流动三维地图</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link href="./css/pretty.css" rel="stylesheet">
+    <script src="./js/jquery.min.js"></script>
+    <script src="./js/config.js"></script>
+    <script src="./js/tooltip.js"></script>
+    <!-- migration.js为本范例的数据 -->
+    <script src="./data/migration.js"></script>
+    <script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<div id='loadingbar' class="spinner">
+    <div class="spinner-container container1">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container2">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container3">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+</div>
+<div id="toolbar" class="param-container tool-bar">
+    <p>1990-2010主要人口迁移流动情况</p>
+    <div id="legend" class="legend">
+        <div class="legend-item"><input id="section-1990-1995" type="radio" name="years-section" value="1990-1995" checked/><label for="section-1990-1995">1990-1995</label></div>
+        <div class="legend-item"><input id="section-1995-2000" type="radio" name="years-section" value="1995-2000"/><label for="section-1995-2000">1995-2000</label></div>
+        <div class="legend-item"><input id="section-2000-2005" type="radio" name="years-section" value="2000-2005"/><label for="section-2000-2005">2000-2005</label></div>
+        <div class="legend-item"><input id="section-2005-2010" type="radio" name="years-section" value="2005-2010"/><label for="section-2005-2010">2005-2010</label></div>
+    </div>
+    <p>
+        提示：鼠标悬浮获取迁移信息
+    </p>
+</div>
+<script type="text/javascript">
+    function onload(Cesium) {
+        try{
+            let viewer = new Cesium.Viewer('cesiumContainer', {
+                infoBox: false,
+                selectionIndicator: false
+            });
+            let scene = viewer.scene;
+            scene.imageryLayers.removeAll(true);
+            scene.globe.baseColor = new Cesium.Color(0.0, 0.0, 0.0, 1.0); // 没有影像时地球的基础颜色，默认为蓝色
+            scene.skyBox.show = false;
+            scene.globe.depthTestAgainstTerrain = false;
+
+            let promiseBaseLayer = scene.addS3MTilesLayerByScp(URL_CONFIG.SCP_WORLD_COUNTRY_VECTOR, {
+                name: "baseLayer"
+            });
+            promiseBaseLayer.then(function(layer){
+                scene.camera.setView({
+                    destination : new Cesium.Cartesian3(-4511826.162646529, 16838364.473915376, 10064576.385825634),
+                    orientation : {
+                        heading : 6.283185307179586,
+                        pitch : -1.5707963267948966,
+                        roll : 0
+                    }
+                });
+
+                generateMigrationMap(viewer, '1990-1995');
+
+                var tooltip = createTooltip(document.body); // 提示工具
+                let screenSpaceEventHandler = new Cesium.ScreenSpaceEventHandler(scene.canvas);
+                screenSpaceEventHandler.setInputAction((movement)=>{
+                    let pickedObject = scene.pick(movement.endPosition); // 拾取场景中的图元
+                    if(pickedObject){
+                        viewer.enableCursorStyle = false;
+                        viewer._element.style.cursor = '';
+                        $('body').removeClass('handCursor').addClass('handCursor');
+                        tooltip.setVisible(true);
+                        tooltip.showAt(movement.endPosition, pickedObject.id.name);
+                    }else{
+                        viewer.enableCursorStyle = true;
+                        $('body').removeClass('handCursor');
+                        tooltip.setVisible(false);
+                    }
+                }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+
+                $('#legend').change(function(){
+                    generateMigrationMap(viewer, $('input[name="years-section"]:checked').val());
+                });
+
+                $('#toolbar').show();
+                $('#loadingbar').remove();
+            });
+        }catch(e){
+            console.log(e);
+        }
+    }
+
+    function generateMigrationMap(viewer, yearsSection){
+        viewer.entities.removeAll();
+        let targetYearsSection = null;
+        switch (yearsSection){
+            case '1990-1995':
+                targetYearsSection = data_1995;
+                break;
+            case '1995-2000':
+                targetYearsSection = data_2000;
+                break;
+            case '2000-2005':
+                targetYearsSection = data_2005;
+                break;
+            case '2005-2010':
+                targetYearsSection = data_2010;
+                break;
+            default:
+                break;
+        }
+        if(!targetYearsSection){
+            return;
+        }
+        for(let geoLine of targetYearsSection){
+            let startName = geoLine[0].name;
+            let destinationName = geoLine[1].name;
+            let migrationNumber = geoLine[1].value;
+
+            // 用于拟合当前曲线的笛卡尔坐标点数组
+            let startPt = Cesium.Cartesian3.fromDegrees(data_geo[startName][0], data_geo[startName][1], 0);
+            let endPt = Cesium.Cartesian3.fromDegrees(data_geo[destinationName][0], data_geo[destinationName][1], 0);
+            let curLinePointsArr = generateCurve(startPt, endPt);
+            viewer.entities.add({ // 背景线
+                description: 'background-line',
+                name: startName + ' -> ' + destinationName + ' ' + migrationNumber + '人',
+                polyline: {
+                    width: 3,
+                    positions: curLinePointsArr,
+                    material: new Cesium.PolylineDashMaterialProperty({
+                        color: new Cesium.Color(255 / 255, 249 / 255, 0, 0.5)
+                    })
+                }
+            });
+
+            viewer.entities.add({ // 尾迹线
+                description: 'trail-line',
+                name: startName + ' -> ' + destinationName + ' ' + migrationNumber + '人',
+                polyline: {
+                    width: 5,
+                    positions: curLinePointsArr,
+                    material: new Cesium.PolylineTrailMaterialProperty({ // 尾迹线材质
+                        color: Cesium.Color.fromCssColorString("rgba(118, 233, 241, 1.0)"),
+                        trailLength : 0.2,
+                        period : 5.0
+                    })
+                }
+            });
+
+            viewer.entities.add({ // 起点
+                description: 'start-point',
+                name: startName,
+                position: Cesium.Cartesian3.fromDegrees(data_geo[startName][0], data_geo[startName][1]),
+                point: {
+                    color: new Cesium.Color(255 / 255, 249 / 255, 0, 1),
+                    pixelSize: 5
+                }
+            });
+
+            viewer.entities.add({ // 终点
+                description: 'end-point',
+                name: destinationName,
+                position: Cesium.Cartesian3.fromDegrees(data_geo[destinationName][0], data_geo[destinationName][1]),
+                point: {
+                    color: new Cesium.Color(251 / 255, 7 / 255, 0, 0.7),
+                    pixelSize: 10
+                }
+            });
+        }
+    }
+
+    /**
+     * 生成曲线来表达国家间的人口流动曲线
+     * @param startPoint 起点
+     * @param endPoint 终点
+     * @returns {Array}
+     */
+    function generateCurve(startPoint, endPoint){
+        let addPointCartesian = new Cesium.Cartesian3();
+        Cesium.Cartesian3.add(startPoint, endPoint, addPointCartesian);
+        let midPointCartesian = new Cesium.Cartesian3();
+        Cesium.Cartesian3.divideByScalar(addPointCartesian, 2, midPointCartesian);
+        let midPointCartographic = Cesium.Cartographic.fromCartesian(midPointCartesian);
+        midPointCartographic.height = Cesium.Cartesian3.distance(startPoint, endPoint) / 10;
+        let midPoint = new Cesium.Cartesian3();
+        Cesium.Ellipsoid.WGS84.cartographicToCartesian(midPointCartographic, midPoint);
+        let spline = new Cesium.CatmullRomSpline({
+            times: [0.0, 0.5, 1.0],
+            points: [startPoint, midPoint, endPoint]
+        });
+        let curvePointsArr = [];
+        for(let i = 0, len = 300; i < len; i++){
+            curvePointsArr.push(spline.evaluate(i / len));
+        }
+        return curvePointsArr;
+    }
+</script>
+</body>
+</html>

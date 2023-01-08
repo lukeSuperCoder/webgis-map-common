@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <script src="./js/echarts.simple.min.js"></script>
+    <title>Global Airlines</title>
+    <link href="./css/widgets.css" rel="stylesheet">
+    <link href="./css/bootstrap.min.css" rel="stylesheet">
+    <link href="./css/pretty.css" rel="stylesheet">
+    <script src="./js/jquery.min.js"></script>
+    <script src="./js/bootstrap.min.js"></script>
+    <script src="./js/bootstrap-select.min.js"></script>
+    <script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+    <script type="text/javascript" src="./js/airportGPS.js"></script>
+    <script src="./js/config.js"></script>
+    <style>
+        #info{
+            position: absolute;
+            left: 47%;
+            bottom: 2%;
+            color: wheat;
+            font:15px Arial;
+        }
+        .bootstrap-select {
+            width: 100px;
+        }
+    </style>
+</head>
+<body>
+<div id="cesiumContainer" class="fullSize">
+</div>
+<div id='loadingbar' class="spinner">
+    <div class="spinner-container container1">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container2">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container3">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+</div>
+<div id="toolbar" class="param-container tool-bar">
+    <select id="Cross-border" class="selectpicker show-tick form-control">
+        <option>境内</option>
+        <option>跨境</option>
+    </select>
+    <button type="button" id="global" class="button black">全球显示</button>
+    <label style="color:white;font:13.3333px Arial; font-weight: bold;">按机场显示：</label>
+    <select id="isStart" class="selectpicker show-tick form-control">
+        <option value="departure" >出港</option>
+        <option value="arrive">到达</option>
+    </select>
+    <select id="selectDiv" class="selectpicker show-tick form-control">
+        <option value="PEK" >北京首都</option>
+        <option value="PVG">上海浦东</option>
+        <option value="CTU">成都双流</option>
+    </select>
+    <button type="button" id="search" class="button black">查询</button>
+    <div id="polyline">
+        <label>
+            <input id="line" type="checkbox" style="display: inline-block; vertical-align: middle;" checked>
+            <span style="display: inline-block; vertical-align: middle;">航线</span>
+        </label>
+    </div>
+    <span id="info"></span>
+</div>
+<script>
+    function onload(Cesium) {
+        var viewer = new Cesium.Viewer('cesiumContainer');
+        viewer.imageryLayers.addImageryProvider(new Cesium.BingMapsImageryProvider({
+            url : 'https://dev.virtualearth.net',
+            mapStyle : Cesium.BingMapsStyle.AERIAL,
+            key: URL_CONFIG.BING_MAP_KEY
+        }));
+       var scene = viewer.scene;
+       var camera = scene.camera;
+       var url = './SampleData/models/AirPlane.s3m';
+       var layer = new Cesium.DynamicLayer3D(scene.context,url);
+       scene.primitives.add(layer);
+       var airport;
+       var dir;
+       var fn={};
+       var arr = [];
+       var objects = [];
+       var index;
+       var flag=0;
+       var timeInterval;
+       var selectDiv  = document.getElementById("selectDiv");
+       var dirDiv=document.getElementById("isStart");
+       var cross=document.getElementById("Cross-border");
+       $('#loadingbar').remove();
+       $('#mytool').show();
+       $('#toolbar').show();
+       Cesium.loadJson('./data/GlobalFlight.json').then(function(jsonData) {
+            var behind_border=[];
+            document.getElementById("global").onclick = function() {
+
+                layer.group[url].stateList.length = 0;
+
+                index=1;
+                viewer.entities.removeAll();
+                if(cross.selectedIndex==1){
+                    createPolyLine(jsonData,"all");
+                }
+                else if(cross.selectedIndex==0){
+                    for(var c=0;c<jsonData.length;c++){
+                        var a=jsonData[c][0];
+                        var b=jsonData[c][1];
+                        if(geoCoordMap[a]&&geoCoordMap[b]&&geoCoordMap[a][4]==geoCoordMap[b][4]){
+                        behind_border.push(jsonData[c]);
+                        }
+                    }
+                    createPolyLine(behind_border,"all");
+                }
+            }
+            var airportData=[];
+            for(var j=0;j<jsonData.length;j++){
+                if(jsonData[j][0]=="PEK"){
+                        airportData.push(jsonData[j]);
+                }
+            }
+            index=1;
+            createPolyLine(airportData,"dep","PEK");
+            document.getElementById("search").onclick = function() {
+                flag=0;
+                if (selectDiv.selectedIndex==0){airport="PEK";}
+                if (selectDiv.selectedIndex==1){airport="PVG";}
+                if (selectDiv.selectedIndex==2){airport="CTU";}
+                if (dirDiv.selectedIndex==0){dir="dep";}
+                if (dirDiv.selectedIndex==1){dir="arr";}
+                if(airportData.length>0){
+                    airportData.length=0;
+                }
+                for(var j=0;j<jsonData.length;j++){
+                    if (dir=="dep"){
+                        if(jsonData[j][0]==airport){
+                            airportData.push(jsonData[j]);
+                        }
+                    }
+                    if (dir=="arr"){
+                        if(jsonData[j][1]==airport)
+                        {
+                            airportData.push(jsonData[j]);
+                        }
+                    }
+                }
+
+                // for(var i = 0;i < objects.length;i++){
+                //     layer.clear(url, i);
+                // }
+                layer.clearAll();
+                layer.group[url].stateList.length = 0;
+                
+                index=1;
+                viewer.entities.removeAll();
+                createPolyLine(airportData,dir,airport);
+            }
+        /////////
+        }).otherwise(function(error) {
+        });
+        $('#line').click(function(evt){
+        var entities=viewer.entities.values;
+        var len=entities.length;
+        for(i=0;i<len;i++){
+            entities[i].show=$(this).prop("checked");
+        }
+    });
+        function addBezier(pointA, pointB, height,num) {
+            var earth = Cesium.Ellipsoid.WGS84;
+            var startPoint = earth.cartographicToCartesian(Cesium.Cartographic.fromDegrees(parseFloat(pointA[0]),parseFloat(pointA[1]), 0.0));
+            var endPoint = earth.cartographicToCartesian(Cesium.Cartographic.fromDegrees(parseFloat(pointB[0]), parseFloat(pointB[1]), 0.0));
+            // determine the midpoint (point will be inside the earth)
+            var addCartesian = startPoint.clone();
+            Cesium.Cartesian3.add(startPoint, endPoint, addCartesian);
+            var midpointCartesian = addCartesian.clone();
+            Cesium.Cartesian3.divideByScalar(addCartesian, 2, midpointCartesian);
+            // move the midpoint to the surface of the earth
+            earth.scaleToGeodeticSurface(midpointCartesian);
+            // add some altitude if you want (1000 km in this case)
+            var midpointCartographic = earth.cartesianToCartographic(midpointCartesian);
+            midpointCartographic.height = height;
+            midpointCartesian = earth.cartographicToCartesian(midpointCartographic);
+            var spline = new Cesium.CatmullRomSpline({
+                times: [0.0, 0.5, 1.0],
+                points: [
+                    startPoint,
+                    midpointCartesian,
+                    endPoint
+                ],
+            });
+            var polylinePoints = [];
+            for (var ii = 0; ii < num; ++ii) {
+                polylinePoints.push(spline.evaluate(ii / num));
+            }
+            return polylinePoints;
+        }
+        
+        /////////
+        var EARTH_RADIUS = 6378137.0;    //单位M
+        var PI = Math.PI;
+        function getRad(d){
+            return d*PI/180.0;
+        }
+        function getGreatCircleDistance(lat1,lng1,lat2,lng2){
+            var radLat1 = getRad(lat1);
+            var radLat2 = getRad(lat2);
+
+            var a = radLat1 - radLat2;
+            var b = getRad(lng1) - getRad(lng2);
+
+            var s = 2*Math.asin(Math.sqrt(Math.pow(Math.sin(a/2),2) + Math.cos(radLat1)*Math.cos(radLat2)*Math.pow(Math.sin(b/2),2)));
+            s = s*EARTH_RADIUS;
+            s = Math.round(s*10000)/10000.0;
+            return s;
+        }
+
+        function createPolyLine(data,mode,airport){
+            document.getElementById("line").checked=true;
+            var num=300;
+            objects.length=0;
+            objects=[];
+            var polylineEntities = [];
+            var t="此时空中有"+ data.length+"条航线";
+            document.getElementById("info").textContent=t;
+            var i;
+            if(mode=="dep"){
+                var p=data[0][0];
+            }
+            else if(mode=="arr"){
+                
+                var p=data[0][1]
+            }
+            else{
+                flag=1;
+                num=30;
+            }
+            if(airport == 'PVG'){
+                //上海浦东机场
+                camera.setView({
+                    destination : new Cesium.Cartesian3(-4032578.8016693345,5427649.626208913,2512475.6081795795),
+                    orientation : {
+                        heading : 5.925348571914093,
+                        pitch :-0.6753207694751793,
+                        roll : 0
+                    }
+                });
+            }
+            else if(airport == 'CTU'){
+                //成都双流机场
+                camera.setView({
+                    destination : new Cesium.Cartesian3(-1432104.201252676,6959576.20812267,2245802.5051383465),
+                    orientation : {
+                        heading : 0.1345035833313153,
+                        pitch :-0.7237342876759398,
+                        roll : 0
+                    }
+                });
+            }
+            else if(airport == 'PEK'){
+                //北京首都机场
+                scene.camera.setView({
+                    destination : new Cesium.Cartesian3(-3496883.8069757824,5504094.655760036,3717965.1235123337),
+                    orientation : {
+                        heading : 5.896655316895333,
+                        pitch : -0.8476315034394291,
+                        roll : 0
+                    }
+                });
+            }else{
+                camera.setView({
+
+                    destination : Cesium.Cartesian3.fromDegrees(116.44829499568006, 39.9038584836946,25500000),
+                    orientation : {
+                    heading : 4.462824916628415,
+                    pitch :-1.5695598976662626,
+                    roll : 2.0831853071570976
+                    }
+                });
+            }
+            if (p){
+                var pos=geoCoordMap[p];
+                 viewer.entities.add({
+                    position : Cesium.Cartesian3.fromDegrees(parseFloat(pos[0]), parseFloat(pos[1])),
+                    point : {
+                        pixelSize : 8,
+                        color : new Cesium.Color(1, 1, 0, 0.9)
+                    }
+                });
+            } 
+                                  
+            for (i = 0; i < data.length; i++) {
+                var dep = data[i][0];
+                var arr = data[i][1];
+                var pointA = geoCoordMap[dep];
+                var pointB = geoCoordMap[arr];
+                if (pointA && pointB) {
+
+                    var origin = [parseFloat(pointA[0]), parseFloat(pointA[1])];
+                    var destination = [parseFloat(pointB[0]), parseFloat(pointB[1])];
+                    var dis = getGreatCircleDistance(origin[1], origin[0], destination[1], destination[0]);
+                    var pntArray = addBezier(origin, destination, dis/7,num);
+                    
+                    if(mode=="dep"){
+                        var color = new Cesium.Color(0.745, 0.402, 0.8, 0.6 );      
+                        viewer.entities.add({
+                            
+                            position : Cesium.Cartesian3.fromDegrees(destination[0], destination[1]),
+                            point : {
+                                pixelSize : 5,
+                                color : new Cesium.Color(0, 1, 1)
+                            }
+                        });
+                    }
+                    else if(mode=="arr") {
+                        var color = new Cesium.Color(51/255, 153/255, 255/255,0.6);
+                        viewer.entities.add({
+                            position : Cesium.Cartesian3.fromDegrees(origin[0], origin[1]),
+                            point : {
+                                pixelSize : 5,
+                                color : new Cesium.Color(1, 0, 1)
+                            }
+                        });
+                    }
+                    else if(mode="all"){
+                        var color=new Cesium.Color(0.2,0.9,0.8,0.8);
+                    }
+                    if(data[i][4]){
+                        data[i].pop();
+                    }
+                    if(mode!="all"){
+                        if(!data[i][4]){
+                            data[i].push(pntArray);
+                        }
+                        dynamiclayer(pntArray);
+                    }
+                    var entity = new Cesium.Entity();
+                    entity.dep=dep;
+                    entity.arr=arr;
+                    entity.bezier = new
+                    Cesium.ConstantProperty(true);
+                    entity.bezier = true;
+                    entity.polyline = {
+                        positions: pntArray,
+                        width: 0.1,
+                        material: color
+                    };
+                    entity.description = pointA[2] + '-' + pointB[2] + "     " + "  Distance:   " + dis / 1000 + " KM";
+                    viewer.entities.add(entity);
+                    polylineEntities.push(entity);          
+                }
+
+            }
+            if (mode=="all"){
+                
+                return;
+            } 
+            else{            
+                layer.updateObjectWithModel(url,objects); 
+                if(timeInterval){
+                	clearInterval(timeInterval);
+                }
+                timeInterval=setInterval(function() {
+                    if(flag==0){
+                        if(index>299){
+                            index=1;
+                            for(i=0;i<data.length;i++){
+                                layer.clear(url,i);
+                            }
+                        }
+                        for(i=0;i<data.length;i++){
+                            var p=data[i][4];
+                            var point=earth.cartesianToCartographic(p[index]);
+                            var state=objects[i];
+                            state.longitude =  Cesium.Math.toDegrees(point.longitude);
+                            state.latitude =  Cesium.Math.toDegrees(point.latitude);
+                            state.altitude=point.height;
+                        }
+                        index++;
+                        layer.updateObjectWithModel(url,objects);
+                    }
+                    else{
+                        // for(i=0;i<data.length;i++){
+                        //     layer.clear(url,i);
+                        // }
+                        layer.clearAll();
+                        return;
+                    }             
+                },200);
+                layer.updateInterval=200;
+            }
+        }                
+        ///此范例采用的本地数据，实时数据可以通过代理获得    
+        //var url="http://localhost:8090/WebGL3D/examples/Proxy.jsp?http://map.variflight.com/api?dep=PEK&isStop=0&isShare=0&isConnect=0&isExtend=0&isAll=1&queryDate=2017-06-13&dataType=1";       
+        var earth = Cesium.Ellipsoid.WGS84;
+        function dynamiclayer(data){
+            var p=data[0];
+            var point=earth.cartesianToCartographic(p);   
+            var state = new Cesium.DynamicObjectState({
+                longitude : Cesium.Math.toDegrees(point.longitude),
+                latitude :  Cesium.Math.toDegrees(point.latitude),
+                altitude : point.height,
+                scale : new Cesium.Cartesian3(1000,1000,1000)
+            });
+            objects.push(state);
+ 
+        }
+    }
+
+</script>
+</body>
+</html>

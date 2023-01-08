@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en" style="height: 100%">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <meta name="description" content="Test">
+    <meta name="cesium-sandcastle-labels" content="Geometries">
+    <title>缺省属性</title>
+
+    <script type="text/javascript" src="../Build/Cesium/ThirdParty/Workers/PlotAlgo/PlotAlgoInclude.js"></script>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link rel="stylesheet" href="./css/sideBar.css">
+    <script src="js/jquery.min.js"></script>
+    <link rel="stylesheet" type="text/css" media="screen,projection" href="css/jquery-sticklr.css"/>
+    <script src="js/plotPanelControl/PlottingUI.Include.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <link href="css/bootstrap-new.min.css" rel="stylesheet">
+    <script type="text/javascript" src="js/widgets.js"></script>
+    <script type="text/javascript" src="js/require.min.js" data-main="js/main"></script>
+    <script type="text/javascript" include="bootstrap-css,responsive,colorpicker"
+            src="js/jquery.colorpicker.js"></script>
+
+</head>
+
+<body class="sandcastle-loading" data-sandcastle-bucket="bucket-requirejs.html"
+      style="margin: 0px; overflow: hidden;background: #fff;height: 100%;">
+
+<div id="toolbar" class="panel panel-primary"
+     style="position: absolute;top: 10px;left: 10px;text-align: center;z-index: 800;border-radius: 4px;">
+    <div class='panel-heading' id="panelheading">
+        <h5 class='panel-title text-center'>缺省属性</h5></div>
+    <div class='panel-body content' id="panelbodycontent">
+        <div class='panel'>
+            <div class='input-group' style="width: 220px;margin-bottom: 15px;">
+                <span class='input-group-addon'>线宽：</span>
+                <input type='text' class='form-control' id='lineWidth' value='3' onchange="lineWidthChanges()"/>
+            </div>
+            <div class='input-group' style="width: 220px;margin-bottom: 15px;">
+                <span class='input-group-addon'>线型：</span>
+                <select class='form-control' id="lineStyle" onchange="lineStyleChanges()"></select>
+            </div>
+            <div class='input-group' style="width: 220px;margin-bottom: 15px;">
+                <span class='input-group-addon'>线色：</span>
+                <input type="text" id="lineColor" value="" class='form-control'/>
+                <span class='input-group-addon'><img src='./img/colorpicker.png' id="cp1"
+                                                     style="cursor:pointer; z-index: 9999;"/></span>
+            </div>
+
+            <div class='input-group' style="width: 220px;margin-bottom: 15px;">
+                <span class='input-group-addon'>标号宽度</span>
+                <input type='text' class='form-control' id='symbolWidth' onchange="symbolWidthChanges()"/>
+            </div>
+            <div class='input-group' style="width: 220px;margin-bottom: 15px;">
+                <span class='input-group-addon'>标号高度</span>
+                <input type='text' class='form-control' id='symbolHeight' onchange="symbolHeightChanges()"/>
+            </div>
+            <div class='input-group' style="width: 220px;margin-bottom: 15px;">
+                <span class='input-group-addon'>使用缺省属性</span>
+                <select class='form-control' id='defaultStyleFlag' onchange="defaultStyleFlagChanges()">
+                    <option value='0'>false</option>
+                    <option value='1'>true</option>
+                </select>
+            </div>
+        </div>
+        <input type="button" class="btn btn-default" value="绘制标号" onclick="plotSymbol()"/>
+        <input type="button" class="btn btn-default" value="清空图层" onclick="clearLayers()"/>
+    </div>
+</div>
+
+<div id="cesiumContainer" class="fullSize"
+     style="position: relative;left: 0%;height: 100%;border: 1px solid #3473b7;"></div>
+<script id="cesium_sandcastle_script">
+    var cesium, scene, viewer, serverUrl;
+    var plottingLayer;
+    var plotting, plotEditControl, plotDrawControl;
+    var item = ["实线", "长虚线", "由点构成的直线", "由线划线段组成的直线", "由重复的线划点图案构成的直线"],
+        select, lineStyle, DefaultSize;
+
+    function onload(Cesium) {
+        'use strict';
+        cesium = Cesium;
+        //若本地没有标绘相关服务则可访问支持中心的iserver
+        // var host = document.location.toString().match('/file:\/\//') ? 'http://localhost:8090' : 'http://' + document.location.host;
+        var host =  'http://support.supermap.com.cn:8090' ;
+        viewer = new Cesium.Viewer('cesiumContainer');
+        scene = viewer.scene;
+        scene.globe.depthTestAgainstTerrain = false;
+        serverUrl = host + '/iserver/services/plot-jingyong/rest/plot';
+        InitPlot(viewer, serverUrl);
+        loadSymbolLib();
+    }
+
+    function InitPlot(viewer, serverUrl) {
+        if (!viewer) {
+            return;
+        }
+        plottingLayer = new cesium.PlottingLayer(scene, "plottingLayer");
+        scene.layers.add(plottingLayer);
+        plotting = cesium.Plotting.getInstance(serverUrl, scene);
+        plotEditControl = new cesium.PlotEditControl(scene, plottingLayer);//编辑控件
+        plotEditControl.activate();
+        plotDrawControl = new cesium.PlotDrawControl(scene, plottingLayer);//绘制控件
+        plotDrawControl.drawFinishEvent.addEventListener(function () {//标绘结束，激活编辑控件
+            plotEditControl.activate();
+        });
+    }
+
+
+    function loadSymbolLib() {
+        symbolLibManager = plotting.getSymbolLibManager();
+        if(symbolLibManager.isInitializeOK()){
+            initHtml();
+        } else {
+            symbolLibManager.initializecompleted.addEventListener(function (result) {
+                if(result.libIDs.length !== 0){
+                    initHtml();
+                }
+            });
+            symbolLibManager.initializeAsync();
+        }
+    }
+
+    function initHtml() {
+        document.getElementById("lineWidth").value = plotting.getDefaultStyle().lineWidth;
+        document.getElementById("lineStyle").value = item[0];
+        document.getElementById("lineColor").value = colorGeometryToString(plotting.getDefaultStyle().lineColor);
+        document.getElementById("symbolWidth").value = plotting.getDefaultStyle().gridSymbolSize.x;
+        document.getElementById("symbolHeight").value = plotting.getDefaultStyle().gridSymbolSize.y;
+        if (plotting.getDefaultStyle().defaultFlag)
+            document.getElementById("defaultStyleFlag").value = 1;
+        else
+            document.getElementById("defaultStyleFlag").value = 0;
+        select = document.getElementById("lineStyle");
+        for (var i = 0, len = item.length; i < len; i++) {
+            var options = document.createElement("option");
+            options.setAttribute("value", item[i]);
+            options.innerHTML = item[i];
+            select.appendChild(options);
+        }
+    }
+
+    function selectLineType() {
+        var select = document.getElementById("lineStyle");
+        var type;
+        for (var i = 0; i < select.children.length; i++) {
+            if (select.children[i].selected) {
+                type = select.children[i].value;
+
+            }
+        }
+        if (type === item[0]) {
+            lineStyle = 0;
+        }
+        else if (type === item[1]) {
+            lineStyle = 1;
+        }
+        else if (type === item[2]) {
+            lineStyle = 2;
+        }
+        else if (type === item[3]) {
+            lineStyle = 3;
+        }
+        else if (type === item[4]) {
+            lineStyle = 4;
+        }
+        var obj = new Object();
+        obj.selectValue = type;
+        obj.lineStyle = lineStyle;
+        return obj;
+    }
+
+    function lineWidthChanges() {
+        plotting.getDefaultStyle().gridLineWidth = parseInt(document.getElementById("lineWidth").value);
+    }
+
+    function lineStyleChanges() {
+        var obj = selectLineType();
+        plotting.getDefaultStyle().lineSymbolID = parseInt(obj.lineStyle);
+
+    }
+
+    function symbolWidthChanges() {
+        DefaultSize = new cesium.Cartesian2(parseInt(document.getElementById("symbolWidth").value), parseInt(document.getElementById("symbolHeight").value));
+        plotting.getDefaultStyle().gridSymbolSize = DefaultSize;
+    }
+
+    function symbolHeightChanges() {
+        DefaultSize = new cesium.Cartesian2(parseInt(document.getElementById("symbolWidth").value), parseInt(document.getElementById("symbolHeight").value));
+        plotting.getDefaultStyle().gridSymbolSize = DefaultSize;
+    }
+
+    function defaultStyleFlagChanges() {
+        if (document.getElementById("defaultStyleFlag").selectedIndex === 0) {
+            plotting.getDefaultStyle().defaultFlag = false;
+        } else {
+            plotting.getDefaultStyle().defaultFlag = true;
+        }
+    }
+
+    function lineColorChanges() {
+        plotting.getDefaultStyle().lineColor = colorConvert(document.getElementById("lineColor").value);
+    }
+
+    function plotSymbol() {
+        plotDrawControl.libID = 421;
+        plotDrawControl.code = 40503;
+        plotDrawControl.activate();
+    }
+
+
+    $(document).ready(function () {
+        $("#cp1").colorpicker({
+            ishex: true,
+            fillcolor: true,
+            event: 'mouseover',
+            target: $("#lineColor"),
+            success: lineColorChanges
+
+        });
+        $("#_creset").css("font-size", "12px");
+        $("#_creset").css("padding-right", "20px");
+        $("#colorpanel").css({"z-index": "9999"});
+    });
+
+    //删除指定标号
+    function deleteSeleGeo() {
+        plottingLayer.removeGeoGraphicObject(plottingLayer._selectedFeature);
+    }
+
+    function clearLayers() {
+        plottingLayer.removeAll();
+    }
+
+    function colorConvert(colorString) {
+        var red = parseInt(colorString.slice(1, 3), 16) / 255;
+        var green = parseInt(colorString.slice(3, 5), 16) / 255;
+        var blue = parseInt(colorString.slice(5, 7), 16) / 255;
+        return {red: red, green: green, blue: blue, alpha: 1};
+    }
+
+    function colorGeometryToString(color) {
+
+        var value = color.value;
+        var red, green, blue;
+
+        if (undefined !== value && null !== value) {
+            red = value[2] > 15 ? value[2].toString(16) : "0" + value[2].toString(16);
+            green = value[1] > 15 ? value[2].toString(16) : "0" + value[1].toString(16);
+            blue = value[0] > 15 ? value[0].toString(16) : "0" + value[0].toString(16);
+        } else {
+            red = color.red * 255;
+            red = red > 15 ? red.toString(16) : "0" + red;
+            green = color.green * 255;
+            green = green > 15 ? green.toString(16) : "0" + green;
+            blue = color.blue * 255;
+            blue = blue > 15 ? blue.toString(16) : "0" + blue;
+        }
+        return "#" + red + green + blue;
+    };
+
+    //“Delete”按键删除选中标号
+    $(document).keydown(function (event) {
+        if (event.keyCode === 46) {
+            deleteSeleGeo();
+        }
+    });
+
+</script>
+</body>
+</html>

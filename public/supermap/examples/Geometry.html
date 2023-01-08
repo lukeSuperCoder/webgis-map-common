@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>geometry</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link href="./css/bootstrap.min.css" rel="stylesheet">
+    <link href="./css/pretty.css" rel="stylesheet">
+    <script src="./js/jquery.min.js"></script>
+    <script src="./js/bootstrap.min.js"></script>
+    <script src="./js/bootstrap-select.min.js"></script>
+    <script src="./js/jquery.colorpicker.js"></script>
+    <script src="./js/slider.js"></script>
+    <script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+    <style>
+        input[type=text]{
+            width: 30px;
+            height: 10px;
+        }
+        input[type=range] {
+            width: 170px;
+        }
+        .popup-content table{
+            padding: 5px;
+        }
+        .popup-content table td{
+            height: 40px;
+        }
+        .popup-container{
+            width: 300px;
+            background-color: #ffffff;
+            display: none;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        .popup-header{
+            width: 100%;
+            height: 25px;
+            background-color: #0083bc;
+            margin-top: -5px;
+        }
+        .popup-content{
+            width: 100%;
+            color: #000000;
+        }
+        .popup-footer{
+            height: 37px;
+            margin-top: 13px;
+        }
+        .header-title{
+            color: #ffffff;
+            font-size: 16px;
+            margin-left: 10px;
+        }
+        .popup-ok{
+            text-decoration: none;
+            font-size: 15px;
+            margin-left: 70%;
+            cursor: pointer;
+            color: #0083cb;
+            background-color: transparent;
+            padding: 5.5px 23px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<div id='loadingbar' class="spinner">
+    <div class="spinner-container container1">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container2">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container3">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+</div>
+<div id="toolbar" class="param-container tool-bar">
+    <button type="button" id="cylinder" class="button black">添加圆柱</button>
+    <button type="button" id="cuboid" class="button black">添加长方体</button>
+    <button type="button" id="sphere" class="button black">添加球体</button>
+    <button type="button" id="cone" class="button black">添加锥体</button>
+</div>
+<div id="popup" class="popup-container">
+    <div class="popup-header">
+        <label class="header-title">对象编辑</label>
+    </div>
+    <div class="popup-content">
+        <table id="setbar_ellipse" style="display: none;">
+            <tbody>
+            <tr>
+                <td>短半轴</td>
+                <td>
+                    <input type="range" min="10" max="100" step="1" data-bind="value: semiMinorAxis, valueUpdate: 'input'">
+                    <input type="text" size="5" data-bind="value: semiMinorAxis">
+                </td>
+            </tr>
+            <tr>
+                <td>长半轴</td>
+                <td>
+                    <input type="range" min="10" max="200" step="1" data-bind="value: semiMajorAxis, valueUpdate: 'input'">
+                    <input type="text" size="5" data-bind="value: semiMajorAxis">
+                </td>
+            </tr>
+            <tr>
+                <td>拉伸高度</td>
+                <td>
+                    <input type="range" min="10" max="100" step="10" data-bind="value: extrudedHeight, valueUpdate: 'input'">
+                    <input type="text" size="5" data-bind="value: extrudedHeight">
+                </td>
+            </tr>
+            <tr>
+                <td>粒度</td>
+                <td>
+                    <input type="range" min="0.5" max="2" step="0.1" data-bind="value: granularity, valueUpdate: 'input'">
+                    <input type="text" size="5" data-bind="value: granularity">
+                </td>
+            </tr>
+            <tr>
+                <td>旋转</td>
+                <td>
+                    <input type="range" min="0" max="90" step="0.1" data-bind="value: rotation, valueUpdate: 'input'">
+                    <input type="text" size="5" data-bind="value: rotation">
+                </td>
+            </tr>
+            <tr>
+                <td>模式</td>
+                <td>
+                    <input  type="checkbox" data-bind="checked: ellipseFill">
+                    填充
+                    <input  type="checkbox" data-bind="checked: ellipseOutline">
+                    线框
+                </td>
+            </tr>
+            <tr>
+                <td>颜色</td>
+                <td>
+                    <input  type="text" size="10" data-bind="value: ellipseMaterial,valueUpdate: 'input'" style="width: 200px;height: 30px;" id="colorPicker_ellipse">
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        <table id="setbar_box" style="display: none;">
+            <tbody>
+            <tr>
+                <td>长</td>
+                <td>
+                    <input type="range" min="10" max="100" step="1" data-bind="value: boxLength, valueUpdate: 'input'">
+                    <input type="text" size="5" data-bind="value: boxLength">
+                </td>
+            </tr>
+            <tr>
+                <td>宽</td>
+                <td>
+                    <input type="range" min="10" max="100" step="1" data-bind="value: boxWidth, valueUpdate: 'input'">
+                    <input type="text" size="5" data-bind="value: boxWidth">
+                </td>
+            </tr>
+            <tr>
+                <td>高</td>
+                <td>
+                    <input type="range" min="10" max="100" step="1" data-bind="value: boxHeight, valueUpdate: 'input'">
+                    <input type="text" size="5" data-bind="value: boxHeight">
+                </td>
+            </tr>
+            <tr>
+                <td>模式</td>
+                <td>
+                    <input  type="checkbox" data-bind="checked: boxFill">
+                    填充
+                    <input  type="checkbox" data-bind="checked: boxOutline">
+                    线框
+                </td>
+            </tr>
+            <tr>
+                <td>颜色</td>
+                <td>
+                    <input   type="text" size="10" data-bind="value: boxMaterial,valueUpdate: 'input'" style="width: 200px;height: 30px;" id="colorPicker_box">
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        <table id="setbar_ellipsoid" style="display: none;">
+            <tbody>
+            <tr>
+                <td>X半径</td>
+                <td>
+                    <input type="range" min="10" max="100" step="1" data-bind="value: xRadii, valueUpdate: 'input'">
+                    <input type="text" size="5" data-bind="value: xRadii">
+                </td>
+            </tr>
+            <tr>
+                <td>Y半径</td>
+                <td>
+                    <input type="range" min="10" max="100" step="1" data-bind="value: yRadii, valueUpdate: 'input'">
+                    <input type="text" size="5" data-bind="value: yRadii">
+                </td>
+            </tr>
+            <tr>
+                <td>Z半径</td>
+                <td>
+                    <input type="range" min="10" max="100" step="1" data-bind="value: zRadii, valueUpdate: 'input'">
+                    <input type="text" size="5" data-bind="value: zRadii">
+                </td>
+            </tr>
+            <tr>
+                <td>模式</td>
+                <td>
+                    <input  type="checkbox" data-bind="checked: ellipsoidFill">
+                    填充
+                    <input  type="checkbox" data-bind="checked: ellipsoidOutline">
+                    线框
+                </td>
+            </tr>
+            <tr>
+                <td>颜色</td>
+                <td>
+                    <input  type="text" size="10" data-bind="value: ellipsoidMaterial,valueUpdate: 'input'" style="width: 200px;height: 30px;" id="colorPicker_ellipsoid">
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        <table id="setbar_cylinder" style="display: none;">
+            <tbody>
+            <tr>
+                <td>长度</td>
+                <td>
+                    <input type="range" min="10" max="100" step="1" data-bind="value: cylinderLength, valueUpdate: 'input'">
+                    <input type="text" size="5" data-bind="value: cylinderLength">
+                </td>
+            </tr>
+            <tr>
+                <td>底部半径</td>
+                <td>
+                    <input type="range" min="10" max="100" step="1" data-bind="value: bottomRadius, valueUpdate: 'input'">
+                    <input type="text" size="5" data-bind="value: bottomRadius">
+                </td>
+            </tr>
+            <tr>
+                <td>模式</td>
+                <td>
+                    <input  type="checkbox" data-bind="checked: cylinderFill">
+                    填充
+                    <input  type="checkbox" data-bind="checked: cylinderOutline">
+                    线框
+                </td>
+            </tr>
+            <tr>
+                <td>颜色</td>
+                <td>
+                    <input  type="text" size="10" data-bind="value: cylinderMaterial,valueUpdate: 'input'" style="width: 200px;height: 30px;" id="colorPicker_cylinder">
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="popup-footer">
+        <a id="closeBtn" class="popup-ok">关闭</a>
+    </div>
+</div>
+<script>
+	function onload(Cesium) {
+		var viewer = new Cesium.Viewer('cesiumContainer',{
+            infoBox : false
+        });
+        viewer.imageryLayers.addImageryProvider(Cesium.createOpenStreetMapImageryProvider({
+            url : 'https://a.tile.openstreetmap.org/'
+        }));
+        var scene = viewer.scene;
+        scene.camera.setView({
+            destination : new Cesium.Cartesian3(-2185176.4555359203,4393321.525166373,4075838.884000409),
+            orientation : {
+                heading : 0.024347826583072774,
+                pitch : -1.1001488756635132,
+                roll : 0.00017851948795311046
+            }
+        });
+
+        var ellipseEntity,boxEntity,ellipsoidEntity,frustumEntity;
+        var entities = viewer.entities;
+        var viewModel = {
+            semiMinorAxis: 10,
+            semiMajorAxis: 40,
+            extrudedHeight : 50,
+            ellipseMaterial : '#ffffff',
+            ellipseFill : true,
+            ellipseOutline : false,
+            boxMaterial : '#ffffff',
+            boxFill : true,
+            boxOutline : false,
+            ellipsoidMaterial : '#ffffff',
+            cylinderMaterial : '#ffffff',
+            granularity : 1,
+            rotation : 0,
+            boxLength : 20,
+            boxWidth : 20,
+            boxHeight : 20,
+            xRadii : 20,
+            yRadii : 20,
+            zRadii : 20,
+            ellipsoidFill : true,
+            ellipsoidOutline : false,
+            cylinderLength : 40,
+            bottomRadius : 20,
+            cylinderFill : true,
+            cylinderOutline : false
+        };
+
+        Cesium.knockout.track(viewModel);
+        var setbar_ellipse = document.getElementById('setbar_ellipse');
+        Cesium.knockout.applyBindings(viewModel, setbar_ellipse);
+        var setbar_box = document.getElementById('setbar_box');
+        Cesium.knockout.applyBindings(viewModel, setbar_box);
+        var setbar_ellipsoid = document.getElementById('setbar_ellipsoid');
+        Cesium.knockout.applyBindings(viewModel, setbar_ellipsoid);
+        var setbar_cylinder = document.getElementById('setbar_cylinder');
+        Cesium.knockout.applyBindings(viewModel, setbar_cylinder);
+
+        var handlerPoint_ellipse = new Cesium.DrawHandler(viewer,Cesium.DrawMode.Point);
+        var handlerPoint_box = new Cesium.DrawHandler(viewer,Cesium.DrawMode.Point);
+        var handlerPoint_ellipsoid = new Cesium.DrawHandler(viewer,Cesium.DrawMode.Point);
+        var handlerPoint_frustum = new Cesium.DrawHandler(viewer,Cesium.DrawMode.Point);
+
+        // 注册绘制圆柱事件
+        handlerPoint_ellipse.drawEvt.addEventListener(function(res){
+            var point = res.object;
+            var position = point.position;
+            var color = Cesium.Color.fromRandom({alpha : 1.0});
+            ellipseEntity = entities.add({
+                position : position,
+                ellipse : {
+                    semiMinorAxis : 20.0,
+                    semiMajorAxis : 40.0,
+                    height : 0,
+                    extrudedHeight : 50.0,
+                    material : color,
+                    granularity : Cesium.Math.RADIANS_PER_DEGREE,
+                    rotation : 0,
+                    fill : true,
+                    outline : false,
+                    outlineColor : Cesium.Color.BLACK,
+                    outlineWidth : 4
+                }
+            });
+            var colorStr = color.toCssColorString();
+            viewModel.ellipseMaterial = colorStr;
+            $('#colorPicker_ellipse').css({
+                color : colorStr
+            });
+            $('#popup').show();
+            hideAll();
+            $('#setbar_ellipse').show();
+        });
+        var targetEntity = null;
+        var handler = new Cesium.ScreenSpaceEventHandler(scene.canvas);
+        handler.setInputAction(function(e) {
+            var pickedObject = scene.pick(e.position);
+            if (Cesium.defined(pickedObject) && (pickedObject.id instanceof Cesium.Entity)) {
+                targetEntity = pickedObject.id;
+            } else {
+                targetEntity = null;
+            }
+        }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+        //注册绘制长方体事件
+        handlerPoint_box.drawEvt.addEventListener(function(res){
+            var point = res.object;
+            var position = point.position;
+            var color = Cesium.Color.fromRandom({alpha : 1.0});
+            boxEntity = entities.add({
+                position : position,
+                box : {
+                    dimensions : new Cesium.Cartesian3(20.0, 20.0, 20.0),
+                    material : color,
+                    fill : true,
+                    outline : false,
+                    outlineColor : Cesium.Color.BLACK,
+                    outlineWidth : 4
+                }
+            });
+            var colorStr = color.toCssColorString();
+            viewModel.boxMaterial = colorStr;
+            $('#colorPicker_box').css({
+                color : colorStr
+            });
+            $('#popup').show();
+            hideAll();
+            $('#setbar_box').show();
+
+        });
+        // 注册绘制球体事件
+        handlerPoint_ellipsoid.drawEvt.addEventListener(function(res){
+            var point = res.object;
+            var position = point.position;
+            var posDeg = Cesium.Cartographic.fromCartesian(position);
+            posDeg.height = 20;
+            position = Cesium.Cartesian3.fromRadians(posDeg.longitude,posDeg.latitude,posDeg.height);
+            var color = Cesium.Color.fromRandom({alpha : 1.0});
+            ellipsoidEntity = entities.add({
+                position : position,
+                ellipsoid : {
+                    radii : new Cesium.Cartesian3(20.0, 20.0, 20.0),
+                    material : color,
+                    fill : true,
+                    outline : false,
+                    outlineColor : Cesium.Color.BLACK,
+                    outlineWidth : 4
+                }
+            });
+            var colorStr = color.toCssColorString();
+            viewModel.ellipsoidMaterial = colorStr;
+            $('#colorPicker_ellipsoid').css({
+                color : colorStr
+            });
+            $('#popup').show();
+            hideAll();
+            $('#setbar_ellipsoid').show();
+
+        });
+        //注册绘制椎体事件
+        handlerPoint_frustum.drawEvt.addEventListener(function(res){
+            var point = res.object;
+            var position = point.position;
+            var color = Cesium.Color.fromRandom({alpha : 1.0});
+            frustumEntity = entities.add({
+                position : position,
+                cylinder : {
+                    length : 40.0,
+                    topRadius : 0.0,
+                    bottomRadius : 20.0,
+                    material : color,
+                    fill : true,
+                    outline : false,
+                    outlineColor : Cesium.Color.BLACK,
+                    outlineWidth : 4
+                }
+            });
+            var colorStr = color.toCssColorString();
+            viewModel.cylinderMaterial = colorStr;
+            $('#colorPicker_cylinder').css({
+                color : colorStr
+            });
+            $('#popup').show();
+            hideAll();
+            $('#setbar_cylinder').show();
+
+        });
+
+        document.getElementById("cylinder").onclick = function() {
+            deactiveAll();
+            handlerPoint_ellipse.activate();
+        };
+       document.getElementById("cuboid").onclick = function() {
+            deactiveAll();
+            handlerPoint_box.activate();
+        };
+        document.getElementById("sphere").onclick = function() {
+            deactiveAll();
+            handlerPoint_ellipsoid.activate();
+        };
+        document.getElementById("cone").onclick = function() {
+            deactiveAll();
+            handlerPoint_frustum.activate();
+        };
+
+        function deactiveAll(){
+            handlerPoint_ellipse.deactivate();
+            handlerPoint_box.deactivate();
+            handlerPoint_ellipsoid.deactivate();
+            handlerPoint_frustum.deactivate();
+        }
+
+        function subscribeLayerParameter_Ellipse(name) {
+            Cesium.knockout.getObservable(viewModel, name).subscribe(
+                    function(newValue) {
+                        if(targetEntity){
+                            if(name == 'semiMinorAxis'){
+                                var semiMajorAxis = targetEntity.ellipse['semiMajorAxis'].getValue();
+                                if(newValue <= semiMajorAxis){
+                                    targetEntity.ellipse[name] = parseFloat(newValue);
+                                }
+                                else{
+                                    viewModel[name] = semiMajorAxis;
+                                }
+                            }
+                            else if(name == 'semiMajorAxis'){
+                                var semiMinorAxis = targetEntity.ellipse['semiMinorAxis'].getValue();
+                                if(newValue >= semiMinorAxis){
+                                    targetEntity.ellipse[name] = parseFloat(newValue);
+                                }
+                                else{
+                                    viewModel[name] = semiMinorAxis;
+                                }
+                            }
+                            else if(name == 'ellipseMaterial'){
+                                targetEntity.ellipse['material'] = Cesium.Color.fromCssColorString(newValue);
+                            }
+                            else if(name == 'granularity'){
+                                targetEntity.ellipse[name] = newValue * Cesium.Math.RADIANS_PER_DEGREE;
+                            }
+                            else if(name =='ellipseFill'){
+                                targetEntity.ellipse.fill = newValue;
+                            }
+                            else if(name == 'ellipseOutline'){
+                                targetEntity.ellipse.outline = newValue;
+                            }
+                            else{
+                                targetEntity.ellipse[name] = parseFloat(newValue);
+                            }
+                        }
+                    }
+            );
+        }
+        function subscribeLayerParameter_Box(name) {
+            Cesium.knockout.getObservable(viewModel, name).subscribe(
+                    function(newValue) {
+                        if(targetEntity){
+                            var dim = targetEntity.box.dimensions.getValue();
+                            if(name == 'boxLength'){
+                                targetEntity.box.dimensions = new Cesium.Cartesian3(parseFloat(newValue),dim.y,dim.z);
+                            }
+                            else if(name == 'boxWidth'){
+                                targetEntity.box.dimensions = new Cesium.Cartesian3(dim.x,parseFloat(newValue),dim.z);
+                            }
+                            else if(name == 'boxHeight'){
+                                targetEntity.box.dimensions = new Cesium.Cartesian3(dim.x,dim.y,parseFloat(newValue));
+                            }
+                            else if(name == 'boxMaterial'){
+                                targetEntity.box['material'] = Cesium.Color.fromCssColorString(newValue);
+                            }
+                            else if(name == 'boxFill'){
+                                targetEntity.box.fill = newValue;
+                            }
+                            else if(name == 'boxOutline'){
+                                targetEntity.box.outline = newValue;
+                            }
+
+                        }
+                    }
+            );
+        }
+        function subscribeLayerParameter_Ellipsoid(name) {
+            Cesium.knockout.getObservable(viewModel, name).subscribe(
+                    function(newValue) {
+                        if(targetEntity){
+                            var radii = targetEntity.ellipsoid.radii.getValue();
+                            if(name == 'xRadii'){
+                                targetEntity.ellipsoid.radii = new Cesium.Cartesian3(parseFloat(newValue),radii.y,radii.z);
+                            }
+                            else if(name == 'yRadii'){
+                                targetEntity.ellipsoid.radii = new Cesium.Cartesian3(radii.x,parseFloat(newValue),radii.z);
+                            }
+                            else if(name == 'zRadii'){
+                                targetEntity.ellipsoid.radii = new Cesium.Cartesian3(radii.x,radii.y,parseFloat(newValue));
+                            }
+                            else if(name == 'ellipsoidMaterial'){
+                                targetEntity.ellipsoid['material'] = Cesium.Color.fromCssColorString(newValue);
+                            }
+                            else if(name == 'ellipsoidFill'){
+                                targetEntity.ellipsoid.fill = newValue;
+                            }
+                            else if(name == 'ellipsoidOutline'){
+                                targetEntity.ellipsoid.outline = newValue;
+                            }
+
+                            if(name != 'ellipsoidMaterial' && name != 'ellipsoidFill' && name != 'ellipsoidOutline'){
+                                var position = targetEntity.position._value;
+                                var posDeg = Cesium.Cartographic.fromCartesian(position);
+                                posDeg.height = parseFloat(newValue);
+                                position = Cesium.Cartesian3.fromRadians(posDeg.longitude,posDeg.latitude,posDeg.height);
+                                targetEntity.position = position;
+                            }
+                        }
+                    }
+            );
+        }
+
+        function subscribeLayerParameter_Cylinder(name) {
+            Cesium.knockout.getObservable(viewModel, name).subscribe(
+                    function(newValue) {
+                        if(targetEntity){
+                            if(name == 'bottomRadius'){
+                                targetEntity.cylinder.bottomRadius = parseFloat(newValue);
+                            }
+                            else if(name == 'cylinderLength'){
+                                targetEntity.cylinder.length = parseFloat(newValue);
+                            }
+                            else if(name == 'cylinderMaterial'){
+                                targetEntity.cylinder['material'] = Cesium.Color.fromCssColorString(newValue);
+                            }
+                            else if(name == 'cylinderFill'){
+                                targetEntity.cylinder.fill = newValue;
+                            }
+                            else if(name == 'cylinderOutline'){
+                                targetEntity.cylinder.outline = newValue;
+                            }
+                        }
+                    }
+            );
+        }
+        subscribeLayerParameter_Ellipse('semiMinorAxis');
+        subscribeLayerParameter_Ellipse('semiMajorAxis');
+        subscribeLayerParameter_Ellipse('extrudedHeight');
+        subscribeLayerParameter_Ellipse('ellipseMaterial');
+        subscribeLayerParameter_Ellipse('granularity');
+        subscribeLayerParameter_Ellipse('rotation');
+        subscribeLayerParameter_Ellipse('ellipseFill');
+        subscribeLayerParameter_Ellipse('ellipseOutline');
+
+        subscribeLayerParameter_Box('boxLength');
+        subscribeLayerParameter_Box('boxWidth');
+        subscribeLayerParameter_Box('boxHeight');
+        subscribeLayerParameter_Box('boxMaterial');
+        subscribeLayerParameter_Box('boxFill');
+        subscribeLayerParameter_Box('boxOutline');
+
+        subscribeLayerParameter_Ellipsoid('xRadii');
+        subscribeLayerParameter_Ellipsoid('yRadii');
+        subscribeLayerParameter_Ellipsoid('zRadii');
+        subscribeLayerParameter_Ellipsoid('ellipsoidMaterial');
+        subscribeLayerParameter_Ellipsoid('ellipsoidFill');
+        subscribeLayerParameter_Ellipsoid('ellipsoidOutline');
+
+        subscribeLayerParameter_Cylinder('cylinderLength');
+        subscribeLayerParameter_Cylinder('bottomRadius');
+        subscribeLayerParameter_Cylinder('cylinderMaterial');
+        subscribeLayerParameter_Cylinder('cylinderFill');
+        subscribeLayerParameter_Cylinder('cylinderOutline');
+
+        $('#closeBtn').click(function(){
+            $('#popup').hide();
+        });
+
+        $('#colorPicker_ellipse').colorpicker({
+            success : function(color){
+                $('#colorPicker_ellipse').trigger('input');
+            },
+            fillcolor : true,
+            offsetLeft : -50
+        });
+
+        $('#colorPicker_box').colorpicker({
+            success : function(color){
+                $('#colorPicker_box').trigger('input');
+            },
+            fillcolor : true,
+            offsetLeft : -50
+        });
+
+        $('#colorPicker_ellipsoid').colorpicker({
+            success : function(color){
+                $('#colorPicker_ellipsoid').trigger('input');
+            },
+            fillcolor : true,
+            offsetLeft : -50
+        });
+
+        $('#colorPicker_cylinder').colorpicker({
+            success : function(color){
+                $('#colorPicker_cylinder').trigger('input');
+            },
+            fillcolor : true,
+            offsetLeft : -50
+        });
+
+        viewer._selectedEntityChanged.addEventListener(function(entity){
+            hideAll();
+            if(!entity){
+                $('#popup').hide();
+                return ;
+            }
+            if(entity.ellipse){
+                $('#setbar_ellipse').show();
+            }
+            else if(entity.box){
+                $('#setbar_box').show();
+            }
+            else if(entity.ellipsoid){
+                $('#setbar_ellipsoid').show();
+            }
+            else if(entity.cylinder){
+                $('#setbar_cylinder').show();
+            }
+            $('#popup').show();
+        });
+        if(!scene.pickPositionSupported){
+            alert('不支持深度拾取,无法进行鼠标交互绘制！');
+        }
+        $('#toolbar').show();
+        $('#loadingbar').remove();
+
+	}
+function hideAll(){
+    $('#setbar_ellipse').hide();
+    $('#setbar_box').hide();
+    $('#setbar_ellipsoid').hide();
+    $('#setbar_cylinder').hide();
+}
+</script>
+</body>
+</html>

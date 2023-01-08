@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>量算</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link href="./css/pretty.css" rel="stylesheet">
+    <link href="./css/examples.css" rel="stylesheet">
+    <script type="text/javascript" src="./js/jquery.min.js"></script>
+    <script type="text/javascript" src="./js/sweetalert-dev.js"></script>
+    <script src="./js/turf.min.js" charset="utf-8"></script>
+    <link rel="stylesheet" href="./css/sweetalert.css">
+    <script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<div class="my-toolbar" id="toolbar" >
+    <div class="my-itemDropDown" >
+        <div id='distance' class="my-item">
+            <img class="my-itemIcon" src="images/distance.png" title="距离">
+        </div>
+        <div id='area' class="my-item">
+            <img class="my-itemIcon" src="images/area.png" title="面积">
+        </div>
+    </div>
+</div>
+<script>
+	function onload(Cesium) {
+        var viewer = new Cesium.Viewer('cesiumContainer',{
+	    });
+	    var scene = viewer.scene;
+        $(".my-toolbar").show();
+
+        var camera = scene.camera;
+
+        //创建绘制线、面对象
+        var polylineHandler = new Cesium.PolylineHandler(viewer);
+        var polygonHandler = new Cesium.PolygonHandler(viewer);
+
+        viewer.scene.globe.depthTestAgainstTerrain = false;
+
+        //线绘制结束回调事件
+        polylineHandler.drawCompletedEvent.addEventListener(function(line){
+            scene.currentPolyline = line;
+
+            var distance = 0;
+
+            //取折线上所有点的位置,并去除重复点
+            positions = unique(line._positions);
+            for(var i = 0, len = positions.length - 1; i < len ; i++){
+                //计算两点间距离并叠加到总距离
+                distance += Cesium.Cartesian3.distance(positions[i], positions[i+1]);
+            }
+
+            //获取折线最后一个点的位置并将其转化成经纬度
+            var labelPosition = positions[i];
+            var cartographic = Cesium.Cartographic.fromCartesian(labelPosition);
+            var longitude = Cesium.Math.toDegrees(cartographic.longitude);
+            var latitude = Cesium.Math.toDegrees(cartographic.latitude);
+            var height = cartographic.height + 5;
+
+            //添加结果文本框
+            if(distance >= 1000){
+                distance /= 1000;
+                viewer.entities.add({
+                    position : Cesium.Cartesian3.fromDegrees(longitude, latitude, height),
+                    label : {
+                        text : distance.toFixed(2) + '千米'
+                    }
+                });
+            }else {
+                viewer.entities.add({
+                    position : Cesium.Cartesian3.fromDegrees(longitude, latitude, height),
+                    label : {
+                        text : distance.toFixed(2) + '米'
+                    }
+                });
+            }
+        });
+
+        polygonHandler.drawCompletedEvent.addEventListener(function(polygon){
+
+            scene.currentPolygon = polygon;
+            //获取多边形所有点的位置并去除重复点
+            var positions = unique(polygon.positions);
+
+            var array = [];
+
+            //将所有的点都转化成经纬度并添加至数组中
+            for(var i = 0, len = positions.length; i < len; i ++){
+                var cartographic = Cesium.Cartographic.fromCartesian(positions[i]);
+
+                var longitude = Cesium.Math.toDegrees(cartographic.longitude).toFixed(6);
+                var latitude = Cesium.Math.toDegrees(cartographic.latitude).toFixed(6);
+                array.push({x: longitude, y: latitude});
+            }
+
+            var arrs = new Array();
+            var tems = new Array();
+            arrs.push(tems);
+            for(var i = 0, len = array.length; i < len; i ++) {
+                tems.push([array[i].x, array[i].y])
+            }
+            //包装成turf指定的对象
+            var polygons = {
+                "type": "FeatureCollection",
+                "features": [
+                    {
+                        "type": "Feature",
+                        "properties": {},
+                        "geometry": {
+                            "type": "Polygon",
+                            "coordinates": arrs
+                        }
+                    }, {
+                        "type": "Feature",
+                        "properties": {},
+                        "geometry": {
+                            "type": "Polygon",
+                            "coordinates": [[
+                                [0, 0],
+                                [0, 0],
+                                [0, 0],
+                                [0, 0],
+                                [0, 0]
+                            ]]
+                        }
+                    }
+                ]
+            };
+            //通过第三方库turf.js计算面积
+            var area = turf.area(polygons);
+            if(area >= 1000000){
+                area /= 1000000;
+                viewer.entities.add({
+                    position : Cesium.Cartesian3.fromDegrees(longitude, latitude, cartographic.height + 5),
+                    label : {
+                        text : '面积：' + area.toFixed(2) + '平方公里'
+                    }
+                });
+            }else{
+                viewer.entities.add({
+                    position : Cesium.Cartesian3.fromDegrees(longitude, latitude, cartographic.height + 5),
+                    label : {
+                        text : '面积：' + area.toFixed(2) + '平方米'
+                    }
+                });
+            }
+        });
+
+
+        function removeBefore(){
+            viewer.entities.removeAll();
+            if(Cesium.defined(scene.currentPolyline)){
+                polylineHandler.polylines.remove(scene.currentPolyline);
+                delete scene.currentPolyline;
+            }
+
+            if(Cesium.defined(scene.currentPolygon)){
+                scene.primitives.remove(scene.currentPolygon);
+                delete scene.currentPolygon;
+            }
+        }
+
+        document.getElementById("distance").onclick = function(){
+            removeBefore();
+            if(polylineHandler.active || polygonHandler.active){
+                swal("plz complete this drawing");
+                return ;
+            }
+            else{
+                polylineHandler.activate();
+            }
+        }
+
+        document.getElementById("area").onclick = function(){
+            removeBefore();
+            if(polygonHandler.active || polylineHandler.active){
+                swal("plz complete this drawing");
+                return ;
+            }
+            else{
+                polygonHandler.activate();
+            }
+        }
+
+    }
+    //去除数组重复值
+    unique = function(arr){
+  	    var res = [];
+  	    var json = {};
+  	    for(var i = 0; i < arr.length; i++){
+  	        if(!json[arr[i]]){
+  			    res.push(arr[i]);
+  			    json[arr[i]] = 1;
+  		    }
+  	    }
+        return res;
+    }
+</script>
+</body>
+</html>

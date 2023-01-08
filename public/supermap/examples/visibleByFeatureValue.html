@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+		<title>按特征值显隐</title>
+		<link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+		<link href="./css/bootstrap.min.css" rel="stylesheet">
+		<link href="./css/pretty.css" rel="stylesheet">
+		<script src="./js/jquery.min.js"></script>
+		<script src="./js/config.js"></script>
+		<script src="./js/bootstrap-select.min.js"></script>
+		<script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+	</head>
+
+	<body>
+		<div id="cesiumContainer"></div>
+		<div id="toolbar" class="param-container tool-bar">
+			<select name="select_layer" id="select_layer" style="width: 200px">
+				<option value="" style="display: none">选择操作图层</option>
+				<option value="building">building</option>
+			</select>
+			<div id="pannel" style="padding: 2px;display: none;">
+				<label style="color: #FFFFFF;" for="wall"><input style="margin-right: 7px;" type="checkbox" id="wall" checked=true>墙</label>
+				<label style="color: #FFFFFF;" for="floor"><input style="margin-right: 7px;" type="checkbox" id="floor" checked=true>楼板</label>
+				<label style="color: #FFFFFF;" for="door"><input style="margin-right: 7px;" type="checkbox" id="door" checked=true>门</label>
+				<label style="color: #FFFFFF;" for="window"><input style="margin-right: 7px;" type="checkbox" id="window" checked=true>窗</label>
+				<label style="color: #FFFFFF;" for="structure"><input style="margin-right: 7px;" type="checkbox" id="structure" checked=true>基础结构</label>
+
+			</div>
+		</div>
+		<script>
+			function onload(Cesium) {
+				var viewer = new Cesium.Viewer('cesiumContainer', {
+					imageryProvider: new Cesium.BingMapsImageryProvider({
+						url: 'https://dev.virtualearth.net',
+						mapStyle: Cesium.BingMapsStyle.AERIAL,
+						key: URL_CONFIG.BING_MAP_KEY
+					}),
+				});
+				var widget = viewer.cesiumWidget;
+				var scene = viewer.scene;
+				var promise = [];
+				try {
+					promise[0] = scene.addS3MTilesLayerByScp(URL_CONFIG.SCENE_GTC_GROUND, {
+						name: 'ground'
+					});
+					promise[1] = scene.addS3MTilesLayerByScp(URL_CONFIG.SCENE_GTC_BUILDIBG, {
+						name: 'original'
+					});
+					promise[2] = scene.addS3MTilesLayerByScp(URL_CONFIG.SCENE_FEATUREVALUE, {
+						name: 'building'
+					});
+					Cesium.when.all(promise, function(layers) {
+						scene.camera.setView({
+							destination: Cesium.Cartesian3.fromDegrees(115.000225758308630, 39.009956534844858, 500),
+							orientation: {
+								heading: 1.705646,
+								pitch: -0.499956,
+								roll: 0.000000
+							}
+						});
+						var building=scene.layers.find('building');
+						var original = scene.layers.find("original");
+						original.setObjsVisible([47], false);
+						$('#select_layer').change(function() {
+							var value = $(this).val();
+							switch(value) {
+								case "building":
+									$('#pannel').show();
+									scene.camera.setView({
+										destination: new Cesium.Cartesian3( -2095062.163635029,4491591.42011113, 4014970.217629646),
+										orientation: {
+											heading: 2.394330296040059,
+											pitch: -0.38667808306003537,
+											roll: 6.283176111916951
+										}
+									});
+									break;
+								default:
+									$('#pannel').show();
+									break;
+							}
+						});
+
+						$("#wall").on("input change", function() {
+							if(!this.checked) {
+								building.setCategoriesVisible([-2000011], 0);
+							} else {
+								building.setCategoriesVisible([-2000011], 1);
+							}
+						});
+
+						$("#floor").on("input change", function() {
+							if(!this.checked) {
+								building.setCategoriesVisible([-2000032], 0);
+							} else {
+								building.setCategoriesVisible([-2000032], 1);
+							}
+						});
+
+						$("#door").on("input change", function() {
+							if(!this.checked) {
+								building.setCategoriesVisible([-2000023], 0);
+							} else {
+								building.setCategoriesVisible([-2000023], 1);
+							}
+						});
+
+						$("#window").on("input change", function() {
+							if(!this.checked) {
+								building.setCategoriesVisible([-2000014], 0);
+							} else {
+								 building.setCategoriesVisible([-2000014], 1);
+							}
+						});
+
+						$("#structure").on("input change", function() {
+							if(!this.checked) {
+								building.setCategoriesVisible([-2001300], 0);
+							} else {
+								building.setCategoriesVisible([-2001300], 1);
+							}
+						});
+					}, function(e) {
+						if(widget._showRenderLoopErrors) {
+							var title = '加载SCP失败，请检查网络连接状态或者url地址是否正确？';
+							widget.showErrorPanel(title, undefined, e);
+						}
+					});
+				} catch(e) {
+					if(widget._showRenderLoopErrors) {
+						var title = '渲染时发生错误，已停止渲染。';
+						widget.showErrorPanel(title, undefined, e);
+					}
+				}
+			}
+		</script>
+	</body>
+
+</html>

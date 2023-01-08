@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en" style="height: 100%">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <meta name="description" content="Test">
+    <meta name="cesium-sandcastle-labels" content="Geometries">
+    <title>SuperMap 图层操作</title>
+
+    <script type="text/javascript" src="../Build/Cesium/ThirdParty/Workers/PlotAlgo/PlotAlgoInclude.js"></script>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <script src="js/jquery.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <link href="css/bootstrap-new.min.css" rel="stylesheet">
+    <script type="text/javascript" src="js/widgets.js"></script>
+    <script type="text/javascript" src="js/require.min.js" data-main="js/main"></script>
+    <style type="text/css">
+
+        #layerList:hover {
+            text-decoration: underline;
+        }
+    </style>
+
+</head>
+<body class="sandcastle-loading" data-sandcastle-bucket="bucket-requirejs.html"
+      style="margin: 0px; overflow: hidden;background: #fff;height: 100%;">
+<div id="toolbar" class="panel panel-primary"
+     style="position: absolute;top: 10px;left: 10px;text-align: center;border-radius: 4px;height: 100px; border-width: 1px;solid: #3473b7;z-index: 9999;">
+    <div class='panel-heading'>
+        <h5 class='panel-title text-center'>图层操作</h5></div>
+    <div class='panel-body content'>
+        <input type="button" class="btn btn-default" value="创建图层" onclick="createPlottingLayer()"/>
+        <input type="button" class="btn btn-default" value="删除图层" onclick="removePlottingLayer()"/>
+        <input type="button" class="btn btn-default" value="绘制标号" onclick="CreateSymbol()"/>
+        <input type="button" class="btn btn-default" value="清空图层" onclick="clearLayers()"/>
+        <input type="button" class="btn btn-default" value="删除所有图层" onclick="removeAllPlottingLayer()"/>
+    </div>
+</div>
+<div id="popupWin" class="panel panel-primary popupWindow"
+     style=" position: absolute;left: 10px;top: 120px;width: 320px;background: #FFF;z-index: 9999;display: block; height: auto; width: 484px">
+    <div class="winTitle" style=" background: #1E90FF;">
+        <span class="title_left">图层列表</span>
+    </div>
+    <div id="layertree" class="winContent" style="  padding: 5px;overflow-y: auto;height: 400px; width: auto">
+        <a class="glyphicon glyphicon-plus" id="showLayer" style="font-size: 1px;padding-left: 10px;"></a>
+        <span id="layerList" onclick="showLayers()">  图层列表</span>
+        <span id="showLayer1"> </span>
+
+    </div>
+</div>
+<div id="cesiumContainer" class="fullSize" style="position: relative;left: 0%;height: 100%;border: 1px solid #3473b7">
+    <script id="cesium_sandcastle_script">
+        var cesium, scene, viewer, serverUrl;
+        var plottingLayer;
+        var plotEditControl = undefined;
+        var plotting;
+        var plottingLayers = [];
+
+    function onload(Cesium){
+        'use strict';
+        cesium = Cesium;
+        //若本地没有标绘相关服务则可访问支持中心的iserver
+        // var host = document.location.toString().match('/file:\/\//') ? 'http://localhost:8090' : 'http://' + document.location.host;
+        var host =  'http://support.supermap.com.cn:8090' ;
+        viewer = new Cesium.Viewer('cesiumContainer');
+        scene = viewer.scene;
+        scene.globe.depthTestAgainstTerrain = false;
+        serverUrl = host + '/iserver/services/plot-jingyong/rest/plot';
+        InitPlot(viewer,serverUrl);
+    }
+
+        function InitPlot(viewer, serverUrl) {
+            if (!viewer) {
+                return;
+            }
+            plotting = cesium.Plotting.getInstance(serverUrl, scene);
+        }
+
+        function createPlottingLayer() {
+            widgets.alert.clearAlert();
+            document.getElementById('showLayer1').style.display = "none";
+            var latestLayer;
+            var plottingLayerName = "Layer_" + Math.ceil(Math.random() * 1000);
+            latestLayer = new cesium.PlottingLayer(scene, plottingLayerName);
+            scene.layers.add(latestLayer);
+            plottingLayers.push(latestLayer);
+            plottingLayer = latestLayer;
+
+            if (undefined === plotEditControl) {
+                plotEditControl = new cesium.PlotEditControl(scene, latestLayer);//编辑控件
+                plotEditControl.activate();
+            }
+            plotEditControl.setPlottingLayer(plottingLayer);
+            var successMessage = "图层 " + plottingLayerName + " 创建成功";
+            widgets.alert.showAlert(successMessage, true);
+        }
+
+        function removePlottingLayer() {
+            widgets.alert.clearAlert();
+            document.getElementById('showLayer1').style.display = "none";
+            if (plottingLayers.length !== 0) {
+                var tempPlottingLayer = plottingLayers[plottingLayers.length - 1];
+                var successMessage = "图层 " + tempPlottingLayer.name + " 删除成功";
+                plottingLayers.splice(plottingLayers.length - 1, 1);
+                tempPlottingLayer.delete();//删除图层
+                plottingLayer = plottingLayers[plottingLayers.length - 1];
+                plotEditControl.setPlottingLayer(plottingLayer);
+                widgets.alert.showAlert(successMessage, true);
+            } else {
+                widgets.alert.showAlert("当前无标绘图层", true);
+
+            }
+        }
+
+
+    function CreateSymbol() {
+        if (plottingLayers.length !== 0) {
+            var points = [new cesium.PlotPoint3D()];
+            points[0].x = 91.2289399584463 - Math.random() * 40;//纬度
+            points[0].y = 44.2810161553334 - Math.random() * 12;//经度
+            points[0].z = 500;
+            var geo = null;
+            plottingLayer.createSymbol(421, 30502, points,function (even) {
+                geo = even.feature;
+                if (null !== geo) {
+                    geo.textContent = plottingLayer.name;
+                }
+            });
+            } else {
+                widgets.alert.showAlert("当前无标绘图层", true);
+            }
+        }
+
+        function clearLayers() {
+            plottingLayer.removeAll();
+        }
+
+
+        function removeAllPlottingLayer() {
+            widgets.alert.clearAlert();
+            document.getElementById('showLayer1').style.display = "none";
+            if (plottingLayers.length !== 0) {
+                var len = plottingLayers.length;
+                for (var i = 0; i < len; i++) {
+                    plottingLayers[i].delete();//删除图层
+                }
+                plottingLayers.splice(0, plottingLayers.length);
+                widgets.alert.showAlert(len + "个图层删除成功");
+            } else {
+                widgets.alert.showAlert("当前无标绘图层", true);
+            }
+        }
+
+        function showLayers() {
+            document.getElementById('showLayer1').innerHTML = '';
+            $(showLayer1).toggle();
+            for (var i = 0; i < plottingLayers.length; i++) {
+                var div = document.getElementById("showLayer1");
+                var br = document.createElement("br");
+                div.appendChild(br);
+                var div2 = document.createElement("label");
+                div2.innerText = plottingLayers[i].name;
+                div.appendChild(div2);
+            }
+        }
+
+        //删除指定标号
+        function deleteSeleGeo() {
+            plottingLayer.removeGeoGraphicObject(plottingLayer.selectedFeature);
+        }
+
+        //"Delete"按键删除选中标号
+        $(document).keydown(function (event) {
+            if (event.keyCode === 46) {
+                deleteSeleGeo();
+            }
+        });
+
+    </script>
+</div>
+</body>
+</html>

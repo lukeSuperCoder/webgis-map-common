@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en" style="height: 100%">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <meta name="description" content="Test">
+    <meta name="cesium-sandcastle-labels" content="Geometries">
+    <title>图层编辑</title>
+
+    <script type="text/javascript" src="../Build/Cesium/ThirdParty/Workers/PlotAlgo/PlotAlgoInclude.js"></script>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link rel="stylesheet" href="./css/sideBar.css">
+    <script src="js/jquery.min.js"></script>
+    <link rel="stylesheet" type="text/css" media="screen,projection" href="css/jquery-sticklr.css"/>
+    <script src="js/plotPanelControl/PlottingUI.Include.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <link href="css/bootstrap-new.min.css" rel="stylesheet">
+    <script type="text/javascript" src="js/widgets.js"></script>
+    <script type="text/javascript" src="js/require.min.js" data-main="js/main"></script>
+</head>
+
+<body class="sandcastle-loading" data-sandcastle-bucket="bucket-requirejs.html"
+      style="margin: 0px; overflow: hidden;background: #fff;height: 100%;">
+
+<div id="toolbar" class="panel panel-primary"
+     style=" position: absolute;top: 10px;left: 10px;width: 300px;text-align: center;z-index: 9999;border-radius: 4px;">
+    <div class='panel-heading'>
+        <h5 class='panel-title text-center'>图层编辑</h5></div>
+    <div class='panel-body content'>
+        <div class='panel'>
+            <div class='input-group' style=" margin-bottom: 12px;">
+                <span class='input-group-addon'>标绘图层的可编辑：</span>
+                <select class='form-control' id='editable' onchange="editableChanges()">
+                    <option value='0'>false</option>
+                    <option value='1' selected>true</option>
+                </select>
+            </div>
+            <!--<div class='input-group' style=" margin-bottom: 12px;">-->
+            <!--<span class='input-group-addon'>标绘图层的可锁定：</span>-->
+            <!--<select class='form-control' id='locked' onchange="lockedChanges()">-->
+            <!--<option value='0' selected>false</option>-->
+            <!--<option value='1'>true</option>-->
+            <!--</select>-->
+            <!--</div>-->
+            <div class='input-group' style=" margin-bottom: 12px;">
+                <span class='input-group-addon'>标绘图层的可选择：</span>
+                <select class='form-control' id='selected' onchange="selectedChanges()">
+                    <option value='0'>false</option>
+                    <option value='1' selected>true</option>
+                </select>
+            </div>
+        </div>
+        <input type="button" class="btn btn-default" value="绘制标号" style="margin-bottom: 10px" onclick="plotSymbol()"/>
+        <input type="button" class="btn btn-default" value="清空图层" style="margin-bottom: 10px"
+               onclick="clearLayers()"/>
+    </div>
+</div>
+<div id="cesiumContainer" class="fullSize"
+     style="position: relative;left: 0%;height: 100%;border: 1px solid #3473b7;"></div>
+<script id="cesium_sandcastle_script">
+    var cesium, scene, viewer, serverUrl;
+    var plottingLayer;
+    var plotting, plotEditControl, plotDrawControl, editFlag, lockedFlag, selectedFlag;
+
+    function onload(Cesium) {
+        'use strict';
+        cesium = Cesium;
+        //若本地没有标绘相关服务则可访问支持中心的iserver
+        // var host = document.location.toString().match('/file:\/\//') ? 'http://localhost:8090' : 'http://' + document.location.host;
+        var host =  'http://support.supermap.com.cn:8090' ;        
+		viewer = new Cesium.Viewer('cesiumContainer');
+        scene = viewer.scene;
+        scene.globe.depthTestAgainstTerrain = false;
+        serverUrl = host + '/iserver/services/plot-jingyong/rest/plot';
+        InitPlot(viewer, serverUrl);
+    }
+
+    function InitPlot(viewer, serverUrl) {
+        if (!viewer) {
+            return;
+        }
+        plottingLayer = new cesium.PlottingLayer(scene, "plottingLayer");
+        scene.layers.add(plottingLayer);
+
+        plotting = cesium.Plotting.getInstance(serverUrl, scene);
+
+        plotEditControl = new cesium.PlotEditControl(scene, plottingLayer);//编辑控件
+        plotEditControl.activate();
+        plotDrawControl = new cesium.PlotDrawControl(scene, plottingLayer);//绘制控件
+
+        plotDrawControl.drawFinishEvent.addEventListener(function () {//标绘结束，激活编辑控件
+            plotEditControl.activate();
+        });
+
+    }
+
+    function editableChanges() {
+        if (document.getElementById("editable").selectedIndex === 0) {
+            editFlag = false;
+        } else {
+            editFlag = true;
+        }
+        plottingLayer.isEditable = editFlag;
+    }
+
+    // 暂时未实现，故先注释
+    // function lockedChanges() {
+    //     if (document.getElementById("locked").selectedIndex === 0) {
+    //         lockedFlag = false;
+    //     } else {
+    //         lockedFlag = true;
+    //     }
+    //     plottingLayer.isLocked = lockedFlag;
+    // }
+
+    function selectedChanges() {
+        if (document.getElementById("selected").selectedIndex === 0) {
+            selectedFlag = false;
+        } else {
+            selectedFlag = true;
+        }
+        plottingLayer.isSelected = selectedFlag;
+    }
+
+    function plotSymbol() {
+        plotDrawControl.libID = 0;
+        plotDrawControl.code = 32;
+        plotDrawControl.activate();
+    }
+
+    //删除指定标号
+    function deleteSeleGeo() {
+        plottingLayer.removeGeoGraphicObject(plottingLayer._selectedFeature);
+    }
+
+    function clearLayers() {
+        plottingLayer.removeAll();
+    }
+
+  //“Delete”按键删除选中标号
+    $(document).keydown(function (event) {
+        if (event.keyCode === 46) {
+            deleteSeleGeo();
+        }
+    });
+</script>
+</body>
+</html>

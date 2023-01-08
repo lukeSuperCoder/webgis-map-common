@@ -1,0 +1,1854 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+    <title>动态标绘专题</title>
+    <link rel="shortcut icon" type="image/x-icon" href="../../web/img/favicon.ico"/>
+    <script type="text/javascript" include="jquery,bootstrap,template,admin-lte,jquery.scrollto,lazyload"
+            src="../js/include-web.js" from="doc"></script>
+    <link rel="stylesheet" href="../css/common.css">
+    <link rel="stylesheet" href="../css/examples.css">
+    <link rel="stylesheet" href="../css/header.css">
+    <link rel='stylesheet' href='../css/sm-extend.css'/>
+    <link rel='stylesheet' href='../css/sm-doc.css'/>
+
+</head>
+    <body class="hold-transition skin-blue sidebar-mini" data-spy="scroll" data-target="#scrollSpy">
+        <!-- ./wrapper -->
+        <div class="wrapper"></div>
+        <div id='container' class='container' style="width: 90%; padding-top: 75px;">
+            <div class='page-header'>
+                <h1>动态标绘专题</h1>
+                <hr/>
+                <h2 class="title">简介</h2>
+                <p>SuperMap iClient3D for WebGL提供了三维动态标绘模块，支持用户在服务器端发布动态标绘服务，在客户端通过访问服务端发布的标绘服务来实现动态标绘与态势推演功能。用户可以在三维场景中方便灵活的标绘三维点标号、线面标号，并进行态势推演展示。</p>
+                <ul>
+                    <ul class="circle">
+                        <li>技术特点：动态标绘技术可以动态的标绘点标号和线面标号，能够独立修改每个标号的风格、位置、形状，并且提供7种动画实现三维态势推演功能。</li>
+                        <li>应用场景：主要用于在三维场景中实现军事作战方案、应急处置方案、公安围捕方案等指挥调度方案的三维动态标绘。通过提供的各类具有特殊意义的图形、模型标号，可以在三维场景上非常直观、准确地展现事件的处置方案，提高事件处置过程中会商和沟通的效率。</li>
+                    </ul>
+                </ul>
+                <h2 class="title">使用说明</h2>
+                <p>首先我们得做如下的准备工作：</p>
+                <ul>
+                    <ul class="circle">
+                        <li>保证服务器存在可用的标绘服务，或者我们可以自行去服务器服务管理页面，通过关联一个可用的标号库快速发布一个标绘服务。</li>
+                        <li>在cesiumContainer上添加一个 viewer，并在此基础上通过访问由SuperMap iServer发布的三维服务（如地形数据、倾斜摄影数据、精细建筑模型等），在相应的三维场景中进行动态标绘。</li>
+                    </ul>
+                </ul>
+                <h2 class="title">一、动态标绘专题-鼠标标绘</h2>
+                <h3>1、创建动态标绘总控对象</h3>
+                <p>
+                    首先，需要创建一个动态标绘总控对象，并为其指定标绘服务serverUrl与场景scene。
+                </p>
+                <p></p>
+                <p>
+                </p>
+                <p>
+                <pre>
+                    var plotting = cesium.Plotting.getInstance(serverUrl, scene);</pre>
+                </p>
+                <h3>2、创建标绘图层</h3>
+                <p>创建一个标绘图层对象,并将标绘图层添加到scene中。</p>
+                <p></p>
+                <p>
+                </p>
+                <p>
+                <pre>
+                   var plottingLayer = new cesium.PlottingLayer(scene, "plottingLayer");
+                   scene.layers.add(plottingLayer);</pre>
+                </p>
+
+                <h3>3、创建标号库管理器对象</h3>
+                <p>其次，我们需要从动态标绘总控对象中获取标号库管理器对象。</p>
+                <p></p>
+                <p>
+                </p>
+                <p>
+                <pre>
+                    var symbolLibManager = plotting.getSymbolLibManager(); </pre>
+                </p>
+
+
+                <h3>4、创建编辑控件和绘制控件</h3>
+                <p>最后，需要创建编辑控件和绘制控件，开始鼠标标绘和编辑。</p>
+                <p>创建编辑控件</p>
+                <p></p>
+                <p>
+                </p>
+                <p>
+                <pre>
+                    var plotEditControl = new cesium.PlotEditControl(scene, plottingLayer);</pre>
+                </p>
+                <p>创建绘制控件</p>
+                <p></p>
+                <p>
+                </p>
+                <p>
+                <pre>
+                    var plotDrawControl = new cesium.PlotDrawControl(scene, plottingLayer);</pre>
+                </p>
+
+                <p>标绘结束，激活编辑控件</p>
+                <p></p>
+                <p>
+                </p>
+                <p>
+                <pre>
+                    plotDrawControl.drawFinishEvent.addEventListener(function () {
+                        plotEditControl.activate();
+                        });
+                </pre>
+                </p>
+
+
+                <h3>5、初始化标绘面板和属性面板</h3>
+                <p>为了使得用户更加方便的进行标绘和编辑标号，SuperMap iClient3D for WebGL动态标绘提供了标绘和属性两个面板，初始化面板的代码如下：</p>
+                <p>初始化标绘面板</p>
+                <p></p>
+                <p>
+                </p>
+                <p>
+                <pre>
+                    initPlotPanel("plotPanel", serverUrl, plotDrawControl, plotEditControl,plotting);</pre>
+                </p>
+                <p>初始化属性面板</p>
+                <p></p>
+                <p>
+                </p>
+                <p>
+                <pre>
+                    stylePanel = new StylePanel('stylePanel', plotEditControl, plotting);</pre>
+                </p>
+                <p>到这里为止，动态标绘初始化工作已经完成，在客户端可以进行鼠标标绘了。</p>
+
+                <h3>6、效果展示</h3>
+                <p>（1）鼠标标绘展示</p>
+                <p>
+                    鼠标左键单击标绘面板任一标号后，即可在三维场景上标绘相应标号：
+                </p>
+                <div class="pageImage">
+                    <img src="../images/TopicDOC/plotting.PNG">
+                </div>
+                <p>（2）属性修改展示</p>
+                <p>
+                    标号标绘完成后，鼠标左键单击选中标号，属性面板会显示该选中对象的属性值，即可在属性面板上直接修改：
+                </p>
+                <div class="pageImage">
+                    <img src="../images/TopicDOC/plottingProperties.png ">
+                </div>
+                <p>（3）标绘面板和属性面板展示</p>
+                <p>
+                    标号标绘完成后，鼠标左键单击选中标号，属性面板会显示该选中对象的属性值，即可在属性面板上直接修改：
+                </p>
+                <div class="pageImage">
+                    <img src="../images/TopicDOC/PlotPanel.png  ">
+                </div>
+                <h2 class="title">二、动态标绘专题-编程标绘</h2>
+                <p>SuperMap iClient3D for WebGL动态标绘技术中，支持编程实现动态标绘。编程标绘也需要首先创建动态标绘总控、标绘图层、标号库管理器对象、编辑控件与绘制控件，实现方法同“动态标绘专题-鼠标标绘”的第1、2、3、4部分内容，这里不再重复。</p>
+                <h3>1、创建标号</h3>
+                <p>根据标号库编码、标号编码、位置点数组可以创建标号，语句如下：</p>
+                <p>
+                </p>
+                <p>
+                <pre>
+                   plottingLayer.createSymbol(libID, code, points, function (even) {
+                                var geo = even.feature;
+                        });
+                   // 其中，libID为标号库编码，code为标号编码，points为位置点数组，function (even){}为回调函数。</pre>
+                </p>
+                <h3>2、修改标号属性</h3>
+                <p>标号可以修改的属性分两部分存储，点标号独有的属性从geo.symbol里获取,而点标号和线面标号共有的属性从geo.symbolStyle里获取。下面的代码以少部分属性为例，3、标号属性列表具体列出标号的主要属性。</p>
+                <p>
+                </p>
+                <p>
+                <pre>
+                    geo.scale = new cesium.Cartesian3(1, 1.0, 1.0);  //缩放比例
+                    geo. gridLineWidth = 6;  //公告板模式线宽
+                    geo.gridSurroundLineWidth = 4;  //公告板模式衬线宽
+                    geo.symbolStyle.surroundLineType = 1;  //衬线类型
+                    geo.symbolRank = 1;  //标号级别
+                    geo.lineSymbolID = 1;  //点标号边线类型 </pre>
+                </p>
+                <h3>3、标号属性列表</h3>
+
+                    <table class="MsoTableGrid" style="mso-border-alt: solid windowtext .5pt;
+				 mso-yfti-tbllook: 1184; mso-padding-alt: 0cm 5.4pt 0cm 5.4pt;
+				 border-collapse: separate; margin-left: 40px; left: 0px;
+				 top: 332px;" width="896" cellspacing="0">
+                    <col width="267" />
+                    <col width="346" />
+                    <col width="98" />
+                    <col width="102" />
+                    <tr style="mso-yfti-irow: 0; mso-yfti-firstrow: yes;">
+                        <td style="border: Solid 1px #000000; vertical-align: top;
+					 mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+					 padding-left: 0px; padding-top: 8px; padding-right: 0px;
+					 padding-bottom: 0px;"><p class="MsoNormal" style="
+												 margin-left: 0px;"><span
+                                style="font-family: 宋体; mso-ascii-font-family: Calibri;
+				 mso-ascii-theme-font: minor-latin; mso-fareast-font-family: 宋体;
+				 mso-fareast-theme-font: minor-fareast; mso-hansi-font-family: Calibri;
+				 mso-hansi-theme-font: minor-latin; color: #0000ff;">属性名/属性接口</span></p></td>
+                        <td style="border-top: Solid 1px #000000; border-right: Solid 1px #000000;
+					 border-bottom: Solid 1px #000000; vertical-align: top;
+					 mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+					 padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 8px; padding-top: 8px;
+					 padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                                                  style=" margin-left: 0px;"><span
+                                style="font-family: 宋体; mso-ascii-font-family: Calibri;
+				 mso-ascii-theme-font: minor-latin; mso-fareast-font-family: 宋体;
+				 mso-fareast-theme-font: minor-fareast; mso-hansi-font-family: Calibri;
+				 mso-hansi-theme-font: minor-latin; color: #0000ff;">属性含义</span></p></td>
+                        <td style="border-top: Solid 1px #000000; border-right: Solid 1px #000000;
+					 border-bottom: Solid 1px #000000; vertical-align: top;
+					 mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+					 padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+					 padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                                                  style=" margin-left: 0px;"><span
+                                style="font-family: 宋体; mso-ascii-font-family: Calibri;
+				 mso-ascii-theme-font: minor-latin; mso-fareast-font-family: 宋体;
+				 mso-fareast-theme-font: minor-fareast; mso-hansi-font-family: Calibri;
+				 mso-hansi-theme-font: minor-latin; color: #0000ff;">点标号</span></p></td>
+                        <td style="border-top: Solid 1px #000000; border-right: Solid 1px #000000;
+					 border-bottom: Solid 1px #000000; vertical-align: top;
+					 mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+					 padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+					 padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                                                  style="margin-left: 0px;"><span
+                                style="font-family: 宋体; mso-ascii-font-family: Calibri;
+				 mso-ascii-theme-font: minor-latin; mso-fareast-font-family: 宋体;
+				 mso-fareast-theme-font: minor-fareast; mso-hansi-font-family: Calibri;
+				 mso-hansi-theme-font: minor-latin; color: #0000ff;">线面标号</span></p></td>
+                    </tr>
+                    <tr style="mso-yfti-irow: 1;">
+                        <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+					 border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+					 mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+					 padding-left: 0px; padding-top: 8px; padding-right: 0px;
+					 padding-bottom: 0px;"><p class="MsoNormal"
+                                              style="layout-grid-mode: char;
+												 mso-layout-grid-align: none;
+												 margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">libID</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+					 vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+					 mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+					 padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+					 padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                              style="layout-grid-mode: char; mso-layout-grid-align: none;
+					 margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">标号所属标号库ID，只读属性</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+					 vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+					 mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+					 padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+					 padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                                                  style="layout-grid-mode: char; mso-layout-grid-align: none;
+					 margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+					 vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+					 mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+					 padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+					 padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                                                  style="layout-grid-mode: char; mso-layout-grid-align: none;
+					 margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                    </tr>
+                    <tr style="mso-yfti-irow: 1;">
+                        <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+                 border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+                 mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+                 padding-left: 0px; padding-top: 8px; padding-right: 0px;
+                 padding-bottom: 0px;"><p class="MsoNormal"
+                                          style="layout-grid-mode: char;
+                                             mso-layout-grid-align: none;
+                                             margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">code</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+                 vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+                 mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+                 padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+                 padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                                              style="layout-grid-mode: char; mso-layout-grid-align: none;
+                 margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">标号的code，只读属性</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+                 vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+                 mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+                 padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+                 padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                                              style="layout-grid-mode: char; mso-layout-grid-align: none;
+                 margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+                 vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+                 mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+                 padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+                 padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                                              style="layout-grid-mode: char; mso-layout-grid-align: none;
+                 margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                    </tr>
+                    <tr style="mso-yfti-irow: 1;">
+                        <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+             border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+             mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+             padding-left: 0px; padding-top: 8px; padding-right: 0px;
+             padding-bottom: 0px;"><p class="MsoNormal"
+                                      style="layout-grid-mode: char;
+                                         mso-layout-grid-align: none;
+                                         margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">symbolName</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+             vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+             mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+             padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+             padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                                          style="layout-grid-mode: char; mso-layout-grid-align: none;
+             margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">标号的名称，只读属性</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+             vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+             mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+             padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+             padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                                          style="layout-grid-mode: char; mso-layout-grid-align: none;
+             margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+             vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+             mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+             padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+             padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                                          style="layout-grid-mode: char; mso-layout-grid-align: none;
+             margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                    </tr>
+                    <tr style="mso-yfti-irow: 1;">
+                        <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+         border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+         mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+         padding-left: 0px; padding-top: 8px; padding-right: 0px;
+         padding-bottom: 0px;"><p class="MsoNormal"
+                                  style="layout-grid-mode: char;
+                                     mso-layout-grid-align: none;
+                                     margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">symbolType</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+         vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+         mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+         padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+         padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                                      style="layout-grid-mode: char; mso-layout-grid-align: none;
+         margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">标号几何类型，点标号、线面标号或者基本图元类型，只读属性</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+         vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+         mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+         padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+         padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                                      style="layout-grid-mode: char; mso-layout-grid-align: none;
+         margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+         vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+         mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+         padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+         padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                                      style="layout-grid-mode: char; mso-layout-grid-align: none;
+         margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                    </tr>
+                    <tr style="mso-yfti-irow: 1;">
+                        <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+     border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+     mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+     padding-left: 0px; padding-top: 8px; padding-right: 0px;
+     padding-bottom: 0px;"><p class="MsoNormal"
+                              style="layout-grid-mode: char;
+                                 mso-layout-grid-align: none;
+                                 margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">points</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+     vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+     mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+     padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+     padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                                  style="layout-grid-mode: char; mso-layout-grid-align: none;
+     margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">标号的位置点，只读属性</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+     vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+     mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+     padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+     padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                                  style="layout-grid-mode: char; mso-layout-grid-align: none;
+     margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+     vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+     mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+     padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+     padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                                  style="layout-grid-mode: char; mso-layout-grid-align: none;
+     margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                    </tr>
+                    <tr style="mso-yfti-irow: 1;">
+                        <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+ border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+ mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+ padding-left: 0px; padding-top: 8px; padding-right: 0px;
+ padding-bottom: 0px;"><p class="MsoNormal"
+                          style="layout-grid-mode: char;
+                             mso-layout-grid-align: none;
+                             margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">visible</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+ vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+ mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+ padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+ padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                              style="layout-grid-mode: char; mso-layout-grid-align: none;
+ margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">是否可见</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+ vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+ mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+ padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+ padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                              style="layout-grid-mode: char; mso-layout-grid-align: none;
+ margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+ vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+ mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+ padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+ padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                              style="layout-grid-mode: char; mso-layout-grid-align: none;
+ margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                    </tr>
+                    <tr style="mso-yfti-irow: 1;">
+                        <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                      style="layout-grid-mode: char;
+                         mso-layout-grid-align: none;
+                         margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">symbolTextStyle</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                          style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">文本风格</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                          style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                          style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                    </tr>
+                    <tr style="mso-yfti-irow: 1;">
+                        <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                         style="layout-grid-mode: char;
+                     mso-layout-grid-align: none;
+                     margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">symbolStyle</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                             style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">标号风格</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                             style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                             style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                    </tr>
+                    <tr style="mso-yfti-irow: 1;">
+                        <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                     style="layout-grid-mode: char;
+                 mso-layout-grid-align: none;
+                 margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">symbolStyle.lineColor</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">线色，默认线色为红色</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                    </tr>
+                    <tr style="mso-yfti-irow: 1;">
+                        <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                     style="layout-grid-mode: char;
+             mso-layout-grid-align: none;
+             margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">symbolStyle.lineWidth</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">线宽</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                    </tr>
+                    <tr style="mso-yfti-irow: 1;">
+                        <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                     style="layout-grid-mode: char;
+         mso-layout-grid-align: none;
+         margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">symbolStyle.fillSymbolID</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">填充模式</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                    </tr>
+                    <tr style="mso-yfti-irow: 1;">
+                        <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                     style="layout-grid-mode: char;
+     mso-layout-grid-align: none;
+     margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">symbolStyle.fillBackColor</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">填充背景色，默认填充背景色为红色</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                    </tr>
+                    <tr style="mso-yfti-irow: 1;">
+                        <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                     style="layout-grid-mode: char;
+ mso-layout-grid-align: none;
+ margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">symbolStyle.fillBackOpaque</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">填充背景透明</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                    </tr>
+                    <tr style="mso-yfti-irow: 1;">
+                        <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                         style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">symbolStyle.fillGradientMode</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                             style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">渐变填充模式</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                             style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                             style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                    </tr>
+                    <tr style="mso-yfti-irow: 1;">
+                        <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                     style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">symbolStyle. fillGradientAngle</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">渐变填充角度</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                    </tr>
+                    <tr style="mso-yfti-irow: 1;">
+                        <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                     style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">symbolStyle. fillGradientOffsetRatioY</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">渐变填充竖直偏移</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                    </tr>
+                    <tr style="mso-yfti-irow: 1;">
+                        <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                     style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">symbolStyle. fillGradientOffsetRatioX</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">渐变填充水平偏移</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                    </tr>
+                    <tr style="mso-yfti-irow: 1;">
+                        <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                     style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">symbolStyle. fillForeColor</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">填充前景色，默认填充前景色为红色</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                    </tr>
+                    <tr style="mso-yfti-irow: 1;">
+                        <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                     style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">symbolStyle. fillOpaqueRate</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">填充透明度</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                    </tr>
+                    <tr style="mso-yfti-irow: 1;">
+                        <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                     style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">symbolStyle.surroundLineColor</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">衬线颜色</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                    </tr>
+                    <tr style="mso-yfti-irow: 1;">
+                        <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                     style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">symbolStyle. surroundLineType</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">衬线类型，默认无衬线</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                    </tr>
+                    <tr style="mso-yfti-irow: 1;">
+                        <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                     style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">symbolStyle. surroundLindWidth</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">衬线宽度</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                    </tr>
+                    <tr style="mso-yfti-irow: 1;">
+                        <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                     style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">scale</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">缩放角度</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">不支持</span></p></td>
+                    </tr>
+                    <tr style="mso-yfti-irow: 1;">
+                        <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                     style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">rotate</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">旋转角度</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">不支持</span></p></td>
+                    </tr>
+                    <tr style="mso-yfti-irow: 1;">
+                        <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                     style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">modelScale</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">模型缩放比例</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">不支持</span></p></td>
+                    </tr>
+                    <tr style="mso-yfti-irow: 1;">
+                        <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                     style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">modelId</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">模型ID</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">不支持</span></p></td>
+                    </tr>
+                    <tr style="mso-yfti-irow: 1;">
+                        <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                     style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">modelRotate</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">模型旋转角度</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">不支持</span></p></td>
+                    </tr>
+                    <tr style="mso-yfti-irow: 1;">
+                        <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                     style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">gridLineWidth</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">公告板线宽</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">不支持</span></p></td>
+                    </tr>
+                    <tr style="mso-yfti-irow: 1;">
+                        <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                     style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">gridSurroundLineWidth</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">公告板衬线宽</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">不支持</span></p></td>
+                    </tr>
+                    <tr style="mso-yfti-irow: 1;">
+                        <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                     style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">gridSymbolSize</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">标号大小</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">不支持</span></p></td>
+                    </tr>
+                    <tr style="mso-yfti-irow: 1;">
+                        <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                     style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">pictureSymbolSize</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">标号图片模式图片大小</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">不支持</span></p></td>
+                    </tr>
+                    <tr style="mso-yfti-irow: 1;">
+                        <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                     style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">picturePath</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">标号图片模式的图片路径</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">不支持</span></p></td>
+                    </tr>
+                    <tr style="mso-yfti-irow: 1;">
+                        <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                     style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">showMode</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">显示模式</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">不支持</span></p></td>
+                    </tr>
+                    <tr style="mso-yfti-irow: 1;">
+                        <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                     style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">isNegativeImage</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">镜像</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                         style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">不支持</span></p></td>
+                    </tr>
+                        <tr style="mso-yfti-irow: 1;">
+                            <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                         style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">symbolRank</span></p></td>
+                            <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                             style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">标号级别</span></p></td>
+                            <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                             style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                            <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                             style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">不支持</span></p></td>
+                        </tr>
+                        <tr style="mso-yfti-irow: 1;">
+                            <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                         style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">lineSymbolID</span></p></td>
+                            <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                             style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">边线类型</span></p></td>
+                            <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                             style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                            <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                             style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">不支持</span></p></td>
+                        </tr>
+                </table>
+                <h2 class="title">三、态势推演</h2>
+                <p>态势推演的根本目的是迅速、准确地为决策者定下行动决心提供支持。三维由于其形象直观的特点，更是进行态势推演的最佳技术。</p>
+                <h3>1、态势推演动画</h3>
+                <p>SuperMap iClient3D for WebGL 动态标绘技术提供了态势推演过程常用的7种动画：属性、闪烁、路径、旋转、比例、显隐和生长动画。</p>
+                <table class="MsoTableGrid" style="mso-border-alt: solid windowtext .5pt;
+				 mso-yfti-tbllook: 1184; mso-padding-alt: 0cm 5.4pt 0cm 5.4pt;
+				 border-collapse: separate; margin-left: 40px; left: 0px;
+				 top: 332px;" width="896" cellspacing="0">
+                    <col width="167" />
+                    <col width="446" />
+                    <col width="98" />
+                    <col width="102" />
+                    <tr style="mso-yfti-irow: 0; mso-yfti-firstrow: yes;">
+                        <td style="border: Solid 1px #000000; vertical-align: top;
+					 mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+					 padding-left: 0px; padding-top: 8px; padding-right: 0px;
+					 padding-bottom: 0px;"><p class="MsoNormal" style="
+												 margin-left: 0px;"><span
+                                style="font-family: 宋体; mso-ascii-font-family: Calibri;
+				 mso-ascii-theme-font: minor-latin; mso-fareast-font-family: 宋体;
+				 mso-fareast-theme-font: minor-fareast; mso-hansi-font-family: Calibri;
+				 mso-hansi-theme-font: minor-latin; color: #0000ff;">动画类型</span></p></td>
+                        <td style="border-top: Solid 1px #000000; border-right: Solid 1px #000000;
+					 border-bottom: Solid 1px #000000; vertical-align: top;
+					 mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+					 padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 8px; padding-top: 8px;
+					 padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                                                  style=" margin-left: 0px;"><span
+                                style="font-family: 宋体; mso-ascii-font-family: Calibri;
+				 mso-ascii-theme-font: minor-latin; mso-fareast-font-family: 宋体;
+				 mso-fareast-theme-font: minor-fareast; mso-hansi-font-family: Calibri;
+				 mso-hansi-theme-font: minor-latin; color: #0000ff;">描述</span></p></td>
+                        <td style="border-top: Solid 1px #000000; border-right: Solid 1px #000000;
+					 border-bottom: Solid 1px #000000; vertical-align: top;
+					 mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+					 padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+					 padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                                                  style=" margin-left: 0px;"><span
+                                style="font-family: 宋体; mso-ascii-font-family: Calibri;
+				 mso-ascii-theme-font: minor-latin; mso-fareast-font-family: 宋体;
+				 mso-fareast-theme-font: minor-fareast; mso-hansi-font-family: Calibri;
+				 mso-hansi-theme-font: minor-latin; color: #0000ff;">点标号</span></p></td>
+                        <td style="border-top: Solid 1px #000000; border-right: Solid 1px #000000;
+					 border-bottom: Solid 1px #000000; vertical-align: top;
+					 mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+					 padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+					 padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                                                  style="margin-left: 0px;"><span
+                                style="font-family: 宋体; mso-ascii-font-family: Calibri;
+				 mso-ascii-theme-font: minor-latin; mso-fareast-font-family: 宋体;
+				 mso-fareast-theme-font: minor-fareast; mso-hansi-font-family: Calibri;
+				 mso-hansi-theme-font: minor-latin; color: #0000ff;">线面标号</span></p></td>
+                    </tr>
+                    <tr style="mso-yfti-irow: 1;">
+                        <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                         style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">属性动画</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                             style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">能够按照设定的起始和终止状态，在指定时间内渐变，可以设置主线颜色，主线宽度，衬线颜色，衬线宽度等。</span></p></td>
+                        <td style="border-left: Solid 0px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                         style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                        <td style="border-left: Solid 0px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                         style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                    </tr>
+                    <tr style="mso-yfti-irow: 1;">
+                        <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                         style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">闪烁动画</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                             style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">能够按设定标号的闪烁间隔，进行颜色切换闪烁或者显隐切换闪烁。</span></p></td>
+                        <td style="border-left: Solid 0px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                         style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                        <td style="border-left: Solid 0px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                         style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                    </tr>
+                    <tr style="mso-yfti-irow: 1;">
+                        <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                         style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">路径动画</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                             style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">能够设定标号的移动轨迹（曲线、折线），方向（沿着轨迹线的切线方向、不沿着轨迹线的切线方向），使标号按照轨迹移动。</span></p></td>
+                        <td style="border-left: Solid 0px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                         style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                        <td style="border-left: Solid 0px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                         style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">不支持</span></p></td>
+                    </tr>
+                    <tr style="mso-yfti-irow: 1;">
+                        <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                         style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">旋转动画</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                             style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">能够按设定的时间，按照起始角度、旋转终止角度，进行旋转。</span></p></td>
+                        <td style="border-left: Solid 0px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                         style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                        <td style="border-left: Solid 0px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                         style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">不支持</span></p></td>
+                    </tr>
+                    <tr style="mso-yfti-irow: 1;">
+                        <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                         style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">比例动画</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                             style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">能够按设定的时间，缩放指定的比例。</span></p></td>
+                        <td style="border-left: Solid 0px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                         style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                        <td style="border-left: Solid 0px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                         style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">不支持</span></p></td>
+                    </tr>
+                    <tr style="mso-yfti-irow: 1;">
+                        <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                         style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">显隐动画</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                             style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">能够设置标号在一定时间内是否可见。</span></p></td>
+                        <td style="border-left: Solid 0px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                         style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                        <td style="border-left: Solid 0px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                         style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                    </tr>
+                    <tr style="mso-yfti-irow: 1;">
+                        <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                         style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">生长动画</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                             style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">能够设置标号的生长比例和生长时间，在指定时间内完成标号生长。</span></p></td>
+                        <td style="border-left: Solid 0px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                         style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">不支持</span></p></td>
+                        <td style="border-left: Solid 0px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                         style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">支持</span></p></td>
+                    </tr>
+                </table>
+                <h3>2、动画管理类</h3>
+                <p>SuperMap iClient3D for WebGL动态标绘技术中态势推演主要是利用GOAnimationManager类（动画管理类）完成态势推演功能。为方便用户顺利实现态势推演功能，下面列出GOAnimationManager类使用方法。</p>
+                <p>(1)获取动画管理对象</p>
+                <p>
+                </p>
+                <p>
+                <pre>
+                   animationManager = plotting.getGOAnimationManager(); </pre>
+                </p>
+                <p>(2)创建动画</p>
+                <p>
+                </p>
+                <p>
+                <pre>
+                   animationManager. createAnimation(animationType, name, goFeature);
+                   // animationType表示动画类型，name为动画名称，goFeature为动画对象
+                   // 注意：在创建动画时，必须选中想要创建动画的对象  </pre>
+                </p>
+                <p>(3)执行动画</p>
+                <p>
+                </p>
+                <p>
+                <pre>
+                   animationManager.execute(); </pre>
+                </p>
+                <p>(4)播放动画</p>
+                <p>
+                </p>
+                <p>
+                <pre>
+                   animationManager.play();
+                   // 注意：动画播放时可以单个播放，也可以多个动画一起播放。</pre>
+                </p>
+                <p>(5)暂停动画</p>
+                <p>
+                </p>
+                <p>
+                <pre>
+                   animationManager. pause (); </pre>
+                </p>
+                <p>(6)停止播放动画</p>
+                <p>
+                </p>
+                <p>
+                <pre>
+                   animationManager. stop ();</pre>
+                </p>
+                <p>(7)重置动画</p>
+                <p>
+                </p>
+                <p>
+                <pre>
+                    animationManager. reset();</pre>
+                </p>
+                <h3>3、态势推演示例</h3>
+                <div class="pageImage">
+                    <img src="../images/TopicDOC/plottingTuiyan.gif ">
+                </div>
+                <h2 class="title">四、态势图管理</h2>
+                <p>SuperMap iClient3D for WebGL动态标绘技术支持态势图管理，包括保存态势图到服务器、打开态势图文件、删除态势图文件、上传态势图文件等功能。态势图管理的各项功能是通过SitDataManager类来完成的。</p>
+                <p>首先，我们需要通过下面的语句获取态势图管理对象：</p>
+                <p>
+                </p>
+                <p>
+                <pre>
+                   sitDataManager = plotting.getSitDataManager();</pre>
+                </p>
+                <p>态势图管理的功能将在下表中列出。</p>
+                <table class="MsoTableGrid" style="mso-border-alt: solid windowtext .5pt;
+				 mso-yfti-tbllook: 1184; mso-padding-alt: 0cm 5.4pt 0cm 5.4pt;
+				 border-collapse: separate; margin-left: 40px; left: 0px;
+				 top: 332px;" width="794" cellspacing="0">
+                    <col width="67" />
+                    <col width="246" />
+                    <col width="398" />
+                    <tr style="mso-yfti-irow: 0; mso-yfti-firstrow: yes;">
+                        <td style="border: Solid 1px #000000; vertical-align: top;
+					 mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+					 padding-left: 0px; padding-top: 8px; padding-right: 0px;
+					 padding-bottom: 0px;"><p class="MsoNormal" style="
+												 margin-left: 0px;"><span
+                                style="font-family: 宋体; mso-ascii-font-family: Calibri;
+				 mso-ascii-theme-font: minor-latin; mso-fareast-font-family: 宋体;
+				 mso-fareast-theme-font: minor-fareast; mso-hansi-font-family: Calibri;
+				 mso-hansi-theme-font: minor-latin; color: #0000ff;">序号</span></p></td>
+                        <td style="border-top: Solid 1px #000000; border-right: Solid 1px #000000;
+					 border-bottom: Solid 1px #000000; vertical-align: top;
+					 mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+					 padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 8px; padding-top: 8px;
+					 padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                                                  style=" margin-left: 0px;"><span
+                                style="font-family: 宋体; mso-ascii-font-family: Calibri;
+				 mso-ascii-theme-font: minor-latin; mso-fareast-font-family: 宋体;
+				 mso-fareast-theme-font: minor-fareast; mso-hansi-font-family: Calibri;
+				 mso-hansi-theme-font: minor-latin; color: #0000ff;">功能描述</span></p></td>
+                        <td style="border-top: Solid 1px #000000; border-right: Solid 1px #000000;
+					 border-bottom: Solid 1px #000000; vertical-align: top;
+					 mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+					 padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+					 padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                                                  style=" margin-left: 0px;"><span
+                                style="font-family: 宋体; mso-ascii-font-family: Calibri;
+				 mso-ascii-theme-font: minor-latin; mso-fareast-font-family: 宋体;
+				 mso-fareast-theme-font: minor-fareast; mso-hansi-font-family: Calibri;
+				 mso-hansi-theme-font: minor-latin; color: #0000ff;">实现语句</span></p></td>
+                    </tr>
+                    <tr style="mso-yfti-irow: 1;">
+                        <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                         style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">1</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                             style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">保存当前态势图数据到服务器</span></p></td>
+                        <td style="border-left: Solid 0px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                         style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">sitDataManager . saveSmlFile();</span></p></td>
+                    </tr>
+                    <tr style="mso-yfti-irow: 1;">
+                        <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                         style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">2</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                             style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">打开指定的已发布态势图文件</span></p></td>
+                        <td style="border-left: Solid 0px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                         style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">sitDataManager .openSmlFileOnServer(smlFileName);</span></p></td>
+                    </tr>
+                    <tr style="mso-yfti-irow: 1;">
+                        <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                         style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">3</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                             style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">删除指定的已发布态势图文件</span></p></td>
+                        <td style="border-left: Solid 0px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                         style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">sitDataManager .deleteSmlFileOnServer(smlFileName);</span></p></td>
+                    </tr>
+                    <tr style="mso-yfti-irow: 1;">
+                        <td style="border-left: Solid 1px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                         style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">4</span></p></td>
+                        <td style="border-right: Solid 1px #000000; border-bottom: Solid 1px #000000;
+vertical-align: top; mso-border-top-alt: solid windowtext .5pt;
+mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt;
+padding: 0cm 5.4pt 0cm 5.4pt; padding-left: 0px; padding-top: 8px;
+padding-right: 0px; padding-bottom: 0px;"><p class="MsoNormal"
+                                             style="layout-grid-mode: char; mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">上传态势图文件</span></p></td>
+                        <td style="border-left: Solid 0px #000000; border-right: Solid 1px #000000;
+border-bottom: Solid 1px #000000; mso-border-top-alt: solid windowtext .5pt;
+mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;
+padding-left: 0px; padding-top: 8px; padding-right: 0px;
+padding-bottom: 0px;"><p class="MsoNormal"
+                         style="layout-grid-mode: char;
+mso-layout-grid-align: none;
+margin-left: 0px;"><span lang="EN-US" xml:lang="EN-US">sitDataManager .uploadSmlFile(fileId, success, fail);</span></p></td>
+                    </tr>
+                </table>
+                <p></p>
+                <p>态势图管理如下图：</p>
+                <div class="pageImage">
+                    <img src="../images/TopicDOC/sitDataManager.png">
+                </div>
+            </div>
+            <div class='footer'>
+                <p>版权所有&nbsp;&copy; 2000-2018 &nbsp;北京超图软件股份有限公司</p>
+            </div>
+        </div>
+        <script type="text/javascript" src="../js/utils.js"></script>
+        <script>
+            $('.wrapper').load("../template/example-pure.html", function () {
+                utils.loadTemplate(".icl-header", "../template/header-doc.html", {});
+                //var $body = $('body');
+                //$body.append("<script type='text/javascript' src='../js/common.js'><\/script>");
+            });
+        </script>
+    </body>
+</html>

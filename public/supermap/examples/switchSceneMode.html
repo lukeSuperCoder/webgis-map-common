@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>Globe模式切换</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link href="./css/pretty.css" rel="stylesheet">
+    <link href="./css/bootstrap.min.css" rel="stylesheet">
+    <script src="./js/jquery.min.js"></script>
+    <script src="./js/config.js"></script>
+    <script src="./js/bootstrap.min.js"></script>
+    <script src="./js/bootstrap-select.min.js"></script>
+    <script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<div id='loadingbar' class="spinner">
+    <div class="spinner-container container1">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container2">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container3">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+</div>
+<div style="position: absolute;left: 5px;top: 5px; width:30px">
+    <select id="sceneMode" class="selectpicker show-tick form-control">
+        <option value="2D">2D</option>
+        <option value="3D">3D</option>
+    </select>
+</div>
+
+<script>
+    function onload(Cesium) {
+        //初始化viewer，并添加STK地形及BingMaps影像
+        var viewer = new Cesium.Viewer('cesiumContainer',{
+            sceneMode : Cesium.SceneMode.SCENE2D
+        });
+        viewer.imageryLayers.addImageryProvider(new Cesium.BingMapsImageryProvider({
+            url : 'https://dev.virtualearth.net',
+            mapStyle : Cesium.BingMapsStyle.AERIAL,
+            key : URL_CONFIG.BING_MAP_KEY
+        }));
+        $('#loadingbar').remove();
+        viewer.scene.camera.setView({
+            destination : Cesium.Cartesian3.fromDegrees(2.373333458311511, -0.05675514129257031, 39240566.00843727),
+        });
+        $('#sceneMode').change(function(){
+            var value = $(this).val();
+            viewer = viewer.destroy();
+            var mode;
+            if(value=="2D"){
+                mode= Cesium.SceneMode.SCENE2D;
+            }
+            else if(value=="3D"){
+                mode= Cesium.SceneMode.SCENE3D;
+            }
+            viewer = new Cesium.Viewer('cesiumContainer',{
+                sceneMode : mode
+            });
+            viewer.imageryLayers.addImageryProvider(new Cesium.BingMapsImageryProvider({
+                url : 'https://dev.virtualearth.net',
+                mapStyle : Cesium.BingMapsStyle.AERIAL,
+                key : URL_CONFIG.BING_MAP_KEY
+            }));
+            viewer.scene.camera.setView({
+                destination : Cesium.Cartesian3.fromDegrees(2.373333458311511, -0.05675514129257031, 39240566.00843727),
+            });
+        });
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>多边形裁剪</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link href="./css/bootstrap.min.css" rel="stylesheet">
+    <link href="./css/pretty.css" rel="stylesheet">
+    <script src="./js/jquery.min.js"></script>
+    <script src="./js/bootstrap.min.js"></script>
+    <script src="./js/bootstrap-select.min.js"></script>
+    <script src="./js/tooltip.js"></script>
+    <script src="./js/config.js"></script>
+    <script type="text/javascript" src="./js/require.min.js" data-main="js/main"></script>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<div id='loadingbar' class="spinner">
+    <div class="spinner-container container1">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container2">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container3">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+</div>
+<div id="toolbar" class="param-container tool-bar">
+    <table>
+        <tr>
+            <td>
+                <button type="button" id="polygon" class="button black">绘制裁剪面</button>
+            </td>
+            <td>
+                <button type="button" id="clear" class="button black">清除</button>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <select id="clip-mode" class="cesium-button">
+                    <option value="clip-outside">开挖外部</option>
+                    <option value="clip-inside">开挖内部</option>
+                </select>
+            </td>
+        </tr>
+    </table>
+</div>
+<script type="text/javascript">
+    function onload(Cesium) {
+        // 初始化viewer部件
+        var viewer = new Cesium.Viewer('cesiumContainer',{
+            infoBox : false,
+            selectionIndicator : false
+        });
+        viewer.imageryLayers.addImageryProvider(new Cesium.BingMapsImageryProvider({
+            url : 'https://dev.virtualearth.net',
+            mapStyle : Cesium.BingMapsStyle.AERIAL,
+            key : URL_CONFIG.BING_MAP_KEY
+        }));
+        var scene = viewer.scene;
+        var positions = [], regions = [], clipMode = Cesium.ModifyRegionMode.CLIP_OUTSIDE;
+        try{
+            //场景添加S3M图层服务
+            var promise = scene.open(URL_CONFIG.SCENE_BIMBUILDING);
+            Cesium.when(promise,function(layers){
+                // 精准定位
+                scene.camera.setView({
+                    destination : new Cesium.Cartesian3(-2180753.065987198, 4379023.266141494, 4092583.575045952),
+                    orientation : {
+                        heading : 4.0392222751147955,
+                        pitch : 0.010279641987852584,
+                        roll : 1.240962888005015e-11
+                    }
+                });
+
+                if(!scene.pickPositionSupported){
+                    alert('不支持深度纹理,无法拾取位置！');
+                }
+                for(var layer of layers){
+                    layer.selectEnabled = false;
+                    // 设置被裁剪对象的颜色
+                    layer.clipLineColor = new Cesium.Color(1, 1, 1, 0);
+                }
+
+                var tooltip = createTooltip(document.body);
+                var handlerPolygon = new Cesium.DrawHandler(viewer, Cesium.DrawMode.Polygon, 0);
+                handlerPolygon.activeEvt.addEventListener(function(isActive){
+                    if(isActive == true){
+                        viewer.enableCursorStyle = false;
+                        viewer._element.style.cursor = '';
+                        $('body').removeClass('drawCur').addClass('drawCur');
+                    }else{
+                        viewer.enableCursorStyle = true;
+                        $('body').removeClass('drawCur');
+                    }
+                });
+                handlerPolygon.movingEvt.addEventListener(function(windowPosition){
+                    if(handlerPolygon.isDrawing){
+                        tooltip.showAt(windowPosition,'<p>点击确定多边形顶点</p><p>右键单击结束绘制</p>');
+                    } else{
+                        tooltip.showAt(windowPosition,'<p>点击绘制第一个点</p>');
+                    }
+                });
+                handlerPolygon.drawEvt.addEventListener(function(result){
+                    tooltip.setVisible(false);
+                    handlerPolygon.polygon.show = false;
+                    handlerPolygon.polyline.show = false;
+                    positions = [];
+                    for(var pt of result.object.positions){
+                        var cartographic = Cesium.Cartographic.fromCartesian(pt);
+                        var longitude = Cesium.Math.toDegrees(cartographic.longitude);
+                        var latitude = Cesium.Math.toDegrees(cartographic.latitude);
+                        var height = cartographic.height;
+                        positions.push(longitude, latitude, height);
+                    }
+                    regions = [];
+                    regions.push(positions);
+                    for(var layer of layers){
+                        layer.setModifyRegions(regions, clipMode);
+                    }
+                });
+
+                $('#polygon').click(function(){
+                    handlerPolygon.activate();
+                });
+
+                $('#clear').click(function(){
+                    handlerPolygon.clear();
+                    // 清除裁剪结果
+                    for(var layer of layers){
+                        layer.clearModifyRegions();
+                    }
+                    positions = [];
+                    regions = [];
+                });
+
+                $('#clip-mode').on('propertychange input', function(){
+                    clipMode = $(this).val() === 'clip-inside' ? Cesium.ModifyRegionMode.CLIP_INSIDE : Cesium.ModifyRegionMode.CLIP_OUTSIDE;
+                    for(var layer of layers){
+                        layer.setModifyRegions(regions, clipMode);
+                    }
+                });
+
+                $('#toolbar').show();
+                $('#loadingbar').remove();
+            },function(e){
+                if (widget._showRenderLoopErrors) {
+                    var title = '加载SCP失败，请检查网络连接状态或者url地址是否正确？';
+                    widget.showErrorPanel(title, undefined, e);
+                }
+            });
+        }
+        catch(e){
+            if (widget._showRenderLoopErrors) {
+                var title = '渲染时发生错误，已停止渲染。';
+                widget.showErrorPanel(title, undefined, e);
+            }
+        }
+    }
+</script>
+</body>
+</html>

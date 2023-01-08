@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en" style="height: 100%">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <meta name="description" content="Test">
+    <meta name="cesium-sandcastle-labels" content="Geometries">
+    <title>态势图叠加</title>
+
+    <script type="text/javascript" src="../Build/Cesium/ThirdParty/Workers/PlotAlgo/PlotAlgoInclude.js"></script>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link rel="stylesheet" href="./css/sideBar.css">
+    <script src="js/jquery.min.js"></script>
+    <link rel="stylesheet" type="text/css" media="screen,projection" href="css/jquery-sticklr.css"/>
+    <script src="js/plotPanelControl/PlottingUI.Include.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <link href="css/bootstrap-new.min.css" rel="stylesheet">
+    <script type="text/javascript" src="js/widgets.js"></script>
+    <script type="text/javascript" src="js/require.min.js" data-main="js/main"></script>
+    <script src="js/fileupLoad.js"></script>
+
+</head>
+
+<body class="sandcastle-loading" data-sandcastle-bucket="bucket-requirejs.html"
+      style="margin: 0px; overflow: hidden;background: #fff;height: 100%;">
+
+<div id="toolbar" class="panel panel-primary" style="position: absolute;top: 15px;left: 10px;text-align: center;z-index: 9999;border-radius: 4px;">
+    <div class='panel-heading'>
+        <h5 class='panel-title text-center'>态势图叠加</h5></div>
+    <div class='panel-body content'>
+        <div class='panel'>
+            <div class='input-group' style=" margin-bottom: 10px;">
+                <input type="file" id="file" name="file" style="margin-left: 50px"/>
+            </div>
+        </div>
+        <input type="button" class="btn btn-default" value="叠加" onclick="add()"/>
+        <input type="button" class="btn btn-default" value="叠加到指定图层" onclick="addtolayer()"/>
+        <input type="button" class="btn btn-default" value="打开" onclick="openSmlData()"/>
+        <input type="button" class="btn btn-default" value="清空图层" onclick="clearLayers()"/>
+    </div>
+</div>
+<div id="cesiumContainer" class="fullSize"
+     style="position: relative;left: 0%;height: 100%;border: 1px solid #3473b7;"></div>
+<script id="cesium_sandcastle_script">
+    var cesium, scene, viewer, serverUrl;
+    var plottingLayer;
+    var plotting, plotEditControl, plotDrawControl;
+
+    function onload(Cesium) {
+        'use strict';
+        cesium = Cesium;
+        //若本地没有标绘相关服务则可访问支持中心的iserver
+        // var host = document.location.toString().match('/file:\/\//') ? 'http://localhost:8090' : 'http://' + document.location.host;
+        var host =  'http://support.supermap.com.cn:8090' ;       
+		viewer = new Cesium.Viewer('cesiumContainer');
+        scene = viewer.scene;
+        scene.globe.depthTestAgainstTerrain = false;
+        serverUrl = host + '/iserver/services/plot-jingyong/rest/plot';
+        InitPlot(viewer, serverUrl);
+    }
+
+    function InitPlot(viewer, serverUrl) {
+        if (!viewer) {
+            return;
+        }
+        plottingLayer = new cesium.PlottingLayer(scene, "plottingLayer");
+        scene.layers.add(plottingLayer);
+
+        plotting = cesium.Plotting.getInstance(serverUrl, scene);
+
+        plotEditControl = new cesium.PlotEditControl(scene, plottingLayer);//编辑控件
+        plotEditControl.activate();
+        plotDrawControl = new cesium.PlotDrawControl(scene, plottingLayer);//绘制控件
+
+        plotDrawControl.drawFinishEvent.addEventListener(function () {//标绘结束，激活编辑控件
+            plotEditControl.activate();
+        });
+
+        sitDataManager = plotting.getSitDataManager();
+
+        symbolLibManager = plotting.getSymbolLibManager();
+
+    }
+
+    function add() {
+        widgets.alert.clearAlert();
+        sitDataManager.addSmlFile('file', true);//是否叠加所有图层,如果是true，将所有图层叠加到当前的态势图上。如果是false，则只叠加与当前态势图相同的图层
+    }
+
+    //叠加态势文件(本地)到指定图层
+    function addtolayer(){
+        widgets.alert.clearAlert();
+        sitDataManager.addSmlFileToLayer('file', "plottingLayer");1
+    }
+
+    //打开本地态势图文件
+    function openSmlData() {
+        widgets.alert.clearAlert();
+        sitDataManager.openSmlFile("file",function (evt) {
+            if(evt.success){
+                plotEditControl.setPlottingLayer(evt.sitDataLayers[0]);
+                plottingLayer = evt.sitDataLayers[0];
+            }
+        });
+    }
+
+    //删除指定标号
+    function deleteSeleGeo() {
+        plottingLayer.removeGeoGraphicObject(plottingLayer._selectedFeature);
+    }
+
+    function clearLayers() {
+        plottingLayer.removeAll();
+    }
+
+    //“Delete”按键删除选中标号
+    //"Enter"按键搜索标号
+    $(document).keydown(function (event) {
+        if (event.keyCode === 46) {
+            deleteSeleGeo();
+        } else if (event.keyCode === 13) {
+            querySymbolLib();
+        }
+    });
+</script>
+</body>
+</html>

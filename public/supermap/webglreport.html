@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <title>WEBGL REPORT</title>
+    <link href='./examples/css/bootstrap.min.css' rel='stylesheet' />
+    <link href='./examples/css/bootstrap-responsive.min.css' rel='stylesheet' />
+    <link href='./examples/css/sm-extend.css' rel='stylesheet' />
+    <link href='./examples/css/sm-doc.css' rel='stylesheet' />
+    <script  src="./examples/js/jquery.min.js"></script>
+    <script  src="./examples/js/underscore-min.1.4.4.js"></script>
+    <title></title>
+</head>
+<style>
+    *{
+        margin:0;
+        padding:0;
+    }
+    #content{
+        background-color:#fff;
+        width:750px;
+        padding:20px;
+        margin:0 auto;
+        border-left: 1px solid #ddd;
+        border-right:1px solid #ddd;
+        -moz-box-shadow:0px 0px 16px #aaa;
+    }
+    .head{
+        font-family:Helvetica,Arial,Verdana;
+        text-transform:uppercase;
+        font-weight:bold;
+        font-size:12px;
+        font-style:normal;
+        letter-spacing:3px;
+        color:#888;
+        border-bottom:3px solid #f0f0f0;
+        padding-bottom:10px;
+        margin-bottom:10px;
+    }
+    .head a{
+        color:#1D81B6;
+        text-decoration:none;
+        float:right;
+        text-shadow:1px 1px 1px #888;
+    }
+    .head a:hover{
+        color:#f0f0f0;
+    }
+    #content h1{
+        font-family:"Trebuchet MS",sans-serif;
+        color:#1D81B6;
+        font-weight:normal;
+        font-style:normal;
+        text-shadow:1px 1px 1px #aaa;
+        text-align: center;
+        padding-bottom: 20px;
+    }
+    #content h2{
+        font-family:"Trebuchet MS",sans-serif;
+        font-size:34px;
+        font-style:normal;
+        background-color:#f0f0f0;
+        margin:40px 0px 30px -40px;
+        padding:0px 40px;
+        clear:both;
+        float:left;
+        width:100%;
+        color:#aaa;
+        text-shadow:1px 1px 1px #fff;
+    }
+    table.table1{
+        font-family: "Trebuchet MS", sans-serif;
+        font-size: 16px;
+        font-weight: bold;
+        line-height: 1.4em;
+        font-style: normal;
+        border-collapse:separate;
+    }
+    .table1 thead th{
+        padding:15px;
+        color:#fff;
+        text-shadow:1px 1px 1px #568F23;
+        border:1px solid #61b3e3;
+        border-bottom:3px solid #61b3e3;
+        background-color:#9DD929;
+        background:-webkit-gradient(
+                linear,
+                left bottom,
+                left top,
+                color-stop(0.02, rgb(123,192,67)),
+                color-stop(0.51, rgb(139,198,66)),
+                color-stop(0.87, rgb(158,217,41))
+        );
+        background:-webkit-gradient(
+                linear,
+                left bottom,
+                left top,
+                color-stop(0.02, #61b3e3),
+                color-stop(0.51, #58a8e3),
+                color-stop(0.87,#2f7fba)
+        );
+        background: -moz-linear-gradient(
+                center bottom,
+                rgb(123,192,67) 2%,
+                rgb(139,198,66) 51%,
+                rgb(158,217,41) 87%
+        );
+        background: -moz-linear-gradient(
+                center bottom,
+                #61b3e3 2%,
+                #58a8e3 51%,
+                #2f7fba 87%
+        );
+        -webkit-border-top-left-radius:5px;
+        -webkit-border-top-right-radius:5px;
+        -moz-border-radius:5px 5px 0px 0px;
+        border-top-left-radius:5px;
+        border-top-right-radius:5px;
+    }
+    .table1 thead th:empty{
+        background:transparent;
+        border:none;
+    }
+    .table1 tbody th{
+        color:#fff;
+        text-shadow:1px 1px 1px #568F23;
+        background-color:#9DD929;
+        border:1px solid #61b3e3;
+        padding:0px 10px;
+        background:-webkit-gradient(
+                linear,
+                left bottom,
+                right top,
+                color-stop(0.02, rgb(158,217,41)),
+                color-stop(0.51, rgb(139,198,66)),
+                color-stop(0.87, rgb(123,192,67))
+        );
+        background:-webkit-gradient(
+                linear,
+                left bottom,
+                left top,
+                color-stop(0.02, #61b3e3),
+                color-stop(0.51, #58a8e3),
+                color-stop(0.87,#2f7fba)
+        );
+        background: -moz-linear-gradient(
+                left bottom,
+                rgb(158,217,41) 2%,
+                rgb(139,198,66) 51%,
+                rgb(123,192,67) 87%
+        );
+        background: -moz-linear-gradient(
+                left bottom,
+                #61b3e3 2%,
+                #58a8e3 51%,
+                #2f7fba 87%
+        );
+        -moz-border-radius:5px 0px 0px 5px;
+        -webkit-border-top-left-radius:5px;
+        -webkit-border-bottom-left-radius:5px;
+        border-top-left-radius:5px;
+        border-bottom-left-radius:5px;
+    }
+    .table1 tfoot td{
+        color: #9CD009;
+        font-size:32px;
+        text-align:center;
+        padding:10px 0px;
+        text-shadow:1px 1px 1px #444;
+    }
+    .table1 tfoot th{
+        color:#666;
+    }
+    .table1 tbody td{
+        padding:10px;
+        text-align:center;
+        background-color:#DEF3CA;
+        border: 2px solid #E7EFE0;
+        -moz-border-radius:2px;
+        -webkit-border-radius:2px;
+        border-radius:2px;
+        color:#666;
+        text-shadow:1px 1px 1px #fff;
+    }
+    .table1 tbody span.check::before{
+        content : url(./examples/images/check0.png)
+    }
+    .table1 tbody span.uncheck{
+        color: red;
+        font-size: 32px;
+    }
+    .table1 tbody td.unsupport{
+        color:red;
+    }
+</style>
+<body>
+    <!--导航条-->
+    <div class="navbar navbar-fixed-top" id="navbar">
+    </div>
+    <div id="content">
+    </div>
+    <script type="text/template" id="reportTemplate">
+        <h1>WEBGL REPORT</h1>
+        <%if(report.support == false){%>
+            <div>
+                <h3 style="color: red;">您的浏览器不支持WEBGL!</h3>
+            </div>
+        <%}else{%>
+            <table class="table1">
+                <thead>
+                <tr>
+                    <th></th>
+                    <th scope="col" abbr="Starter">支持</th>
+                    <th scope="col" abbr="Medium">描述</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <th scope="row">WEGBL</th>
+                    <td><span class="check"></span></td>
+                    <td>您的浏览器支持WEBGL，版本 <%= report.webglVersion %>.0</td>
+                </tr>
+                <tr>
+                    <th scope="row">深度纹理</th>
+                    <%if(report.extensions.indexOf('WEBGL_depth_texture') != -1){ %>
+                    <td><span class="check"></span></td>
+                    <td>可以正常拾取场景中的深度，翻转平移等交互操作将以拾取点作为参考。</td>
+                    <%}else{%>
+                    <td><span class="uncheck">&times;</span></td>
+                    <td class="unsupport">无法拾取场景中的深度信息，翻转平移等交互操作将以球面作为参考。</td>
+                    <%}%>
+                </tr>
+                <tr>
+                    <th scope="row">实例化</th>
+                    <%if(report.extensions.indexOf('ANGLE_instanced_arrays') != -1){ %>
+                    <td><span class="check"></span></td>
+                    <td>以扩展方式支持实例化渲染，可以大幅提升实例化数据的渲染效率。</td>
+                    <%}else{%>
+                    <td><span class="uncheck">&times;</span></td>
+                    <td class="unsupport">不支持实例化渲染！</td>
+                    <%}%>
+                </tr>
+                <tr>
+                    <th scope="row">DDS纹理压缩</th>
+                    <%if(report.extensions.indexOf('WEBGL_compressed_texture_s3tc') != -1){ %>
+                    <td><span class="check"></span></td>
+                    <td>支持DDS纹理压缩（DXT1、DXT3、DXT5纹理格式），大幅降低显存。</td>
+                    <%}else{%>
+                    <td><span class="uncheck">&times;</span></td>
+                    <td class="unsupport">不支持DDS纹理压缩！</td>
+                    <%}%>
+                </tr>
+                <tr>
+                    <th scope="row">ETC纹理压缩</th>
+                    <%if(report.extensions.indexOf('WEBGL_compressed_texture_etc1') != -1){ %>
+                    <td><span class="check"></span></td>
+                    <td>支持ETC纹理压缩，主要使用于安卓系列移动设备，节省存储空间。</td>
+                    <%}else{%>
+                    <td><span class="uncheck">&times;</span></td>
+                    <td class="unsupport">不支持ETC纹理压缩。</td>
+                    <%}%>
+                </tr>
+                <tr>
+                    <th scope="row">PVR纹理压缩</th>
+                    <%if(report.extensions.indexOf('WEBGL_compressed_texture_pvr') != -1){ %>
+                    <td><span class="check"></span></td>
+                    <td>支持PVR纹理压缩，主要适用于苹果系列移动设备，节省存储空间。</td>
+                    <%}else{%>
+                    <td><span class="uncheck">&times;</span></td>
+                    <td class="unsupport">不支持PVR纹理压缩(主要用于苹果系列移动设备)。</td>
+                    <%}%>
+                </tr>
+                <tr>
+                    <th scope="row">float纹理</th>
+                    <%if(report.extensions.indexOf('OES_texture_float') != -1){ %>
+                    <td><span class="check"></span></td>
+                    <td>支持float纹理。</td>
+                    <%}else{%>
+                    <td><span class="uncheck">&times;</span></td>
+                    <td class="unsupport">不支持float纹理。</td>
+                    <%}%>
+                </tr>
+                </tbody>
+            </table>
+        <%}%>
+    </script>
+    <script>
+        $(function() {
+            "use strict";
+
+            var webglVersion = window.location.search.indexOf('v=2') > 0 ? 2 : 1;
+
+            var template = _.template($('#reportTemplate').html());
+            var report = {
+                platform: navigator.platform,
+                userAgent: navigator.userAgent,
+                webglVersion: webglVersion,
+                support : true
+            };
+
+            if ((webglVersion === 2 && !window.WebGL2RenderingContext) ||
+                    (webglVersion === 1 && !window.WebGLRenderingContext)) {
+                // The browser does not support WebGL
+                report.support = false;
+                renderReport();
+                return;
+            }
+
+            var canvas = $('<canvas />', { width: '1', height: '1' }).appendTo('body');
+            var gl;
+            var possibleNames = (webglVersion === 2) ? ['webgl2', 'experimental-webgl2'] : ['webgl', 'experimental-webgl'];
+            var contextName = _.find(possibleNames, function (name) {
+                gl = canvas[0].getContext(name, { stencil: true });
+                return !!gl;
+            });
+            canvas.remove();
+            function renderReport(header) {
+                $('#content').html(template({
+                    report: report
+                }));
+            }
+
+            report = _.extend(report, {
+                contextName: contextName,
+                glVersion: gl.getParameter(gl.VERSION),
+                extensions: gl.getSupportedExtensions()
+            });
+            renderReport();
+            window.gl = gl;
+        });
+    </script>
+    <script src='./examples/js/bootstrap.js'></script>
+    <script src="examples/js/navbar.js"></script>
+</body>
+</html>
