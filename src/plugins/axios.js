@@ -24,10 +24,10 @@ export const Service = axios.create(config);
 Service.interceptors.request.use(
   function (config) {
     // Do something before request is sent
-    loadingInstance = Loading.service({
-      lock: true,
-      text: "请稍后...",
-    });
+    // loadingInstance = Loading.service({
+    //   lock: true,
+    //   text: "请稍后...",
+    // });
     //身份认证相关设置
     // const token = store.state.token;
     // token && (config.headers.Authorization = token);
@@ -42,7 +42,6 @@ Service.interceptors.request.use(
 // Add a response interceptor
 Service.interceptors.response.use(
   function (response) {
-    debugger
     if (loadingInstance) {
       loadingInstance.close();
     }
@@ -57,7 +56,6 @@ Service.interceptors.response.use(
   },
   function (error) {
     console.log(error["response"]);
-    debugger
     if (loadingInstance) {
       loadingInstance.close();
     }
