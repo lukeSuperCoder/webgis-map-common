@@ -60,7 +60,7 @@ module.exports = {
     },
   },
   devServer: {
-    port: 8081, // 端口号
+    port: 5555, // 端口号
     open: false, //配置是否自动启动浏览器
     https: false,// https:{type:Boolean}是否启用https
     proxy: {
