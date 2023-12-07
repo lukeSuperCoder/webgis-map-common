@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>mapbox</title>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v2.0.0/mapbox-gl.css' rel='stylesheet' />
+    
+    <style>
+        body { margin:0; padding:0; }
+				html,body {
+			   padding: 0;
+			  margin: 0;
+			  height: 100%;
+		}
+		#map {
+			width: 100%;
+			height: 100%;
+		}
+        #map { position:absolute; top:0; bottom:0; width:100%; }
+        .map-legend{
+            position:absolute;
+            z-index: 5;
+        }
+        .measure-result {
+            background-color: white;
+            border-radius: 3px;
+            height: 16px;
+            line-height: 16px;
+            padding: 0 3px;
+            font-size: 12px;
+            box-shadow: 0 0 0 1px #ccc;
+            position: absolute;
+        }
+        .measure-result .close {
+            cursor: pointer;
+            width: 14px;
+            height: 14px;
+            line-height: 16px;
+            text-align: center;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+    <div id='map'>
+        <div class="map-legend">  
+    </div>
+    </div>
+    <script src='https://api.mapbox.com/mapbox-gl-js/v2.0.0/mapbox-gl.js'></script>	
+	<script>
+		var vecUrl = "http://t0.tianditu.com/vec_w/wmts?tk=a633a372f3e7db22bdf13167950247f2";
+        var cvaUrl = "http://t0.tianditu.com/cva_w/wmts?tk=a633a372f3e7db22bdf13167950247f2";
+		var tdtVec = {
+			//类型为栅格瓦片
+			"type": "raster",
+			'tiles': [
+				//请求地址
+				vecUrl + "&SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=vec&STYLE=default&TILEMATRIXSET=w&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=tiles"
+			],
+			//分辨率
+			'tileSize': 256
+		};
+		var tdtCva = {
+			"type": "raster",
+			'tiles': [
+				cvaUrl + "&SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=cva&STYLE=default&TILEMATRIXSET=w&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=tiles"
+			],
+			'tileSize': 256
+		};
+		mapboxgl.accessToken = 'pk.eyJ1IjoibW9ob25nIiwiYSI6ImNrNGFsdjY5ZzA1NW4zbG14b2JoMnA5c3IifQ.1qVWFsyHW2wKThTgQg08SA';
+		const map = new mapboxgl.Map({
+			//地图容器div的id
+                container: 'map',
+                style: {
+                    //设置版本号，一定要设置
+                    "version": 8,
+                    //添加来源
+                    "sources": {
+                        "tdtVec": tdtVec,
+                        "tdtCva": tdtCva,
+                    },
+                    sprite: 'mapbox://sprites/mapbox/streets-v11',
+                    glyphs: 'mapbox://fonts/mapbox/{fontstack}/{range}.pbf',
+                    "layers": [
+                        {
+                            //图层id，要保证唯一性
+                            "id": "tdtVec",
+                            //图层类型
+                            "type": "raster",
+                            //数据源
+                            "source": "tdtVec",
+                            //图层最小缩放级数
+                            "minzoom": 0,
+                            //图层最大缩放级数
+                            "maxzoom": 17
+                        },
+						{
+							"id": "tdtCva",
+							"type": "raster",
+							"source": "tdtCva",
+							"minzoom": 0,
+							"maxzoom": 17
+						}
+                    ],
+                },
+                //地图中心点
+                center: [113.14371373500097,26.939001572414696],
+                //地图当前缩放级数
+                zoom: 4,
+                minZoom:3.5
+		});
+
+	</script>
+
+</body>
