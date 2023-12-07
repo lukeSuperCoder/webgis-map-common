@@ -59,6 +59,12 @@ const routes = [
         meta: {},
         component: () => import("../views/SystemManagement/AntvMap.vue"),
       },
+      {
+        path: "/LeafletMap",
+        name: "LeafletMap",
+        meta: {},
+        component: () => import("../views/SystemManagement/LeafletMap.vue"),
+      }
     ],
   },
   {

@@ -61,6 +61,15 @@
           "id": 2,
           "value": "/MapBoxTest"
         }
+      },
+      {
+        "entity": {
+          "alias": "leaflet测试",
+          "name": "LeafletMap",
+          "icon": "el-icon-user",
+          "id": 2,
+          "value": "/LeafletMap"
+        }
       }
     ]
   }
