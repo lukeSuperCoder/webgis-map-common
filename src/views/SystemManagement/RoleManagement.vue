@@ -64,8 +64,8 @@ export default {
   },
   computed: {},
   mounted() {
-    this.getRoleInfoData();
-    this.initData();
+    // this.getRoleInfoData();
+    // this.initData();
   },
   methods: {
     initData: function () {

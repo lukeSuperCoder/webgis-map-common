@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>vue-manage-system</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no">
+
+    <!-- mapbox-gl -->
+    <script src="https://api.tiles.mapbox.com/mapbox-gl-js/v1.6.1/mapbox-gl.js"></script>
+    <link href="https://api.tiles.mapbox.com/mapbox-gl-js/v1.6.1/mapbox-gl.css" rel="stylesheet" />
+	<!-- echart-->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@3.8.5/dist/echarts.js"></script>
+  
+</head>
+<body>
+<div style=" width: 100%;
+  height: 100%;
+  position: absolute;" id="thematicMapDiv"></div>
+<script>
+//数据为模拟数据，仅供参考
+window.onload=function(){
+	addBasicMap();
+	//专题数据
+	window.thematicdata=[{"XZQH":"110000","BZ3":30.0,"XZQHMC":"北京市","BZ2":10.0,"GEOJSON":"{\"type\": \"Feature\",\"properties\": {},\"geometry\": {\"type\": \"Point\",\"coordinates\": [116.412616834352,40.1855914174138 ]}}"},{"XZQH":"140000","BZ3":50.0,"XZQHMC":"山西省","BZ2":20.0,"GEOJSON":"{\"type\": \"Feature\",\"properties\": {},\"geometry\": {\"type\": \"Point\",\"coordinates\": [112.288799420842,37.5712486062551 ]}}"},{"XZQH":"220000","BZ3":500.0,"XZQHMC":"吉林省","BZ2":300.0,"GEOJSON":"{\"type\": \"Feature\",\"properties\": {},\"geometry\": {\"type\": \"Point\",\"coordinates\": [126.187672031028,43.6682548638262 ]}}"},{"XZQH":"360000","BZ3":100.0,"XZQHMC":"江西省","BZ2":2000.0,"GEOJSON":"{\"type\": \"Feature\",\"properties\": {},\"geometry\": {\"type\": \"Point\",\"coordinates\": [115.72225295253,27.6141576799222 ]}}"}];
+	window.thematicHeader={"XZQH":"行政区划","BZ3":"小学","XZQHMC":"行政区划名称","BZ2":"初中","GEOJSON":"坐标"};
+	//需要清理的对象
+	 window.echartMapPoints=[];
+	 window.echartInitLists=[];
+	
+	addThematicEchartLayer();
+	
+}
+//天地图（各个区域的token可以在网上查到）
+var vecUrl = "http://192.168.200.141/wmts/vec_w/wmts?tk=9254b8157f0ff0a6331196e4afc27cb6";
+var cvaUrl = "http://192.168.200.141/wmts/cva_w/wmts?tk=9254b8157f0ff0a6331196e4afc27cb6";
+//使用严格模式
+"use strict";
+//实例化source对象
+var tdtVec = {
+    //类型为栅格瓦片
+    "type": "raster",
+    'tiles': [
+        //请求地址
+        vecUrl + "&SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=vec&STYLE=default&TILEMATRIXSET=w&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=tiles" 
+    ],
+    //分辨率
+    'tileSize': 256
+};
+var tdtCva = {           
+    "type": "raster",
+    'tiles': [               
+        cvaUrl + "&SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=cva&STYLE=default&TILEMATRIXSET=w&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=tiles" 
+    ],            
+    'tileSize': 256
+}; 
+//加载底图
+function addBasicMap(){
+  //这个可以自己去mapboxgl官网申请key
+ mapboxgl.accessToken = 'pk.eyJ1IjoibHVjaGFuZzY2NiIsImEiOiJjbDAyMDVyMXMweW9qM2RuZnZiemxzbGdoIn0.JhMWPCeC_5h0k0eM3LdOTA';
+ window.map = new mapboxgl.Map({
+      container: "thematicMapDiv",
+      style: {
+                 //设置版本号，一定要设置
+                 "version": 8,
+                 //添加来源
+                 "sources": {
+                     "tdtVec": tdtVec,
+                     "tdtCva": tdtCva
+                 },
+                 "layers": [
+                      {
+                          //图层id，要保证唯一性
+                          "id": "tdtVec",
+                          //图层类型
+                          "type": "raster",
+                          //数据源
+                          "source": "tdtVec",
+                          //图层最小缩放级数
+                          "minzoom": 0,
+                          //图层最大缩放级数
+                          "maxzoom": 17
+                      },
+                      {
+                          "id": "tdtCva",
+                          "type": "raster",
+                          "source": "tdtCva",
+                          "minzoom": 0,
+                          "maxzoom": 17
+                      }
+                 ],
+             },
+       center: [113.9, 33.5],
+       zoom: 4
+    });
+}
+
+//加载专题地图
+function addThematicEchartLayer() {
+      //销毁echartLists
+      clearEchartInstantAndPoint();
+	  //专题数据处理及加载到地图
+      window.thematicdata.forEach(element => {
+        var geojson = JSON.parse(element.GEOJSON);
+        var el1 = document.createElement("div");
+        el1.id = "thematicchart" + element.XZQH;
+        el1.style = "height:100px;width:100px;";
+        window.echartMapPoints.push( new mapboxgl.Marker(el1, { offset: [-50 / 2, -50 / 2] })
+          .setLngLat([
+            geojson.geometry.coordinates[0],
+            geojson.geometry.coordinates[1]
+          ])
+          .addTo(window.map));
+		  //echart初始化专题图
+		  addEchartInit(element);
+	
+})}
+
+//echart初始化专题图
+function addEchartInit(element){
+		var data = [];
+        Object.keys(window.thematicHeader).forEach(key => {
+          if (key.indexOf("BZ") != -1) {
+            data.push({ name: window.thematicHeader[key], value: element[key] });
+          }
+          });
+        var option1 = {
+            tooltip : {
+            trigger: 'item',
+            formatter: "{a}<br/>{b} : {c} ({d}%)"
+          },
+          series: {
+            name:element.XZQHMC,
+            type: "pie",
+            data: data,
+            radius: "50%",
+            center: ["50%", "50%"],
+            label: {
+              normal: {
+                position: "inner",
+                fontSize:10
+              },
+              
+            }
+          }
+        };
+		window.echartInitLists.push(initEchart("thematicchart" + element.XZQH, option1));
+   
+		
+}
+//初始化echart表
+function initEchart(id,options){
+  var mychart = echarts.init(document.getElementById(id));
+  mychart.setOption(options);
+  return mychart;
+}
+
+//清除echart及marker
+function clearEchartInstantAndPoint(){
+		window.echartInitLists.forEach(echartItem => {
+                  echartItem.dispose();
+          });
+        window.echartMapPoints.forEach(pointItem => {
+            pointItem.remove();
+          });
+}
+</script>
+</body>
+</html>
+
+

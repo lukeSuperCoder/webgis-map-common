@@ -141,7 +141,7 @@ export default {
   computed: {},
   mounted() {
     // this.promiseDemo();
-    this.getUserInfoData();
+    // this.getUserInfoData();
   },
   methods: {
     getCal(date,data) {

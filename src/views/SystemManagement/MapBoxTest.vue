@@ -1,6 +1,7 @@
 <template>
   <div id="map" class="main">
-    <el-button @click="removeDraw">123</el-button>
+    <el-button @click="removeDraw">删除</el-button>
+    <el-button @click="addCrontor">添加绘制</el-button>
   </div>
 </template>
 
@@ -84,12 +85,8 @@ export default {
                         // "tdtCva": tdtCva,
                         // "tdtIbo": tdtIbo
                     },
-                    // sprite: 'mapbox://sprites/mapbox/streets-v11',
-                    // glyphs: 'mapbox://fonts/mapbox/{fontstack}/{range}.pbf',
-                    glyphs:
-                    'http://120.46.161.91:30859/v1/rest/fileproxy/dataobjects/default/font/{fontstack}/{range}.pbf',
-                    sprite:
-                    'http://120.46.161.91:30859/v1/rest/fileproxy/dataobjects/default/icon/common',
+                    sprite: 'mapbox://sprites/mapbox/streets-v11',
+                    glyphs: 'mapbox://fonts/mapbox/{fontstack}/{range}.pbf',
                     "layers": [
                         {
                             //图层id，要保证唯一性
@@ -119,11 +116,22 @@ export default {
                         // }
                     ],
                 },
+                // style: "mapbox://styles/mapbox/streets-v11",
                 //地图中心点
                 center: [113.14371373500097,27.939001572414696],
                 //地图当前缩放级数
                 zoom: 5,
-                minZoom:3.5
+                minZoom:3.5,
+                transformRequest: (url, resourceType) => {
+                if (url.indexOf('http://10.1.140.55:7006') > -1) {
+                    return {
+                        url: url,
+                        // headers: {'my-custom-header': true},
+                        // credentials: 'include'  // Include cookies for cross-origin requests,
+                        method: 'POST'
+                    };
+                    }
+                }
             });
             //实例化导航控件
             var nav = new mapboxgl.NavigationControl(
@@ -139,54 +147,69 @@ export default {
             this.mapInstance.on('load', () => {
                 // this.addPieServise()
                 // this.addPieServiseByWangGe()
-                this.addPieServiseByPutong()
+                // this.addPieServiseByPutong()
                 // this.addShuiYinLayer()
                 // this.addShuiYinLayer1()
                 this.addMvtService()
                 this.addMvtService1()
-                const fillLayer = {
-                        type: 'fill',
-                        id: 'dongchengqu',
-                        source: {
-                            type: 'geojson',
-                            data: dongchengquGeoJSON,
-                        },
-                        paint: {
-                            'fill-color': '#68A2EA',
-                            'fill-opacity': 0.3,
-                        },
-                    }
-                    const lineLayer = {
-                        type: 'line',
-                        id: 'dongchengquLIN',
-                        source: {
-                            type: 'geojson',
-                            data: dongchengquLineGeoJSON,
-                        },
-                        paint: {
-                            'line-color': '#68A2EA',
-                            'line-width': 3,
-                            'line-dasharray': [0.2, 3],
-                        },
-                        layout: {
-                            'line-join': 'round',
-                            'line-cap': 'round',
-                        },
-                    }
-                    this.mapInstance.addLayer(lineLayer)
-                    this.mapInstance.addLayer(fillLayer)
+                // this.addMvtService2()
+                // this.addMvtService3()
+                // this.addMvtService4()
+                // this.addMvtService5()
+                // this.addMvtFill()
+                // const fillLayer = {
+                //         type: 'fill',
+                //         id: 'dongchengqu',
+                //         source: {
+                //             type: 'geojson',
+                //             data: dongchengquGeoJSON,
+                //         },
+                //         paint: {
+                //             'fill-color': '#68A2EA',
+                //             'fill-opacity': 0.3,
+                //         },
+                //     }
+                //     const lineLayer = {
+                //         type: 'line',
+                //         id: 'dongchengquLIN',
+                //         source: {
+                //             type: 'geojson',
+                //             data: dongchengquLineGeoJSON,
+                //         },
+                //         paint: {
+                //             'line-color': '#68A2EA',
+                //             'line-width': 3,
+                //             'line-dasharray': [0.2, 3],
+                //         },
+                //         layout: {
+                //             'line-join': 'round',
+                //             'line-cap': 'round',
+                //         },
+                //     }
+                //     this.mapInstance.addLayer(lineLayer)
+                //     this.mapInstance.addLayer(fillLayer)
                     // this.addImgMarker(1)
                     // this.addImgMarker(2)
-                    var arr = [[116.105419,39.214714],[115.405419,38.914714],[116.805419,38.914714],[112.405419,39.914714],[111.405419,39.514714]]
-                    var imgarr = ['logout.png','logout.png','logout.png','user.png','user.png']
-                    for (let index = 0; index < 5; index++) {
-                       this.addImgPoint(index+'',index+'',arr[index],imgarr[index])       
-                    }
-                    this.mapInstance.on('click', (e) => {
-                        
-                        console.log(this.mapInstance.getZoom());
+                    // var arr = [[116.105419,39.214714],[115.405419,38.914714],[116.805419,38.914714],[112.405419,39.914714],[111.405419,39.514714]]
+                    // var imgarr = ['ic_gonggongweisheng.svg']
+                    // for (let index = 0; index < 5; index++) {
+                    //    this.addImgPoint(index+'',index+'',arr[index],imgarr[index])       
+                    // }
+                    const symbol = "https://docs.mapbox.com/mapbox-gl-js/assets/custom_marker.png";
+                    this.mapInstance.loadImage(symbol, (error, image) => {
+                    if (error) throw error;
+                    this.mapInstance.addImage('image123321', image);
+                    console.log(this.mapInstance.hasImage('image123321'),'image123321');
+                    // Add a data source containing one point feature.
+                    
+                    });
+                    console.log(this.mapInstance.style._layers);
+                    this.mapInstance.on('click',"2021qg_sheng", (e) => {
+                        console.log(e.features);
+                        // console.log(this.mapInstance.getZoom());
                     })
                     // this.addCrontor()
+                    this.mapInstance.on('click', this.mapClickEvent);
             })
         },
         addImgMarker(type) {
@@ -275,6 +298,7 @@ export default {
         },
         addImgPoint(id,type,point,imgUrl) {
             var symbol = require('../../assets/image/home/'+imgUrl) //养老机构
+            console.log(symbol);
             this.mapInstance.loadImage(
                 symbol,
                 (error, image) => {
@@ -305,7 +329,7 @@ export default {
                         'source': id, // reference the data source
                         'layout': {
                             'icon-image': id, // reference the image
-                            'icon-size': 1
+                            'icon-size': 20
                         }
                     });
                 }
@@ -327,7 +351,7 @@ export default {
              }
         },
         highLight() {
-            this.addImgPoint(10+'',10+'',[116.105419,39.214714],'user.png')
+            this.addImgPoint(10+'',10+'',[116.105419,39.214714],'ic_gonggongweisheng.svg')
         },
         //地图添加弹框
         addTextPoint(data) {
@@ -381,7 +405,7 @@ export default {
         },
         //添加pie地图服务
         addPieServise() {
-            const url = 'http://192.168.200.133:30080/v1/rest/services/tile/mtVVauqB2stXsnryVk6ve/ows_0674c119458e1001/wmts?TILEROW={y}&TileMatrixSet=WorldWebMercatorQuad&REQUEST=GetTile&VERSION=1.0.0&format=image/png&SERVICE=WMTS&style=default&TILEMATRIX={z}&layer=l0674c119464e1000&TILECOL={x}&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0ZW5hbnRJZCI6Im10VlZhdXFCMnN0WHNucnlWazZ2ZSIsImlkIjoiMDY0Nzg0YWY2YjBlMTAwMCIsInVzZXJJZCI6IllSTlZhd05oOFFiUU50anJYU25TcyJ9.wv9Re0NLNthhgfb9pwPAxI99WuzzBRwHkjQ8c7kKziY'
+            const url = 'http://120.46.161.91:30440/v1/rest/services/tile/KtXNwxZBUMDBslAJgdFry/ows_0662eeefb90e1001/mvt?SERVICE=MVT&LAYER=l0662eeefba0e1000&VERSION=1.0.0&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0ZW5hbnRJZCI6Ikt0WE53eFpCVU1EQnNsQUpnZEZyeSIsImlkIjoiMDYyZTBkNTM4ZTRlMTAwMCIsInVzZXJJZCI6IjN1NWlRamU4Q0cyZERWMUtRdVNPdCJ9.neEdjw4EkDgyJVMAVASQj4qyy0cup18bhP4FCdcMC9Q'
             const sourceId = 'ows_0662eeefb90e1001'
             const id = 'quanguosheng'
             this.mapInstance.addSource(id, {
@@ -404,7 +428,7 @@ export default {
         //添加标注信息
         addShuiYinLayer() {
             const id = 'isclear_shuiyin'
-            const url = 'http://192.168.200.133:30080/v1/rest/services/tile/mtVVauqB2stXsnryVk6ve/ows_0676368f17ce1001/wmts?TILEROW={y}&TileMatrixSet=WorldWebMercatorQuad&REQUEST=GetTile&VERSION=1.0.0&format=image/png&SERVICE=WMTS&style=default&TILEMATRIX={z}&layer=l0677847c7fce1000&TILECOL={x}&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0ZW5hbnRJZCI6Im10VlZhdXFCMnN0WHNucnlWazZ2ZSIsImlkIjoiMDY0Nzg0YWY2YjBlMTAwMCIsInVzZXJJZCI6IllSTlZhd05oOFFiUU50anJYU25TcyJ9.wv9Re0NLNthhgfb9pwPAxI99WuzzBRwHkjQ8c7kKziY'
+            const url = 'http://192.168.200.133:30080/v1/rest/services/tile/mtVVauqB2stXsnryVk6ve/ows_0693713f620e1000/wmts?TILEROW={y}&TileMatrixSet=WorldWebMercatorQuad&REQUEST=GetTile&VERSION=1.0.0&format=image/png&SERVICE=WMTS&style=default&TILEMATRIX={z}&layer=l0693713f63ce1000&TILECOL={x}&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0ZW5hbnRJZCI6Im10VlZhdXFCMnN0WHNucnlWazZ2ZSIsImlkIjoiMDY0Nzg0YWY2YjBlMTAwMCIsInVzZXJJZCI6IllSTlZhd05oOFFiUU50anJYU25TcyJ9.wv9Re0NLNthhgfb9pwPAxI99WuzzBRwHkjQ8c7kKziY'
             this.mapInstance.addSource(id, {
                 type: 'raster',
                 tiles: [url],
@@ -435,45 +459,64 @@ export default {
         },
         addMvtService() {
             var that = this;
+            var areacode = ["410000000000"]
             fetch(
-                    'http://192.168.200.133:30080/v1/rest/services/tile/mtVVauqB2stXsnryVk6ve/ows_0678de70e20e1001/mvt?SERVICE=MVT&LAYER=l0678de70e30e1000&VERSION=1.0.0&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0ZW5hbnRJZCI6Im10VlZhdXFCMnN0WHNucnlWazZ2ZSIsImlkIjoiMDY0Nzg0YWY2YjBlMTAwMCIsInVzZXJJZCI6IllSTlZhd05oOFFiUU50anJYU25TcyJ9.wv9Re0NLNthhgfb9pwPAxI99WuzzBRwHkjQ8c7kKziY'
+                    `http://192.168.200.133:30080/v1/rest/services/tile/mtVVauqB2stXsnryVk6ve/ows_06961533fd0e1000/mvt?SERVICE=MVT&LAYER=l06961533fe0e1000&VERSION=1.0.0&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0ZW5hbnRJZCI6Im10VlZhdXFCMnN0WHNucnlWazZ2ZSIsImlkIjoiMDY0Nzg0YWY2YjBlMTAwMCIsInVzZXJJZCI6IllSTlZhd05oOFFiUU50anJYU25TcyJ9.wv9Re0NLNthhgfb9pwPAxI99WuzzBRwHkjQ8c7kKziY`
                 )
                 .then((res) => res.json())
                 .then((res1) => {
                     console.log('res1', res1);
-                    that.mapInstance.addSource('id', {
+                    that.mapInstance.addSource('test_mvt', {
                         type: 'vector',
-                        url: 'http://192.168.200.133:30080/v1/rest/services/tile/mtVVauqB2stXsnryVk6ve/ows_0678de70e20e1001/mvt?SERVICE=MVT&LAYER=l0678de70e30e1000&VERSION=1.0.0&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0ZW5hbnRJZCI6Im10VlZhdXFCMnN0WHNucnlWazZ2ZSIsImlkIjoiMDY0Nzg0YWY2YjBlMTAwMCIsInVzZXJJZCI6IllSTlZhd05oOFFiUU50anJYU25TcyJ9.wv9Re0NLNthhgfb9pwPAxI99WuzzBRwHkjQ8c7kKziY',
+                        url: `http://192.168.200.133:30080/v1/rest/services/tile/mtVVauqB2stXsnryVk6ve/ows_06961533fd0e1000/mvt?SERVICE=MVT&LAYER=l06961533fe0e1000&VERSION=1.0.0&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0ZW5hbnRJZCI6Im10VlZhdXFCMnN0WHNucnlWazZ2ZSIsImlkIjoiMDY0Nzg0YWY2YjBlMTAwMCIsInVzZXJJZCI6IllSTlZhd05oOFFiUU50anJYU25TcyJ9.wv9Re0NLNthhgfb9pwPAxI99WuzzBRwHkjQ8c7kKziY`,
                     });
                     let creatLayers = JsonToMapbox(
                         JSON.parse(
-                            `{"Others":{"Scale":{"Min":0,"Max":24}},"Type":"point","Filter":{"Attribute":{"LogicalOperator":"And","Rule":[]}},"Mode":"simple","Label":{"Field":"sheng","OutlineColor":{"Hex":"#FFFFFF","Opacity":0},"Position":{"Anchor":"bottom","Angle":0},"Color":{"Hex":"#000000","Opacity":1},"Blur":0,"YOffset":0,"Scale":{"Min":0,"Max":24},"XOffset":0,"Overlap":true,"Font":{"Size":14,"Family":"Noto Sans Regular"},"OutlineWidth":1},"Style":[{"Type":"vector","OutlineColor":{"Hex":"#474747","Opacity":0.9},"Size":2,"Color":{"Hex":"#2483EB","Opacity":1},"Visible":false,"Blur":0,"Style":"circle","YOffset":0,"XOffset":0,"OutlineWidth":1}]}`
+                             '{"Others":{"Scale":{"Min":0,"Max":24}},"Type":"point","Filter":{"Attribute":{"LogicalOperator":"And","Rule":[]}},"Mode":"simple","Label":{"Field":"sheng","OutlineColor":{"Hex":"#FF0000","Opacity":0},"Position":{"Anchor":"bottom","Angle":0},"Color":{"Hex":"#000000","Opacity":1},"Blur":0,"YOffset":0,"Scale":{"Min":0,"Max":24},"XOffset":0,"Overlap":true,"Font":{"Size":14,"Family":"Noto Sans Regular"},"OutlineWidth":0},"Style":[{"Type":"vector","OutlineColor":{"Hex":"#474747","Opacity":0.9},"Size":15,"Color":{"Hex":"#2483EB","Opacity":1},"Visible":false,"Blur":0,"Style":"circle","YOffset":0,"XOffset":0,"OutlineWidth":8}]}'
                         ),
-                        'id',
-                        'id',
+                        'test_mvt',
+                        'test_mvt',
                         res1.vector_layers[0].id
                     );
                     console.log(creatLayers);
                     creatLayers.forEach((v) => {
                         that.mapInstance.addLayer(v);
                     });
+                    that.mapInstance.setLayerZoomRange('test_mvt_0_0', 0, 6);
                 });
+                this.mapInstance.on('click',(e) => {
+                    console.log(e);
+                    var min_x = 110.3753969824229;
+                    var min_y = 32.576747359269504;
+                    var max_x = 115.05517036570535;
+                    var max_y = 29.776378554578216;
+                    const features = that.mapInstance.queryRenderedFeatures(
+                        [
+                            [min_x, min_y],
+                            [max_x, max_y],
+                        ],
+                        { layers: ["test_mvt_0_0"] }
+                    );
+                    console.log(features,'123321');
+
+                })
+                
         },
         addMvtService1() {
             var that = this;
             fetch(
-                    'http://192.168.200.133:30080/v1/rest/services/tile/mtVVauqB2stXsnryVk6ve/ows_0678de85844e1001/mvt?SERVICE=MVT&LAYER=l0678de85854e1000&VERSION=1.0.0&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0ZW5hbnRJZCI6Im10VlZhdXFCMnN0WHNucnlWazZ2ZSIsImlkIjoiMDY0Nzg0YWY2YjBlMTAwMCIsInVzZXJJZCI6IllSTlZhd05oOFFiUU50anJYU25TcyJ9.wv9Re0NLNthhgfb9pwPAxI99WuzzBRwHkjQ8c7kKziY'
+                    'http://192.168.200.133:30080/v1/rest/services/tile/mtVVauqB2stXsnryVk6ve/ows_0696520f430e1000/mvt?SERVICE=MVT&LAYER=l0696520f440e1000&VERSION=1.0.0&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0ZW5hbnRJZCI6Im10VlZhdXFCMnN0WHNucnlWazZ2ZSIsImlkIjoiMDY0Nzg0YWY2YjBlMTAwMCIsInVzZXJJZCI6IllSTlZhd05oOFFiUU50anJYU25TcyJ9.wv9Re0NLNthhgfb9pwPAxI99WuzzBRwHkjQ8c7kKziY'
                 )
                 .then((res) => res.json())
                 .then((res1) => {
                     console.log('res1', res1);
                     that.mapInstance.addSource('test_mvt1', {
                         type: 'vector',
-                        url: 'http://192.168.200.133:30080/v1/rest/services/tile/mtVVauqB2stXsnryVk6ve/ows_0678de85844e1001/mvt?SERVICE=MVT&LAYER=l0678de85854e1000&VERSION=1.0.0&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0ZW5hbnRJZCI6Im10VlZhdXFCMnN0WHNucnlWazZ2ZSIsImlkIjoiMDY0Nzg0YWY2YjBlMTAwMCIsInVzZXJJZCI6IllSTlZhd05oOFFiUU50anJYU25TcyJ9.wv9Re0NLNthhgfb9pwPAxI99WuzzBRwHkjQ8c7kKziY',
+                        url: 'http://192.168.200.133:30080/v1/rest/services/tile/mtVVauqB2stXsnryVk6ve/ows_0696520f430e1000/mvt?SERVICE=MVT&LAYER=l0696520f440e1000&VERSION=1.0.0&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0ZW5hbnRJZCI6Im10VlZhdXFCMnN0WHNucnlWazZ2ZSIsImlkIjoiMDY0Nzg0YWY2YjBlMTAwMCIsInVzZXJJZCI6IllSTlZhd05oOFFiUU50anJYU25TcyJ9.wv9Re0NLNthhgfb9pwPAxI99WuzzBRwHkjQ8c7kKziY',
                     });
                     let creatLayers = JsonToMapbox(
                         JSON.parse(
-                            `{"Others":{"Scale":{"Min":0,"Max":24}},"Type":"point","Filter":{"Attribute":{"LogicalOperator":"And","Rule":[]}},"Mode":"simple","Label":{"Field":"shengcode","OutlineColor":{"Hex":"#FFFFFF","Opacity":0},"Position":{"Anchor":"top","Angle":0},"Color":{"Hex":"#000000","Opacity":1},"Blur":0,"YOffset":0,"Scale":{"Min":0,"Max":24},"XOffset":0,"Overlap":true,"Font":{"Size":14,"Family":"Noto Sans Regular"},"OutlineWidth":1},"Style":[{"Type":"vector","OutlineColor":{"Hex":"#474747","Opacity":0.9},"Size":2,"Color":{"Hex":"#2483EB","Opacity":1},"Visible":false,"Blur":0,"Style":"circle","YOffset":0,"XOffset":0,"OutlineWidth":1}]}`
+                            '{"Others":{"Scale":{"Min":0,"Max":24}},"Type":"point","Filter":{"Attribute":{"LogicalOperator":"And","Rule":[]}},"Mode":"simple","Label":{"Field":"shengcode","OutlineColor":{"Hex":"#FF0000","Opacity":0},"Position":{"Anchor":"top","Angle":0},"Color":{"Hex":"#000000","Opacity":1},"Blur":0,"YOffset":0,"Scale":{"Min":0,"Max":24},"XOffset":0,"Overlap":true,"Font":{"Size":14,"Family":"DIN Offc Pro Medium"},"OutlineWidth":0},"Style":[{"Type":"vector","OutlineColor":{"Hex":"#474747","Opacity":0.9},"Size":15,"Color":{"Hex":"#2483EB","Opacity":1},"Visible":false,"Blur":0,"Style":"circle","YOffset":0,"XOffset":0,"OutlineWidth":8}]}'
                         ),
                         'test_mvt1',
                         'test_mvt1',
@@ -483,6 +526,116 @@ export default {
                     creatLayers.forEach((v) => {
                         that.mapInstance.addLayer(v);
                     });
+                    that.mapInstance.setLayerZoomRange('test_mvt1_0_0', 7, 10);
+
+                });
+        },
+        addMvtService2() {
+            var that = this;
+            fetch(
+                    'http://192.168.200.133:30080/v1/rest/services/tile/mtVVauqB2stXsnryVk6ve/ows_068aab533f8e1001/mvt?SERVICE=MVT&LAYER=l068aab53404e1000&VERSION=1.0.0&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0ZW5hbnRJZCI6Im10VlZhdXFCMnN0WHNucnlWazZ2ZSIsImlkIjoiMDY0Nzg0YWY2YjBlMTAwMCIsInVzZXJJZCI6IllSTlZhd05oOFFiUU50anJYU25TcyJ9.wv9Re0NLNthhgfb9pwPAxI99WuzzBRwHkjQ8c7kKziY'
+                )
+                .then((res) => res.json())
+                .then((res1) => {
+                    console.log('res1', res1);
+                    that.mapInstance.addSource('test_mvt2', {
+                        type: 'vector',
+                        url: 'http://192.168.200.133:30080/v1/rest/services/tile/mtVVauqB2stXsnryVk6ve/ows_068aab533f8e1001/mvt?SERVICE=MVT&LAYER=l068aab53404e1000&VERSION=1.0.0&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0ZW5hbnRJZCI6Im10VlZhdXFCMnN0WHNucnlWazZ2ZSIsImlkIjoiMDY0Nzg0YWY2YjBlMTAwMCIsInVzZXJJZCI6IllSTlZhd05oOFFiUU50anJYU25TcyJ9.wv9Re0NLNthhgfb9pwPAxI99WuzzBRwHkjQ8c7kKziY',
+                    });
+                    let creatLayers = JsonToMapbox(
+                        JSON.parse(
+                            '{"Others":{"Scale":{"Min":6,"Max":24}},"Type":"polygon","Filter":{"Attribute":{"LogicalOperator":"And","Rule":[]}},"Mode":"simple","Label":{"Field":""},"Style":[{"Type":"vector","OutlineColor":{"Hex":"#E1E1E1","Opacity":1},"Color":{"Hex":"#F5F4EE","Opacity":1},"OutlineStyle":"solid","Visible":true,"OutlineWidth":0.28}]}'
+                        ),
+                        'test_mvt2',
+                        'test_mvt2',
+                        res1.vector_layers[0].id
+                    );
+                    console.log(creatLayers);
+                    creatLayers.forEach((v) => {
+                        that.mapInstance.addLayer(v);
+                    });
+                    that.mapInstance.setLayerZoomRange('test_mvt2_0_0', 7, 15);
+                });
+        },
+        addMvtService3() {
+            var that = this;
+            fetch(
+                    'http://192.168.200.133:30080/v1/rest/services/tile/mtVVauqB2stXsnryVk6ve/ows_068aaeacd3ce1001/mvt?SERVICE=MVT&LAYER=l068aaeacd4ce1000&VERSION=1.0.0&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0ZW5hbnRJZCI6Im10VlZhdXFCMnN0WHNucnlWazZ2ZSIsImlkIjoiMDY0Nzg0YWY2YjBlMTAwMCIsInVzZXJJZCI6IllSTlZhd05oOFFiUU50anJYU25TcyJ9.wv9Re0NLNthhgfb9pwPAxI99WuzzBRwHkjQ8c7kKziY'
+                )
+                .then((res) => res.json())
+                .then((res1) => {
+                    console.log('res1', res1);
+                    that.mapInstance.addSource('test_mvt3', {
+                        type: 'vector',
+                        url: 'http://192.168.200.133:30080/v1/rest/services/tile/mtVVauqB2stXsnryVk6ve/ows_068aaeacd3ce1001/mvt?SERVICE=MVT&LAYER=l068aaeacd4ce1000&VERSION=1.0.0&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0ZW5hbnRJZCI6Im10VlZhdXFCMnN0WHNucnlWazZ2ZSIsImlkIjoiMDY0Nzg0YWY2YjBlMTAwMCIsInVzZXJJZCI6IllSTlZhd05oOFFiUU50anJYU25TcyJ9.wv9Re0NLNthhgfb9pwPAxI99WuzzBRwHkjQ8c7kKziY',
+                    });
+                    let creatLayers = JsonToMapbox(
+                        JSON.parse(
+                            '{"Others":{"Scale":{"Min":0,"Max":24}},"Type":"polygon","Filter":{"Attribute":{"LogicalOperator":"And","Rule":[]}},"Mode":"simple","Label":{"Field":""},"Style":[{"Type":"vector","OutlineColor":{"Hex":"#B2B2B2","Opacity":1},"Color":{"Hex":"#F5F4EE","Opacity":1},"OutlineStyle":"dash","OutlineDashes":[20,20],"Visible":true,"OutlineWidth":0.28}]}'
+                        ),
+                        'test_mvt3',
+                        'test_mvt3',
+                        res1.vector_layers[0].id
+                    );
+                    console.log(creatLayers);
+                    creatLayers.forEach((v) => {
+                        that.mapInstance.addLayer(v);
+                    });
+                    that.mapInstance.setLayerZoomRange('test_mvt3', 6, 9);
+                });
+        },
+        addMvtService4() {
+            var that = this;
+            fetch(
+                    'http://192.168.200.133:30080/v1/rest/services/tile/mtVVauqB2stXsnryVk6ve/ows_068aaeacd3ce1001/mvt?SERVICE=MVT&LAYER=l068aaeacd4ce1000&VERSION=1.0.0&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0ZW5hbnRJZCI6Im10VlZhdXFCMnN0WHNucnlWazZ2ZSIsImlkIjoiMDY0Nzg0YWY2YjBlMTAwMCIsInVzZXJJZCI6IllSTlZhd05oOFFiUU50anJYU25TcyJ9.wv9Re0NLNthhgfb9pwPAxI99WuzzBRwHkjQ8c7kKziY'
+                )
+                .then((res) => res.json())
+                .then((res1) => {
+                    console.log('res1', res1);
+                    that.mapInstance.addSource('test_mvt4', {
+                        type: 'vector',
+                        url: 'http://192.168.200.133:30080/v1/rest/services/tile/mtVVauqB2stXsnryVk6ve/ows_068aaeacd3ce1001/mvt?SERVICE=MVT&LAYER=l068aaeacd4ce1000&VERSION=1.0.0&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0ZW5hbnRJZCI6Im10VlZhdXFCMnN0WHNucnlWazZ2ZSIsImlkIjoiMDY0Nzg0YWY2YjBlMTAwMCIsInVzZXJJZCI6IllSTlZhd05oOFFiUU50anJYU25TcyJ9.wv9Re0NLNthhgfb9pwPAxI99WuzzBRwHkjQ8c7kKziY',
+                    });
+                    let creatLayers = JsonToMapbox(
+                        JSON.parse(
+                            '{"Others":{"Scale":{"Min":0,"Max":24}},"Type":"polygon","Filter":{"Attribute":{"LogicalOperator":"And","Rule":[]}},"Mode":"simple","Label":{"Field":""},"Style":[{"Type":"vector","OutlineColor":{"Hex":"#B2B2B2","Opacity":1},"Color":{"Hex":"#F5F4EE","Opacity":1},"OutlineStyle":"dash","OutlineDashes":[8,2],"Visible":true,"OutlineWidth":0.28}]}'
+                        ),
+                        'test_mvt4',
+                        'test_mvt4',
+                        res1.vector_layers[0].id
+                    );
+                    console.log(creatLayers);
+                    creatLayers.forEach((v) => {
+                        that.mapInstance.addLayer(v);
+                    });
+                    that.mapInstance.setLayerZoomRange('test_mvt', 9, 12);
+                });
+        },
+        addMvtService5() {
+            var that = this;
+            fetch(
+                    'http://192.168.200.133:30080/v1/rest/services/tile/mtVVauqB2stXsnryVk6ve/ows_068aaeede8ce1000/mvt?SERVICE=MVT&LAYER=l068aaeede98e1000&VERSION=1.0.0&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0ZW5hbnRJZCI6Im10VlZhdXFCMnN0WHNucnlWazZ2ZSIsImlkIjoiMDY0Nzg0YWY2YjBlMTAwMCIsInVzZXJJZCI6IllSTlZhd05oOFFiUU50anJYU25TcyJ9.wv9Re0NLNthhgfb9pwPAxI99WuzzBRwHkjQ8c7kKziY'
+                )
+                .then((res) => res.json())
+                .then((res1) => {
+                    console.log('res1', res1);
+                    that.mapInstance.addSource('test_mvt5', {
+                        type: 'vector',
+                        url: 'http://192.168.200.133:30080/v1/rest/services/tile/mtVVauqB2stXsnryVk6ve/ows_068aaeede8ce1000/mvt?SERVICE=MVT&LAYER=l068aaeede98e1000&VERSION=1.0.0&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0ZW5hbnRJZCI6Im10VlZhdXFCMnN0WHNucnlWazZ2ZSIsImlkIjoiMDY0Nzg0YWY2YjBlMTAwMCIsInVzZXJJZCI6IllSTlZhd05oOFFiUU50anJYU25TcyJ9.wv9Re0NLNthhgfb9pwPAxI99WuzzBRwHkjQ8c7kKziY',
+                    });
+                    let creatLayers = JsonToMapbox(
+                        JSON.parse(
+                            '{"Others":{"Scale":{"Min":0,"Max":24}},"Type":"polygon","Filter":{"Attribute":{"LogicalOperator":"And","Rule":[]}},"Mode":"simple","Label":{"Field":""},"Style":[{"Type":"vector","OutlineColor":{"Hex":"#C8C8C8","Opacity":1},"Color":{"Hex":"#F5F4EE","Opacity":1},"OutlineStyle":"dash","OutlineDashes":[8,2],"Visible":true,"OutlineWidth":0.28}]}'
+                        ),
+                        'test_mvt5',
+                        'test_mvt5',
+                        res1.vector_layers[0].id
+                    );
+                    console.log(creatLayers);
+                    creatLayers.forEach((v) => {
+                        that.mapInstance.addLayer(v);
+                    });
+                    that.mapInstance.setLayerZoomRange('test_mvt5', 12, 15);
                 });
         },
         //添加高碑店网格地图服务
@@ -509,13 +662,13 @@ export default {
         },
         //添加普通地图服务
         addPieServiseByPutong() {
-            const url = 'http://192.168.200.133:30080/v1/rest/services/tile/mtVVauqB2stXsnryVk6ve/ows_0674c059d24e1001/wmts?TILEROW={y}&TileMatrixSet=WorldWebMercatorQuad&REQUEST=GetTile&VERSION=1.0.0&format=image/png&SERVICE=WMTS&style=default&TILEMATRIX={z}&layer=l0674c059d34e1000&TILECOL={x}&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0ZW5hbnRJZCI6Im10VlZhdXFCMnN0WHNucnlWazZ2ZSIsImlkIjoiMDY0Nzg0YWY2YjBlMTAwMCIsInVzZXJJZCI6IllSTlZhd05oOFFiUU50anJYU25TcyJ9.wv9Re0NLNthhgfb9pwPAxI99WuzzBRwHkjQ8c7kKziY'
+            const url = 'http://192.168.200.133:30080/v1/rest/services/tile/mtVVauqB2stXsnryVk6ve/ows_068bb977770e1001/wmts?TILEROW={y}&TileMatrixSet=WorldWebMercatorQuad&REQUEST=GetTile&VERSION=1.0.0&format=image/png&SERVICE=WMTS&style=default&TILEMATRIX={z}&layer=l068bb977780e1000&TILECOL={x}&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0ZW5hbnRJZCI6Im10VlZhdXFCMnN0WHNucnlWazZ2ZSIsImlkIjoiMDY0Nzg0YWY2YjBlMTAwMCIsInVzZXJJZCI6IllSTlZhd05oOFFiUU50anJYU25TcyJ9.wv9Re0NLNthhgfb9pwPAxI99WuzzBRwHkjQ8c7kKziY'
             const id = 'gaobeidianputong'
             this.mapInstance.addSource(id, {
                 type: 'raster',
                 tiles: [url],
                 tileSize: 256,
-                // bounds: [75, -80.051129, 130, 85.051129],
+                bounds: [75, -80.051129, 130, 85.051129],
             })
             this.mapInstance.addLayer(
                 {
@@ -530,7 +683,69 @@ export default {
                     // },
                 },
             )
-        }
+        },
+        addMvtFill() {
+            var areacode = ["410000000000"]
+            var geom = 'POLYGON ((102.59489801311975 39.15501852419044, 122.15014865909001 39.15501852419044, 122.15014865909001 28.202327317289075, 102.59489801311975 28.202327317289075, 102.59489801311975 39.15501852419044))'
+            this.mapInstance.addLayer({
+                'id': '2021qg_sheng',
+                source: {
+                    type: "vector",
+                    tiles: [`http://10.1.140.175:7002/v1/mvt/sys_area_year/{z}/{x}/{y}?geomColumn=mgeom`],
+                    minzoom: 0,
+                    maxzoom: 24
+                },
+                
+                "source-layer": 'sys_area_year',
+                "type" : "fill",
+                "paint": {
+                    'fill-color': '#f0f000',
+                    'fill-opacity': 1
+                }
+                // 'layout': {
+                // 'visibility': 'visible',
+                // // coalesce 当请求的图片找不到时，用fallbackImage替代
+                // // "icon-image": ["coalesce", ["image", "custom-marker"], ["image", "arrow"]],
+                // "icon-image": ["coalesce", ["image", "image123321"]],
+                // 'text-font': [
+                // 'Open Sans Semibold',
+                // 'Arial Unicode MS Bold'
+                // ],
+                // 'text-offset': [0, 1.25],
+                // 'text-anchor': 'top'
+                //     }      
+            });
+        },
+        mapClickEvent(e) {
+            let features = this.mapInstance.queryRenderedFeatures(e.point)
+            this.popup = this.createPopup(e, features[0]);
+                // this.popup.addTo(mapUtil._mapInstance);
+                // mapUtil._mapInstance.setPaintProperty(`${element.id}Fill`, 'fill-opacity', 0.5);
+                // mapUtil._mapInstance.setPaintProperty(`${element.id}Line`, 'line-width', 4);
+        },
+        // 创建popup
+        createPopup(e, feature) {
+            if (this.popup) {
+                this.popup.remove();
+            }
+            let name = `123`
+            // 取区域的颜色
+            let html = `<div class="title" style="background:red" title="${name}">${
+                name
+            }</div>
+            `;
+            
+            let popup = new mapboxgl.Popup({
+                offset: [0, -15],
+                anchor: 'bottom',
+                closeButton: false,
+                className: 'popup'
+            })
+                .setLngLat([e.lngLat.lng,e.lngLat.lat])
+                .setHTML(html)
+                .addTo(this.mapInstance);
+            // return popup;
+            },
 }
 }
 </script>

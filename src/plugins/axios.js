@@ -42,7 +42,6 @@ Service.interceptors.request.use(
 // Add a response interceptor
 Service.interceptors.response.use(
   function (response) {
-    debugger
     if (loadingInstance) {
       loadingInstance.close();
     }
@@ -57,7 +56,6 @@ Service.interceptors.response.use(
   },
   function (error) {
     console.log(error["response"]);
-    debugger
     if (loadingInstance) {
       loadingInstance.close();
     }
