@@ -86,10 +86,7 @@
                 tileLayer.addTo(map);
                 // tileLayer.removeFrom(map);
                 console.log(tileLayer);
-                var bj = L.marker([39.92, 116.46],{
-                    minZoom: 12,
-                    show: false
-                }).bindPopup('这里是北京');
+                var bj = L.marker([39.92, 116.46]).bindPopup('这里是北京');
                 var sh = L.marker([31.213, 121.445]).bindPopup('这里是上海');
                 var gz = L.marker([23.16, 113.23]).bindPopup('这里是广州');
                 var cities = L.layerGroup([bj, sh, gz]).addTo(map);
