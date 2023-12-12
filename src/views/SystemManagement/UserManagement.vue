@@ -149,16 +149,23 @@ export default {
       console.log(this.datevalue);
     },
     promiseDemo() {
+      // 创建一个新的 Promise 对象
       let promise = new Promise(function (resolve, reject) {
         console.log('start');
-        setTimeout(() => {console.log('loading...'); resolve();},5000)
-        });
-        promise.then(function () {
-            console.log("then")
-        });
-        promise.catch(function () {
-            console.log("catch");
-        })
+
+        // 设置一个定时器，5秒后打印 'loading...' 并调用 resolve() 方法
+        setTimeout(() => { console.log('loading...'); resolve(); }, 5000);
+      });
+
+      // 当 Promise 对象的状态变为 fulfilled 时，执行 then 方法中的回调函数
+      promise.then(function () {
+        console.log("then");
+      });
+
+      // 当 Promise 对象的状态变为 rejected 时，执行 catch 方法中的回调函数
+      promise.catch(function () {
+        console.log("catch");
+      })
     },
     getUserInfoData: function () {
       systemLogin();
