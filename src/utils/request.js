@@ -108,3 +108,14 @@ export function getRoleInfo(params) {
     params: params,
   });
 }
+/**
+ * 获取天地图区划信息
+ * @param params
+ */
+export function getAreaInfo(params) {
+  return Service({
+    url: `workMap/searchAdministrativePolygon`,
+    method: "post",
+    data: params,
+  });
+}

@@ -26,6 +26,7 @@
     "ol": "^6.12.0",
     "ol-hashed": "^2.1.0",
     "postcss-px2rem": "^0.3.0",
+    "proj4": "^2.9.2",
     "scss": "^0.2.4",
     "scss-loader": "^0.0.1",
     "terraformer-wkt-parser": "^1.2.1",

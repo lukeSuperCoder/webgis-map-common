@@ -9,12 +9,18 @@
 </template>
 
 <script>
+import * as turf from '@turf/turf'
+import { getAreaInfo } from '../../utils/request'
+import proj4 from 'proj4';
     export default {
         data() {
-
+            return {
+                map: null
+            }
         },
         mounted() {
-            this.initMap()
+            this.initMap();
+            this.getArea();
         },
         methods: {
             initMap() {
@@ -156,6 +162,61 @@
                     transparent: true,
                     attribution: "Weather data © 2012 IEM Nexrad"
                 });
+                this.map = map;
+            },
+            getArea() {
+                // 定义AMap投影参数
+                proj4.defs("AMap", '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs');
+
+                // 定义EPSG:3857投影参数
+                proj4.defs("EPSG:3857", '+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over');
+                let params = {
+                    args: [
+                        {
+                            "keywords": "海南省"
+                        }   
+                    ]
+                }
+                getAreaInfo(params).then(res => {
+                    // console.log(res.locres.poi_list[0].coords);
+                    //@代表多面分割标识
+                    let data = res.locres.poi_list[0].coords.split('@')
+                    //转换成geojson格式
+                    let geojson = {
+                        "type": "FeatureCollection",
+                        "features": []
+                    }
+                    data.forEach(element => {
+                        let coords = element.split(';')
+                        //数组去重
+                        let points = []
+                        for (let i = 0; i < coords.length; i=i+2) {
+                            var lnglat = [parseFloat(coords[i]), parseFloat(coords[i+1])]; // 高德坐标系经纬度数组，例如 [120.12345, 30.67890]
+                            points.push(lnglat)
+                        }
+                        let feature = {
+                            "type": "Feature",
+                            "properties": {},
+                            "geometry": {
+                                "type": "Polygon",
+                                "coordinates": [
+                                    points
+                                ]
+                            }
+                        }
+                        geojson.features.push(feature)
+                    });
+                    console.log(geojson)
+                    L.geoJSON(geojson, {
+                        style: function (feature) {
+                            return {
+                                color: 'blue'
+                            };
+                        }
+                    }).bindPopup(function (layer) {
+                        return layer.feature.properties.description;
+                    }).addTo(this.map);
+                })
             }
         }
     }

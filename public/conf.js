@@ -1,4 +1,4 @@
 const conf = {
-  url: "http://localhost:8080",
+  url: "/api",
 };
 export default conf;

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title><%= htmlWebpackPlugin.options.title %></title>
+  </head>
+  //HTMl
+<body>  
+    <button>提交</button>
+</body>
+ 
+//JavaScript
+<script>
+    	// 首先使用querySelector方法获取按钮元素
+        const btn = document.querySelector("button");
+        // 定义提交操作函数
+        function payMoney() {
+        	console.log("付款成功");
+        }
+        // 定义防抖函数
+        // fn: 点击按钮要执行的函数
+        // delay: 延迟时间
+        function debounce(fn, delay) {
+        	// 设置定时器标识（写在return函数外面，方便下面内部函数获取）
+        	let timer;
+        	// 返回函数，不然调用debounce会立即执行此函数
+        	return function() {
+        		// fn指定this
+        		let context = this;
+        		// fn参数
+        		let args = arguments;
+        		// 先清除定时器
+        		clearTimeout(timer);
+        		//设置定时器
+        		timer = setTimeout(() => {
+        			// 调用函数
+        			fn.apply(context, args);
+        		}, delay);
+        	}
+        }
+		// 给按钮添加点击监听事件，点击时，执行debounce函数
+		btn.addEventListener("click", debounce(payMoney, 1000))
+</script>
+ 
+ 
+//JavaScript防抖核心代码
+<script>
+    function debounce(fn, delay) {
+      let timer = null;
+      return function() {
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+          fn.apply(this, arguments);
+        }, delay);
+      }
+    }
+</script>
+ 
+</html>
