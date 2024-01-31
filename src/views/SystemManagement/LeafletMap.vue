@@ -15,12 +15,13 @@ import proj4 from 'proj4';
     export default {
         data() {
             return {
-                map: null
+                map: null,
             }
         },
         mounted() {
             this.initMap();
-            this.getArea();
+            // this.getArea();
+            this.getTest();
         },
         methods: {
             initMap() {
@@ -30,7 +31,7 @@ import proj4 from 'proj4';
                     // gratings: {isShow: true}
                 }).setView([31.213, 121.445], 5);
                 L.tileLayer(
-                    "https://m12.shipxy.com/tile.c?l=Na&m=o&x={x}&y={y}&z={z}"
+                    "http://gac-geo.googlecnapps.cn/maps/vt?lyrs=s&x={x}&y={y}&z={z}"
                 ).addTo(map);
                 // 自定义按钮-海图
                 document.getElementById("btn_haitu").addEventListener("click", function (e) {
@@ -44,6 +45,9 @@ import proj4 from 'proj4';
                     e.stopPropagation();
                     let gaoDeLayer1 = L.tileLayer(
                         "http://t0.tianditu.com/vec_c/wmts?layer=vec&style=default&tilematrixset=c&Service=WMTS&Request=GetTile&Version=1.0.0&Format=tiles&TileMatrix={z}&TileCol={x}&TileRow={y}&tk=9254b8157f0ff0a6331196e4afc27cb6",
+                    ).addTo(map);
+                    let gaoDeLayer2 = L.tileLayer(
+                        "http://t0.tianditu.com/ibo_c/wmts?layer=ibo&style=default&tilematrixset=c&Service=WMTS&Request=GetTile&Version=1.0.0&Format=tiles&TileMatrix={z}&TileCol={x}&TileRow={y}&tk=9254b8157f0ff0a6331196e4afc27cb6",
                     ).addTo(map);
                 });
                 // 自定义按钮-卫星
@@ -89,7 +93,7 @@ import proj4 from 'proj4';
                     //     return _url;
                     // },
                 });
-                tileLayer.addTo(map);
+                //tileLayer.addTo(map);
                 // tileLayer.removeFrom(map);
                 console.log(tileLayer);
                 var bj = L.marker([39.92, 116.46]).bindPopup('这里是北京');
@@ -119,15 +123,15 @@ import proj4 from 'proj4';
                     }]
                 }
 
-                L.geoJSON(data, {
-                    style: function (feature) {
-                        return {
-                            color: feature.properties.color
-                        };
-                    }
-                }).bindPopup(function (layer) {
-                    return layer.feature.properties.description;
-                }).addTo(map);
+                // L.geoJSON(data, {
+                //     style: function (feature) {
+                //         return {
+                //             color: feature.properties.color
+                //         };
+                //     }
+                // }).bindPopup(function (layer) {
+                //     return layer.feature.properties.description;
+                // }).addTo(map);
                 var nexrad = L.tileLayer.wms("http://mesonet.agron.iastate.edu/cgi-bin/wms/nexrad/n0r.cgi", {
                     layers: 'nexrad-n0r-900913',
                     format: 'image/png',
@@ -217,7 +221,24 @@ import proj4 from 'proj4';
                         return layer.feature.properties.description;
                     }).addTo(this.map);
                 })
-            }
+            },
+            getTest() {
+                //3857坐标系下获取经纬度对应瓦片坐标
+                var lat = 31.213;
+                var lon = 121.445;
+                var z = 17;
+                // 经纬度转为左上角为原点，x轴向右，y轴向下的坐标系中的点
+                var mer_lat = (180 - Math.log(Math.tan(Math.PI / 4 + lat * Math.PI / 360)) * 180 / Math.PI) / 360;  // 计算纬度在墨卡托投影下的x轴像素值
+                var mer_lon = (180 + lon) / 360; // 计算经度在墨卡托投影下的y轴像素值
+                var x = Math.floor(Math.pow(2,z)*mer_lon);  // 计算x轴像素坐标
+                var y = Math.floor(Math.pow(2,z)*mer_lat); // 计算y轴像素坐标
+                console.log(x,y,z);
+                let url = `http://gac-geo.googlecnapps.cn/maps/vt?lyrs=s&x=${x}&y=${y}&z=${z}`; //高德瓦片
+                console.log(url,'---gd');
+                this.map.setView([lat, lon], z);
+                let url2 = `https://t0.tianditu.gov.cn/img_w/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=img&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILECOL=${x}&TILEROW=${y}&TILEMATRIX=${z}&tk=9254b8157f0ff0a6331196e4afc27cb6`; //天地图瓦片
+                console.log(url2,'---tdt');
+            },
         }
     }
 </script>
