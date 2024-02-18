@@ -30,6 +30,8 @@ import proj4 from 'proj4';
                     zoom: 5,
                     // gratings: {isShow: true}
                 }).setView([31.213, 121.445], 5);
+                //mapbox custom layer url
+                //"https://api.mapbox.com/styles/v1/luchang666/clsd0b1bg00jc01pvcqfz9f7t/tiles/256/{z}/{x}/{y}?access_token=pk.eyJ1IjoibHVjaGFuZzY2NiIsImEiOiJjbDAyMDh4aWgwejE4M2txY3NzazlkYW5hIn0.WuT5g-2YeZr3tB0llkZfOA"
                 L.tileLayer(
                     "http://gac-geo.googlecnapps.cn/maps/vt?lyrs=s&x={x}&y={y}&z={z}"
                 ).addTo(map);
