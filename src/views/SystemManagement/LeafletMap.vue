@@ -21,19 +21,25 @@ import proj4 from 'proj4';
         mounted() {
             this.initMap();
             // this.getArea();
-            this.getTest();
+            // this.getTest();
+            // this.getGeoJsonByfile();
+            // let timer = this.getCircleLight();
+            // setTimeout(() => {
+            //     this.getCircleLight();
+            // }, 500);
         },
         methods: {
             initMap() {
                 var map = L.map('leaflet-map', {
                     crs: L.CRS.EPSG3857,
-                    zoom: 5,
+                    zoom: 3,
+                    minZoom: 3,
                     // gratings: {isShow: true}
                 }).setView([31.213, 121.445], 5);
                 //mapbox custom layer url
                 //"https://api.mapbox.com/styles/v1/luchang666/clsd0b1bg00jc01pvcqfz9f7t/tiles/256/{z}/{x}/{y}?access_token=pk.eyJ1IjoibHVjaGFuZzY2NiIsImEiOiJjbDAyMDh4aWgwejE4M2txY3NzazlkYW5hIn0.WuT5g-2YeZr3tB0llkZfOA"
                 L.tileLayer(
-                    "http://gac-geo.googlecnapps.cn/maps/vt?lyrs=s&x={x}&y={y}&z={z}"
+                    "https://m12.shipxy.com/tile.c?l=Na&m=o&x={x}&y={y}&z={z}"
                 ).addTo(map);
                 // 自定义按钮-海图
                 document.getElementById("btn_haitu").addEventListener("click", function (e) {
@@ -101,6 +107,7 @@ import proj4 from 'proj4';
                 var bj = L.marker([39.92, 116.46]).bindPopup('这里是北京');
                 var sh = L.marker([31.213, 121.445]).bindPopup('这里是上海');
                 var gz = L.marker([23.16, 113.23]).bindPopup('这里是广州');
+
                 var cities = L.layerGroup([bj, sh, gz]).addTo(map);
                 let data = {
                     "type": "FeatureCollection",
@@ -154,7 +161,7 @@ import proj4 from 'proj4';
                 map.on('click', (e) => {
                     map.eachLayer(function (layer) {
                         if (layer.options.layers) {
-                            console.log(layer);
+                            // console.log(layer);
                             // map.removeLayer(layer);
                             layer.removeFrom(map);
                             // layer.hide();
@@ -241,6 +248,102 @@ import proj4 from 'proj4';
                 let url2 = `https://t0.tianditu.gov.cn/img_w/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=img&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILECOL=${x}&TILEROW=${y}&TILEMATRIX=${z}&tk=9254b8157f0ff0a6331196e4afc27cb6`; //天地图瓦片
                 console.log(url2,'---tdt');
             },
+            getGeoJsonByfile() {
+                //leaflet添加geojson文件图层
+                let data = require('../../assets/data/ezz_data.json');
+                // console.log(data);
+                let layer = L.geoJSON(data, {
+                    onEachFeature: function (feature, layer) {
+                        layer.on('mouseover', function (e) {
+                        // 在点击时获取对应的数据
+                            console.log(feature.properties.LINE_CNAME);
+                            layer.setStyle({
+                                color: 'red'
+                            });
+                        });
+                        layer.on('mouseout', function (e) {
+                        // 在点击时获取对应的数据
+                            console.log(feature.properties.LINE_CNAME);
+                            layer.setStyle({
+                                color: 'blue'
+                            });
+                        });
+                    },
+                    style: function (feature) {
+                        return {
+                            color: 'blue'
+                        };
+                    }
+                }).addTo(this.map);
+                    // this.map.setView([39.92, 116.46], 17);
+            },
+            //生成闪烁的圆圈
+            getCircleLight() {
+                // 定义水滴的位置和半径
+                var center = L.latLng(39.92, 116.46);
+                var initialRadius = 0; // 初始半径为0
+                var initialOpacity = 0.9;
+
+                // 创建多个圆并添加到地图上
+                var circles = [];
+                var circle = L.circle(center, {
+                    color: 'red',
+                    fillColor: 'red',
+                    fillOpacity: initialOpacity,
+                    opacity: initialOpacity,
+                    radius: initialRadius
+                }).addTo(this.map);
+                circles.push(circle);
+
+                // 定义扩散速度和最大半径
+                var speed = 10; // 扩散速度（毫秒）
+                var maxRadius = 1000; // 最大半径
+
+                // 定时器函数，每隔一段时间更新所有圆的半径和样式
+                function expandCircles() {
+                    for (var i = 0; i < circles.length; i++) {
+                        var circle = circles[i];
+                        var currentRadius = circle.getRadius();
+                        
+                        if (currentRadius < maxRadius) {
+                            // 更新圆的半径
+                            circle.setRadius(currentRadius + 10);
+                            
+                            // 使用 Leaflet 的动画库平滑更新圆的大小
+                            circle.setStyle({
+                                radius: currentRadius + 10
+                            });
+                            
+                            // 根据当前半径调整圆的不透明度
+                            var fillOpacity = (1 - currentRadius / maxRadius) * 0.9;
+                            circle.setStyle({
+                                fillOpacity: fillOpacity,
+                                opacity: fillOpacity
+                            });
+                        } else {
+                            // 更新圆的半径
+                            circle.setRadius(0);
+                            // 使用 Leaflet 的动画库平滑更新圆的大小
+                            circle.setStyle({
+                                fillOpacity: 0.9,
+                                opacity: 0.9,
+                                radius: 0
+                            });
+                        }
+                    }
+
+                    // 检查是否所有圆都达到最大半径，是则清除定时器
+                    if (circles.every(function(circle) {
+                        return circle.getRadius() >= maxRadius;
+                    })) {
+                        // clearInterval(intervalId);
+                    }
+                }
+
+                // 每隔一段时间调用一次定时器函数，实现水滴扩散动画
+                var intervalId = setInterval(expandCircles, speed);
+                return intervalId;
+            }
         }
     }
 </script>
