@@ -45,6 +45,7 @@ export default {
             var vecUrl = "http://t0.tianditu.com/vec_w/wmts?tk=9254b8157f0ff0a6331196e4afc27cb6";
             var cvaUrl = "http://t0.tianditu.com/cva_w/wmts?tk=9254b8157f0ff0a6331196e4afc27cb6";
             var iboUrl = "http://t0.tianditu.gov.cn/ibo_w/wmts?tk=9254b8157f0ff0a6331196e4afc27cb6";
+            var googleImgUrl = "https://g1.shipxy.com/tile.g?m=1&x={x}&y={y}&z={z}";
             //使用严格模式
             "use strict";
             //实例化source对象
@@ -53,7 +54,7 @@ export default {
                 "type": "raster",
                 'tiles': [
                     //请求地址
-                    vecUrl + "&SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=vec&STYLE=default&TILEMATRIXSET=w&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=tiles"
+                    vecUrl
                 ],
                 //分辨率
                 'tileSize': 256
@@ -69,6 +70,13 @@ export default {
                 "type": "raster",
                 'tiles': [
                     iboUrl + "&SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=cva&STYLE=default&TILEMATRIXSET=w&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=tiles"
+                ],
+                'tileSize': 256
+            }
+            var googleImgIbo = {
+                "type": "raster",
+                'tiles': [
+                    googleImgUrl
                 ],
                 'tileSize': 256
             }
@@ -121,7 +129,7 @@ export default {
                 center: [113.14371373500097,27.939001572414696],
                 //地图当前缩放级数
                 zoom: 5,
-                minZoom:3.5,
+                // minZoom:3.5,
                 transformRequest: (url, resourceType) => {
                 if (url.indexOf('http://10.1.140.55:7006') > -1) {
                     return {
@@ -150,66 +158,24 @@ export default {
                 // this.addPieServiseByPutong()
                 // this.addShuiYinLayer()
                 // this.addShuiYinLayer1()
-                this.addMvtService()
-                this.addMvtService1()
-                // this.addMvtService2()
-                // this.addMvtService3()
-                // this.addMvtService4()
-                // this.addMvtService5()
-                // this.addMvtFill()
-                // const fillLayer = {
-                //         type: 'fill',
-                //         id: 'dongchengqu',
-                //         source: {
-                //             type: 'geojson',
-                //             data: dongchengquGeoJSON,
-                //         },
-                //         paint: {
-                //             'fill-color': '#68A2EA',
-                //             'fill-opacity': 0.3,
-                //         },
-                //     }
-                //     const lineLayer = {
-                //         type: 'line',
-                //         id: 'dongchengquLIN',
-                //         source: {
-                //             type: 'geojson',
-                //             data: dongchengquLineGeoJSON,
-                //         },
-                //         paint: {
-                //             'line-color': '#68A2EA',
-                //             'line-width': 3,
-                //             'line-dasharray': [0.2, 3],
-                //         },
-                //         layout: {
-                //             'line-join': 'round',
-                //             'line-cap': 'round',
-                //         },
-                //     }
-                //     this.mapInstance.addLayer(lineLayer)
-                //     this.mapInstance.addLayer(fillLayer)
-                    // this.addImgMarker(1)
-                    // this.addImgMarker(2)
-                    // var arr = [[116.105419,39.214714],[115.405419,38.914714],[116.805419,38.914714],[112.405419,39.914714],[111.405419,39.514714]]
-                    // var imgarr = ['ic_gonggongweisheng.svg']
-                    // for (let index = 0; index < 5; index++) {
-                    //    this.addImgPoint(index+'',index+'',arr[index],imgarr[index])       
-                    // }
-                    const symbol = "https://docs.mapbox.com/mapbox-gl-js/assets/custom_marker.png";
-                    this.mapInstance.loadImage(symbol, (error, image) => {
-                    if (error) throw error;
-                    this.mapInstance.addImage('image123321', image);
-                    console.log(this.mapInstance.hasImage('image123321'),'image123321');
-                    // Add a data source containing one point feature.
-                    
-                    });
-                    console.log(this.mapInstance.style._layers);
-                    this.mapInstance.on('click',"2021qg_sheng", (e) => {
-                        console.log(e.features);
-                        // console.log(this.mapInstance.getZoom());
-                    })
-                    // this.addCrontor()
-                    this.mapInstance.on('click', this.mapClickEvent);
+                // this.addMvtService()
+                this.addMvtFill()
+      
+                const symbol = "https://docs.mapbox.com/mapbox-gl-js/assets/custom_marker.png";
+                this.mapInstance.loadImage(symbol, (error, image) => {
+                if (error) throw error;
+                this.mapInstance.addImage('image123321', image);
+                console.log(this.mapInstance.hasImage('image123321'),'image123321');
+                // Add a data source containing one point feature.
+                
+                });
+                console.log(this.mapInstance.style._layers);
+                this.mapInstance.on('click',"mvt-fill", (e) => {
+                    console.log(e.features);
+                    // console.log(this.mapInstance.getZoom());
+                })
+                // this.addCrontor()
+                this.mapInstance.on('click', this.mapClickEvent);
             })
         },
         addImgMarker(type) {
@@ -502,142 +468,6 @@ export default {
                 })
                 
         },
-        addMvtService1() {
-            var that = this;
-            fetch(
-                    'http://192.168.200.133:30080/v1/rest/services/tile/mtVVauqB2stXsnryVk6ve/ows_0696520f430e1000/mvt?SERVICE=MVT&LAYER=l0696520f440e1000&VERSION=1.0.0&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0ZW5hbnRJZCI6Im10VlZhdXFCMnN0WHNucnlWazZ2ZSIsImlkIjoiMDY0Nzg0YWY2YjBlMTAwMCIsInVzZXJJZCI6IllSTlZhd05oOFFiUU50anJYU25TcyJ9.wv9Re0NLNthhgfb9pwPAxI99WuzzBRwHkjQ8c7kKziY'
-                )
-                .then((res) => res.json())
-                .then((res1) => {
-                    console.log('res1', res1);
-                    that.mapInstance.addSource('test_mvt1', {
-                        type: 'vector',
-                        url: 'http://192.168.200.133:30080/v1/rest/services/tile/mtVVauqB2stXsnryVk6ve/ows_0696520f430e1000/mvt?SERVICE=MVT&LAYER=l0696520f440e1000&VERSION=1.0.0&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0ZW5hbnRJZCI6Im10VlZhdXFCMnN0WHNucnlWazZ2ZSIsImlkIjoiMDY0Nzg0YWY2YjBlMTAwMCIsInVzZXJJZCI6IllSTlZhd05oOFFiUU50anJYU25TcyJ9.wv9Re0NLNthhgfb9pwPAxI99WuzzBRwHkjQ8c7kKziY',
-                    });
-                    let creatLayers = JsonToMapbox(
-                        JSON.parse(
-                            '{"Others":{"Scale":{"Min":0,"Max":24}},"Type":"point","Filter":{"Attribute":{"LogicalOperator":"And","Rule":[]}},"Mode":"simple","Label":{"Field":"shengcode","OutlineColor":{"Hex":"#FF0000","Opacity":0},"Position":{"Anchor":"top","Angle":0},"Color":{"Hex":"#000000","Opacity":1},"Blur":0,"YOffset":0,"Scale":{"Min":0,"Max":24},"XOffset":0,"Overlap":true,"Font":{"Size":14,"Family":"DIN Offc Pro Medium"},"OutlineWidth":0},"Style":[{"Type":"vector","OutlineColor":{"Hex":"#474747","Opacity":0.9},"Size":15,"Color":{"Hex":"#2483EB","Opacity":1},"Visible":false,"Blur":0,"Style":"circle","YOffset":0,"XOffset":0,"OutlineWidth":8}]}'
-                        ),
-                        'test_mvt1',
-                        'test_mvt1',
-                        res1.vector_layers[0].id
-                    );
-                    console.log(creatLayers);
-                    creatLayers.forEach((v) => {
-                        that.mapInstance.addLayer(v);
-                    });
-                    that.mapInstance.setLayerZoomRange('test_mvt1_0_0', 7, 10);
-
-                });
-        },
-        addMvtService2() {
-            var that = this;
-            fetch(
-                    'http://192.168.200.133:30080/v1/rest/services/tile/mtVVauqB2stXsnryVk6ve/ows_068aab533f8e1001/mvt?SERVICE=MVT&LAYER=l068aab53404e1000&VERSION=1.0.0&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0ZW5hbnRJZCI6Im10VlZhdXFCMnN0WHNucnlWazZ2ZSIsImlkIjoiMDY0Nzg0YWY2YjBlMTAwMCIsInVzZXJJZCI6IllSTlZhd05oOFFiUU50anJYU25TcyJ9.wv9Re0NLNthhgfb9pwPAxI99WuzzBRwHkjQ8c7kKziY'
-                )
-                .then((res) => res.json())
-                .then((res1) => {
-                    console.log('res1', res1);
-                    that.mapInstance.addSource('test_mvt2', {
-                        type: 'vector',
-                        url: 'http://192.168.200.133:30080/v1/rest/services/tile/mtVVauqB2stXsnryVk6ve/ows_068aab533f8e1001/mvt?SERVICE=MVT&LAYER=l068aab53404e1000&VERSION=1.0.0&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0ZW5hbnRJZCI6Im10VlZhdXFCMnN0WHNucnlWazZ2ZSIsImlkIjoiMDY0Nzg0YWY2YjBlMTAwMCIsInVzZXJJZCI6IllSTlZhd05oOFFiUU50anJYU25TcyJ9.wv9Re0NLNthhgfb9pwPAxI99WuzzBRwHkjQ8c7kKziY',
-                    });
-                    let creatLayers = JsonToMapbox(
-                        JSON.parse(
-                            '{"Others":{"Scale":{"Min":6,"Max":24}},"Type":"polygon","Filter":{"Attribute":{"LogicalOperator":"And","Rule":[]}},"Mode":"simple","Label":{"Field":""},"Style":[{"Type":"vector","OutlineColor":{"Hex":"#E1E1E1","Opacity":1},"Color":{"Hex":"#F5F4EE","Opacity":1},"OutlineStyle":"solid","Visible":true,"OutlineWidth":0.28}]}'
-                        ),
-                        'test_mvt2',
-                        'test_mvt2',
-                        res1.vector_layers[0].id
-                    );
-                    console.log(creatLayers);
-                    creatLayers.forEach((v) => {
-                        that.mapInstance.addLayer(v);
-                    });
-                    that.mapInstance.setLayerZoomRange('test_mvt2_0_0', 7, 15);
-                });
-        },
-        addMvtService3() {
-            var that = this;
-            fetch(
-                    'http://192.168.200.133:30080/v1/rest/services/tile/mtVVauqB2stXsnryVk6ve/ows_068aaeacd3ce1001/mvt?SERVICE=MVT&LAYER=l068aaeacd4ce1000&VERSION=1.0.0&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0ZW5hbnRJZCI6Im10VlZhdXFCMnN0WHNucnlWazZ2ZSIsImlkIjoiMDY0Nzg0YWY2YjBlMTAwMCIsInVzZXJJZCI6IllSTlZhd05oOFFiUU50anJYU25TcyJ9.wv9Re0NLNthhgfb9pwPAxI99WuzzBRwHkjQ8c7kKziY'
-                )
-                .then((res) => res.json())
-                .then((res1) => {
-                    console.log('res1', res1);
-                    that.mapInstance.addSource('test_mvt3', {
-                        type: 'vector',
-                        url: 'http://192.168.200.133:30080/v1/rest/services/tile/mtVVauqB2stXsnryVk6ve/ows_068aaeacd3ce1001/mvt?SERVICE=MVT&LAYER=l068aaeacd4ce1000&VERSION=1.0.0&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0ZW5hbnRJZCI6Im10VlZhdXFCMnN0WHNucnlWazZ2ZSIsImlkIjoiMDY0Nzg0YWY2YjBlMTAwMCIsInVzZXJJZCI6IllSTlZhd05oOFFiUU50anJYU25TcyJ9.wv9Re0NLNthhgfb9pwPAxI99WuzzBRwHkjQ8c7kKziY',
-                    });
-                    let creatLayers = JsonToMapbox(
-                        JSON.parse(
-                            '{"Others":{"Scale":{"Min":0,"Max":24}},"Type":"polygon","Filter":{"Attribute":{"LogicalOperator":"And","Rule":[]}},"Mode":"simple","Label":{"Field":""},"Style":[{"Type":"vector","OutlineColor":{"Hex":"#B2B2B2","Opacity":1},"Color":{"Hex":"#F5F4EE","Opacity":1},"OutlineStyle":"dash","OutlineDashes":[20,20],"Visible":true,"OutlineWidth":0.28}]}'
-                        ),
-                        'test_mvt3',
-                        'test_mvt3',
-                        res1.vector_layers[0].id
-                    );
-                    console.log(creatLayers);
-                    creatLayers.forEach((v) => {
-                        that.mapInstance.addLayer(v);
-                    });
-                    that.mapInstance.setLayerZoomRange('test_mvt3', 6, 9);
-                });
-        },
-        addMvtService4() {
-            var that = this;
-            fetch(
-                    'http://192.168.200.133:30080/v1/rest/services/tile/mtVVauqB2stXsnryVk6ve/ows_068aaeacd3ce1001/mvt?SERVICE=MVT&LAYER=l068aaeacd4ce1000&VERSION=1.0.0&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0ZW5hbnRJZCI6Im10VlZhdXFCMnN0WHNucnlWazZ2ZSIsImlkIjoiMDY0Nzg0YWY2YjBlMTAwMCIsInVzZXJJZCI6IllSTlZhd05oOFFiUU50anJYU25TcyJ9.wv9Re0NLNthhgfb9pwPAxI99WuzzBRwHkjQ8c7kKziY'
-                )
-                .then((res) => res.json())
-                .then((res1) => {
-                    console.log('res1', res1);
-                    that.mapInstance.addSource('test_mvt4', {
-                        type: 'vector',
-                        url: 'http://192.168.200.133:30080/v1/rest/services/tile/mtVVauqB2stXsnryVk6ve/ows_068aaeacd3ce1001/mvt?SERVICE=MVT&LAYER=l068aaeacd4ce1000&VERSION=1.0.0&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0ZW5hbnRJZCI6Im10VlZhdXFCMnN0WHNucnlWazZ2ZSIsImlkIjoiMDY0Nzg0YWY2YjBlMTAwMCIsInVzZXJJZCI6IllSTlZhd05oOFFiUU50anJYU25TcyJ9.wv9Re0NLNthhgfb9pwPAxI99WuzzBRwHkjQ8c7kKziY',
-                    });
-                    let creatLayers = JsonToMapbox(
-                        JSON.parse(
-                            '{"Others":{"Scale":{"Min":0,"Max":24}},"Type":"polygon","Filter":{"Attribute":{"LogicalOperator":"And","Rule":[]}},"Mode":"simple","Label":{"Field":""},"Style":[{"Type":"vector","OutlineColor":{"Hex":"#B2B2B2","Opacity":1},"Color":{"Hex":"#F5F4EE","Opacity":1},"OutlineStyle":"dash","OutlineDashes":[8,2],"Visible":true,"OutlineWidth":0.28}]}'
-                        ),
-                        'test_mvt4',
-                        'test_mvt4',
-                        res1.vector_layers[0].id
-                    );
-                    console.log(creatLayers);
-                    creatLayers.forEach((v) => {
-                        that.mapInstance.addLayer(v);
-                    });
-                    that.mapInstance.setLayerZoomRange('test_mvt', 9, 12);
-                });
-        },
-        addMvtService5() {
-            var that = this;
-            fetch(
-                    'http://192.168.200.133:30080/v1/rest/services/tile/mtVVauqB2stXsnryVk6ve/ows_068aaeede8ce1000/mvt?SERVICE=MVT&LAYER=l068aaeede98e1000&VERSION=1.0.0&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0ZW5hbnRJZCI6Im10VlZhdXFCMnN0WHNucnlWazZ2ZSIsImlkIjoiMDY0Nzg0YWY2YjBlMTAwMCIsInVzZXJJZCI6IllSTlZhd05oOFFiUU50anJYU25TcyJ9.wv9Re0NLNthhgfb9pwPAxI99WuzzBRwHkjQ8c7kKziY'
-                )
-                .then((res) => res.json())
-                .then((res1) => {
-                    console.log('res1', res1);
-                    that.mapInstance.addSource('test_mvt5', {
-                        type: 'vector',
-                        url: 'http://192.168.200.133:30080/v1/rest/services/tile/mtVVauqB2stXsnryVk6ve/ows_068aaeede8ce1000/mvt?SERVICE=MVT&LAYER=l068aaeede98e1000&VERSION=1.0.0&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0ZW5hbnRJZCI6Im10VlZhdXFCMnN0WHNucnlWazZ2ZSIsImlkIjoiMDY0Nzg0YWY2YjBlMTAwMCIsInVzZXJJZCI6IllSTlZhd05oOFFiUU50anJYU25TcyJ9.wv9Re0NLNthhgfb9pwPAxI99WuzzBRwHkjQ8c7kKziY',
-                    });
-                    let creatLayers = JsonToMapbox(
-                        JSON.parse(
-                            '{"Others":{"Scale":{"Min":0,"Max":24}},"Type":"polygon","Filter":{"Attribute":{"LogicalOperator":"And","Rule":[]}},"Mode":"simple","Label":{"Field":""},"Style":[{"Type":"vector","OutlineColor":{"Hex":"#C8C8C8","Opacity":1},"Color":{"Hex":"#F5F4EE","Opacity":1},"OutlineStyle":"dash","OutlineDashes":[8,2],"Visible":true,"OutlineWidth":0.28}]}'
-                        ),
-                        'test_mvt5',
-                        'test_mvt5',
-                        res1.vector_layers[0].id
-                    );
-                    console.log(creatLayers);
-                    creatLayers.forEach((v) => {
-                        that.mapInstance.addLayer(v);
-                    });
-                    that.mapInstance.setLayerZoomRange('test_mvt5', 12, 15);
-                });
-        },
         //添加高碑店网格地图服务
         addPieServiseByWangGe() {
             const url = 'https://engine-dev.piesat.cn/engine-server-test/v1/external/access/dispatch/services/l05f03ee72a8e1000/MVT?REQUEST=GetTile&VERSION=1.3.0&SERVICE=MVT&layer=l05f03ee72ace1000&token=d319112a0f95a137ffb288588b4d595f'
@@ -685,22 +515,25 @@ export default {
             )
         },
         addMvtFill() {
+            let mvt_url = 'http://127.0.0.1:8093/getMvtByArea/?x={x}&y={y}&z={z}'
             var areacode = ["410000000000"]
             var geom = 'POLYGON ((102.59489801311975 39.15501852419044, 122.15014865909001 39.15501852419044, 122.15014865909001 28.202327317289075, 102.59489801311975 28.202327317289075, 102.59489801311975 39.15501852419044))'
             this.mapInstance.addLayer({
-                'id': '2021qg_sheng',
+                'id': 'mvt-fill',
                 source: {
                     type: "vector",
-                    tiles: [`http://10.1.140.175:7002/v1/mvt/sys_area_year/{z}/{x}/{y}?geomColumn=mgeom`],
+                    // tiles: [`http://10.1.140.175:7002/v1/mvt/sys_area_year/{z}/{x}/{y}?geomColumn=mgeom`],
+                    tiles: [mvt_url],
                     minzoom: 0,
                     maxzoom: 24
                 },
                 
-                "source-layer": 'sys_area_year',
-                "type" : "fill",
+                "source-layer": 'layer',
+                "type" : "circle",
                 "paint": {
-                    'fill-color': '#f0f000',
-                    'fill-opacity': 1
+                    'circle-color': 'red',
+                    // 'fill-color': 'red',
+                    // 'fill-opacity': 1
                 }
                 // 'layout': {
                 // 'visibility': 'visible',

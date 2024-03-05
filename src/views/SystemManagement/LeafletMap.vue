@@ -23,10 +23,10 @@ import proj4 from 'proj4';
             // this.getArea();
             // this.getTest();
             // this.getGeoJsonByfile();
-            // let timer = this.getCircleLight();
-            // setTimeout(() => {
-            //     this.getCircleLight();
-            // }, 500);
+            let timer = this.getCircleLight();
+            setTimeout(() => {
+                this.getCircleLight();
+            }, 1000);
         },
         methods: {
             initMap() {
@@ -250,7 +250,7 @@ import proj4 from 'proj4';
             },
             getGeoJsonByfile() {
                 //leaflet添加geojson文件图层
-                let data = require('../../assets/data/ezz_data.json');
+                let data = require('../../assets/data/shanghai.json');
                 // console.log(data);
                 let layer = L.geoJSON(data, {
                     onEachFeature: function (feature, layer) {
@@ -296,7 +296,7 @@ import proj4 from 'proj4';
                 circles.push(circle);
 
                 // 定义扩散速度和最大半径
-                var speed = 10; // 扩散速度（毫秒）
+                var speed = 25; // 扩散速度（毫秒）
                 var maxRadius = 1000; // 最大半径
 
                 // 定时器函数，每隔一段时间更新所有圆的半径和样式
