@@ -1,7 +1,7 @@
 # vue-map-common
 
 #### 介绍
-基于vue框架以及地图相关技术相关样例代码，涵盖mapbox,openlayer,AntvMap,超图等地图技术
+基于vue框架加载多种二维webgis框架，涵盖mapbox,openlayer,leaflet等。
 
 #### 软件架构
 软件架构说明
@@ -15,9 +15,8 @@
 
 #### 使用说明
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+1.  npm i
+2.  npm run server
 
 #### 参与贡献
 
