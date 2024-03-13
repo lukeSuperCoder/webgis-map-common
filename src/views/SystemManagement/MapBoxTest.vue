@@ -89,7 +89,7 @@ export default {
                     "version": 8,
                     //添加来源
                     "sources": {
-                        "tdtVec": tdtVec,
+                        "tdtVec": googleImgIbo,
                         // "tdtCva": tdtCva,
                         // "tdtIbo": tdtIbo
                     },
@@ -515,7 +515,7 @@ export default {
             )
         },
         addMvtFill() {
-            let mvt_url = 'http://127.0.0.1:8093/getMvtByArea/?x={x}&y={y}&z={z}'
+            let mvt_url = 'http://127.0.0.1:8094/getMvtByArea/?x={x}&y={y}&z={z}'
             var areacode = ["410000000000"]
             var geom = 'POLYGON ((102.59489801311975 39.15501852419044, 122.15014865909001 39.15501852419044, 122.15014865909001 28.202327317289075, 102.59489801311975 28.202327317289075, 102.59489801311975 39.15501852419044))'
             this.mapInstance.addLayer({
@@ -529,10 +529,10 @@ export default {
                 },
                 
                 "source-layer": 'layer',
-                "type" : "circle",
+                "type" : "fill",
                 "paint": {
-                    'circle-color': 'red',
-                    // 'fill-color': 'red',
+                    // 'circle-color': 'red',
+                    'fill-color': 'red',
                     // 'fill-opacity': 1
                 }
                 // 'layout': {

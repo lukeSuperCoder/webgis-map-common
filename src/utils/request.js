@@ -119,3 +119,14 @@ export function getAreaInfo(params) {
     data: params,
   });
 }
+/**
+ * 获取geoserver数据
+ * @param params
+ */
+export function getWfsInfo(params) {
+  return Service({
+    url: `/geoserver/eez_v12/wfs`,
+    method: "get",
+    params: params,
+  });
+}

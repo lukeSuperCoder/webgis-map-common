@@ -10,26 +10,29 @@
 
 <script>
 import * as turf from '@turf/turf'
-import { getAreaInfo } from '../../utils/request'
+import { getAreaInfo, getWfsInfo } from '../../utils/request'
 import proj4 from 'proj4';
     export default {
         data() {
             return {
                 map: null,
+                layerGroup: null
             }
         },
         mounted() {
             this.initMap();
+            // this.getWfsByBbox();
             // this.getArea();
             // this.getTest();
             // this.getGeoJsonByfile();
-            let timer = this.getCircleLight();
-            setTimeout(() => {
-                this.getCircleLight();
-            }, 1000);
+            // let timer = this.getCircleLight();
+            // setTimeout(() => {
+            //     this.getCircleLight();
+            // }, 1000);
         },
         methods: {
             initMap() {
+                let that = this;
                 var map = L.map('leaflet-map', {
                     crs: L.CRS.EPSG3857,
                     zoom: 3,
@@ -39,8 +42,9 @@ import proj4 from 'proj4';
                 //mapbox custom layer url
                 //"https://api.mapbox.com/styles/v1/luchang666/clsd0b1bg00jc01pvcqfz9f7t/tiles/256/{z}/{x}/{y}?access_token=pk.eyJ1IjoibHVjaGFuZzY2NiIsImEiOiJjbDAyMDh4aWgwejE4M2txY3NzazlkYW5hIn0.WuT5g-2YeZr3tB0llkZfOA"
                 L.tileLayer(
-                    "https://m12.shipxy.com/tile.c?l=Na&m=o&x={x}&y={y}&z={z}"
+                    "https://g1.shipxy.com/tile.g?m=1&x={x}&y={y}&z={z}",
                 ).addTo(map);
+                
                 // 自定义按钮-海图
                 document.getElementById("btn_haitu").addEventListener("click", function (e) {
                     e.stopPropagation();
@@ -60,6 +64,7 @@ import proj4 from 'proj4';
                 });
                 // 自定义按钮-卫星
                 document.getElementById("btn_weixing").addEventListener("click", function (e) {
+                    e.stopPropagation();
                     let gaoDeLayer1 = L.tileLayer(
                         "https://g1.shipxy.com/tile.g?m=1&x={x}&y={y}&z={z}", {
                             layers: 'nexrad-n0r-900913',
@@ -103,7 +108,7 @@ import proj4 from 'proj4';
                 });
                 //tileLayer.addTo(map);
                 // tileLayer.removeFrom(map);
-                console.log(tileLayer);
+                // console.log(tileLayer);
                 var bj = L.marker([39.92, 116.46]).bindPopup('这里是北京');
                 var sh = L.marker([31.213, 121.445]).bindPopup('这里是上海');
                 var gz = L.marker([23.16, 113.23]).bindPopup('这里是广州');
@@ -141,13 +146,13 @@ import proj4 from 'proj4';
                 // }).bindPopup(function (layer) {
                 //     return layer.feature.properties.description;
                 // }).addTo(map);
-                var nexrad = L.tileLayer.wms("http://mesonet.agron.iastate.edu/cgi-bin/wms/nexrad/n0r.cgi", {
-                    layers: 'nexrad-n0r-900913',
-                    format: 'image/png',
-                    transparent: true,
-                    attribution: "Weather data © 2012 IEM Nexrad"
-                });
-                nexrad.addTo(map);
+                // var nexrad = L.tileLayer("http://api.elanedata.com/geo/coverage/wmts?layer=dicarea%3Aarea_eez_v12&style=&tilematrixset=EPSG%3A3857&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fpng&TileMatrix=EPSG%3A3857%3A{z}&TileCol={x}&TileRow={y}", {
+                //     // layers: 'nexrad-n0r-900913',
+                //     // format: 'image/png',
+                //     transparent: true,
+                //     // attribution: "Weather data © 2012 IEM Nexrad"
+                // }).addTo(map);
+                this.layerGroup = L.layerGroup().addTo(map);
                 bj.on('click', (params) => {
                     console.log(params);
                     //自适应定位
@@ -158,23 +163,9 @@ import proj4 from 'proj4';
                     map.flyTo([39.92, 116.46])
 
                 })
-                map.on('click', (e) => {
-                    map.eachLayer(function (layer) {
-                        if (layer.options.layers) {
-                            // console.log(layer);
-                            // map.removeLayer(layer);
-                            layer.removeFrom(map);
-                            // layer.hide();
-                        }
-                    });
-                    // console.log(e);
+                map.on('moveend', (e) => {
+                    // that.getWfsByBbox();
                 })
-                var nexrad = L.tileLayer.wms("http://mesonet.agron.iastate.edu/cgi-bin/wms/nexrad/n0r.cgi", {
-                    layers: 'nexrad-n0r-900913',
-                    format: 'image/png',
-                    transparent: true,
-                    attribution: "Weather data © 2012 IEM Nexrad"
-                });
                 this.map = map;
             },
             getArea() {
@@ -250,7 +241,7 @@ import proj4 from 'proj4';
             },
             getGeoJsonByfile() {
                 //leaflet添加geojson文件图层
-                let data = require('../../assets/data/shanghai.json');
+                let data = require('../../assets/data/ezz_geojson_low.json');
                 // console.log(data);
                 let layer = L.geoJSON(data, {
                     onEachFeature: function (feature, layer) {
@@ -343,6 +334,50 @@ import proj4 from 'proj4';
                 // 每隔一段时间调用一次定时器函数，实现水滴扩散动画
                 var intervalId = setInterval(expandCircles, speed);
                 return intervalId;
+            },
+            getWfsByBbox() {
+                let bounds = this.map.getBounds();
+                let bbox = bounds._southWest.lng+','+bounds._southWest.lat+','+bounds._northEast.lng+','+bounds._northEast.lat;
+                this.layerGroup.clearLayers();
+                let params = {
+                    service: 'WFS',
+                    version: '1.0.0',
+                    request: 'GetFeature',
+                    typeName: 'eez_v12:eez_cname',
+                    // maxFeatures: 5,
+                    outputFormat: 'application/json',
+                    bbox: bbox
+                }
+                getWfsInfo(params).then((res) => {
+                    console.log(res);
+                    res.features.forEach((item) => {
+                        let layer = L.geoJSON(item, {
+                            onEachFeature: function (feature, layer) {
+                                layer.on('mouseover', function (e) {
+                                    console.log(e);
+                                // 在点击时获取对应的数据
+                                    console.log(e.target.feature.properties.geocname);
+                                    layer.setStyle({
+                                        color: 'red'
+                                    });
+                                });
+                                layer.on('mouseout', function (e) {
+                                // 在点击时获取对应的数据
+                                    console.log(e.target.feature.properties.geocname);
+                                    layer.setStyle({
+                                        color: 'blue'
+                                    });
+                                });
+                            },
+                            style: function (feature) {
+                                return {
+                                    color: 'blue'
+                                };
+                            }
+                        })
+                        this.layerGroup.addLayer(layer);
+                    })
+                })
             }
         }
     }
