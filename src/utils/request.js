@@ -125,7 +125,7 @@ export function getAreaInfo(params) {
  */
 export function getWfsInfo(params) {
   return Service({
-    url: `/geoserver/eez_v12/wfs`,
+    url: `/geo/coverage/dicarea/ows`,
     method: "get",
     params: params,
   });

@@ -21,7 +21,7 @@ import proj4 from 'proj4';
         },
         mounted() {
             this.initMap();
-            // this.getWfsByBbox();
+            this.getWfsByBbox();
             // this.getArea();
             // this.getTest();
             // this.getGeoJsonByfile();
@@ -164,7 +164,7 @@ import proj4 from 'proj4';
 
                 })
                 map.on('moveend', (e) => {
-                    // that.getWfsByBbox();
+                    that.getWfsByBbox();
                 })
                 this.map = map;
             },
@@ -241,7 +241,7 @@ import proj4 from 'proj4';
             },
             getGeoJsonByfile() {
                 //leaflet添加geojson文件图层
-                let data = require('../../assets/data/ezz_geojson_low.json');
+                let data = require('../../assets/data/shanghai.json');
                 // console.log(data);
                 let layer = L.geoJSON(data, {
                     onEachFeature: function (feature, layer) {
@@ -336,6 +336,8 @@ import proj4 from 'proj4';
                 return intervalId;
             },
             getWfsByBbox() {
+                let url = 'http://localhost:5555/api/geo/coverage/dicarea/ows'
+                let that = this;
                 let bounds = this.map.getBounds();
                 let bbox = bounds._southWest.lng+','+bounds._southWest.lat+','+bounds._northEast.lng+','+bounds._northEast.lat;
                 this.layerGroup.clearLayers();
@@ -343,20 +345,24 @@ import proj4 from 'proj4';
                     service: 'WFS',
                     version: '1.0.0',
                     request: 'GetFeature',
-                    typeName: 'eez_v12:eez_cname',
+                    typeName: 'dicarea:eez_v12',
                     // maxFeatures: 5,
                     outputFormat: 'application/json',
                     bbox: bbox
                 }
+                let tooltip = L.tooltip({
+                    sticky: true,
+                    permanent: true,
+                    direction: 'right'
+                });
                 getWfsInfo(params).then((res) => {
-                    console.log(res);
                     res.features.forEach((item) => {
                         let layer = L.geoJSON(item, {
                             onEachFeature: function (feature, layer) {
-                                layer.on('mouseover', function (e) {
-                                    console.log(e);
+                                layer.on('mousemove', function (e) {
                                 // 在点击时获取对应的数据
                                     console.log(e.target.feature.properties.geocname);
+                                    tooltip.setLatLng(e.latlng).setContent(e.target.feature.properties.geocname).addTo(that.map);
                                     layer.setStyle({
                                         color: 'red'
                                     });
@@ -364,6 +370,7 @@ import proj4 from 'proj4';
                                 layer.on('mouseout', function (e) {
                                 // 在点击时获取对应的数据
                                     console.log(e.target.feature.properties.geocname);
+                                    tooltip.remove();
                                     layer.setStyle({
                                         color: 'blue'
                                     });
