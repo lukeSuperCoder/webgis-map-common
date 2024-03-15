@@ -21,7 +21,7 @@ import proj4 from 'proj4';
         },
         mounted() {
             this.initMap();
-            this.getWfsByBbox();
+            // this.getWfsByBbox();
             // this.getArea();
             // this.getTest();
             // this.getGeoJsonByfile();
