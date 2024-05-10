@@ -42,7 +42,7 @@ export default {
         initTdtMap() {
             //天地图
             mapboxgl.accessToken = 'pk.eyJ1IjoibHVjaGFuZzY2NiIsImEiOiJjbDAyMDVyMXMweW9qM2RuZnZiemxzbGdoIn0.JhMWPCeC_5h0k0eM3LdOTA';
-            var vecUrl = "http://t0.tianditu.com/vec_w/wmts?tk=9254b8157f0ff0a6331196e4afc27cb6";
+            var vecUrl = "https://g1.shipxy.com/tile.g?m=1&x={x}&y={y}&z={z}";
             var cvaUrl = "http://t0.tianditu.com/cva_w/wmts?tk=9254b8157f0ff0a6331196e4afc27cb6";
             var iboUrl = "http://t0.tianditu.gov.cn/ibo_w/wmts?tk=9254b8157f0ff0a6331196e4afc27cb6";
             var googleImgUrl = "https://g1.shipxy.com/tile.g?m=1&x={x}&y={y}&z={z}";
@@ -89,7 +89,7 @@ export default {
                     "version": 8,
                     //添加来源
                     "sources": {
-                        "tdtVec": googleImgIbo,
+                        "tdtVec": tdtVec,
                         // "tdtCva": tdtCva,
                         // "tdtIbo": tdtIbo
                     },
@@ -159,7 +159,7 @@ export default {
                 // this.addShuiYinLayer()
                 // this.addShuiYinLayer1()
                 // this.addMvtService()
-                this.addMvtFill()
+                // this.addMvtFill()
       
                 const symbol = "https://docs.mapbox.com/mapbox-gl-js/assets/custom_marker.png";
                 this.mapInstance.loadImage(symbol, (error, image) => {
@@ -524,17 +524,26 @@ export default {
                     type: "vector",
                     // tiles: [`http://10.1.140.175:7002/v1/mvt/sys_area_year/{z}/{x}/{y}?geomColumn=mgeom`],
                     tiles: [mvt_url],
-                    minzoom: 0,
+                    minzoom: 10,
                     maxzoom: 24
                 },
                 
                 "source-layer": 'layer',
-                "type" : "fill",
+                "type" : "line",
                 "paint": {
-                    // 'circle-color': 'red',
-                    'fill-color': 'red',
+                    'line-color': 'green',
+                    'line-width': 5
+                    // 'fill-color': 'red',
                     // 'fill-opacity': 1
                 }
+
+                // "type" : "circle",
+                // "paint": {
+                //     'circle-color': 'red',
+                //     // 'fill-color': 'red',
+                //     // 'fill-opacity': 1
+                // }
+
                 // 'layout': {
                 // 'visibility': 'visible',
                 // // coalesce 当请求的图片找不到时，用fallbackImage替代
@@ -547,6 +556,24 @@ export default {
                 // 'text-offset': [0, 1.25],
                 // 'text-anchor': 'top'
                 //     }      
+            });
+            this.mapInstance.addLayer({
+                'id': 'mvt-fill2',
+                source: {
+                    type: "vector",
+                    // tiles: [`http://10.1.140.175:7002/v1/mvt/sys_area_year/{z}/{x}/{y}?geomColumn=mgeom`],
+                    tiles: [mvt_url],
+                    minzoom: 0,
+                    maxzoom: 24
+                },
+                
+                "source-layer": 'layer',              
+                "type" : "circle",
+                "paint": {
+                    'circle-color': 'red',
+                    // 'fill-color': 'red',
+                    // 'fill-opacity': 1
+                }    
             });
         },
         mapClickEvent(e) {

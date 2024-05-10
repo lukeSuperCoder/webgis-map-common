@@ -10,6 +10,7 @@ import * as L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet.pm";
 import "leaflet.pm/dist/leaflet.pm.css";
+import "leaflet-geojson-vt/src/leaflet-geojson-vt.js"
 
 Vue.config.productionTip = false;
 
