@@ -11,6 +11,7 @@ import "leaflet/dist/leaflet.css";
 import "leaflet.pm";
 import "leaflet.pm/dist/leaflet.pm.css";
 import "leaflet-geojson-vt/src/leaflet-geojson-vt.js"
+import "leaflet-markers-canvas/src/leaflet-markers-canvas.js"
 
 Vue.config.productionTip = false;
 

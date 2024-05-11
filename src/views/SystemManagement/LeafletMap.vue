@@ -17,7 +17,9 @@ import proj4 from 'proj4';
         data() {
             return {
                 map: null,
-                layerGroup: null
+                layerGroup: null,
+                canvas_markers: [],
+                markersCanvas: null
             }
         },
         mounted() {
@@ -27,7 +29,8 @@ import proj4 from 'proj4';
             // this.getArea();
             // this.getTest();
             // this.getGeoJsonByfile();
-            this.getGeoJsonByfileVt();
+            // this.getGeoJsonByfileVt();
+            this.loadCanvasMarker();
             // let timer = this.getCircleLight();
             // setTimeout(() => {
             //     this.getCircleLight();
@@ -167,7 +170,21 @@ import proj4 from 'proj4';
 
                 })
                 map.on('moveend', (e) => {
+                    // that.markersCanvas.removeMarkers(that.canvas_markers,true);
+                    // that.loadCanvasMarker();
+                    // that.markersCanvas.redraw();
+                    // setTimeout(() => {
+                    // }, 1000);
                     // that.getWfsByBbox();
+                })
+                map.on('zoomstart', (e) => {
+                    // that.markersCanvas.removeMarkers(that.canvas_markers,true);
+                    // that.markersCanvas.redraw();
+                    // that.loadCanvasMarker();
+                    // that.getWfsByBbox();
+                })
+                map.on('movestart', (e) => {
+                    // that.markersCanvas.removeMarkers(that.canvas_markers,true);
                 })
                 this.map = map;
             },
@@ -480,7 +497,6 @@ import proj4 from 'proj4';
                 };
 
                 var mapboxPbfLayer = L.vectorGrid.protobuf(mapboxUrl, mapboxVectorTileOptions).on('click', function(e) {	// The .on method attaches an event handler
-				debugger
                     L.popup()
 					.setContent(e.layer.properties.name || e.layer.properties.type)
 					.setLatLng(e.latlng)
@@ -490,6 +506,41 @@ import proj4 from 'proj4';
 			}).addTo(this.map);
                 console.log(mapboxPbfLayer);
             },
+            loadCanvasMarker() {
+                let that = this;
+                if(!this.markersCanvas) {
+                    this.markersCanvas = new L.MarkersCanvas();
+                    this.markersCanvas.addTo(this.map);
+                }
+                that.markersCanvas.removeMarkers(that.canvas_markers,true);
+                var icon = L.icon({
+                    iconUrl: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAiCAYAAABFlhkzAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyhpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNi1jMTQ1IDc5LjE2MzQ5OSwgMjAxOC8wOC8xMy0xNjo0MDoyMiAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTkgKE1hY2ludG9zaCkiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6QzIwMzlDREFDODc3MTFFOUJEQjBENTkxMDVGNzVERDkiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6QzIwMzlDREJDODc3MTFFOUJEQjBENTkxMDVGNzVERDkiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDpDMjAzOUNEOEM4NzcxMUU5QkRCMEQ1OTEwNUY3NUREOSIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDpDMjAzOUNEOUM4NzcxMUU5QkRCMEQ1OTEwNUY3NUREOSIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PhKXihUAAAUQSURBVHjarFZbSBxnFD47M4mr28aNS1O166VGY1QMRdKHvohW6YMiWCJNTcit9EHbh4IPpi1BaNKHgn3oS9uklRBNglqVFgTxSQWtGCI+JCBequjqrpd0q7Ho6mZ2pt+ZnVncm25KDpydmf/yfec/t39NS8nJFE1mJSkdj4+h70MLoG9AvVAndBE6CG0vXVpyRMMwRSIAcCoe3wlEta8rimRRVYqDihhUobLJRC/w3MbzX0GQFZDg80sQuQ4lAPgHJqLO44pihZJABwvAaUMQWLdA/glIeqISAPxTieh2is8nmlVVG+PNW2wxVDU2QY9g/hiUjWDZxfyKKKoy0WcguR1GAPAPAd6TJssmST/+qihSfE4OpdTWkq20lMzp6X4wh4Pcg4O00t5OntlZSvb5iN0IcFqSJCY5B5LfAwQAT4ZVk3af7zhbvgmr3QkJlN3URKkXLpBJFCO6RwWw8/59mrt5k2x7e2TFafgky6K4gdPmg2TVcPG3iYqigbPl7rg4OnP3Lr116RL91t1NTSAypKWlJfDNxParV6mwtVXbw3sZg7EYU1szYLengGUhU5aPsp1zkkQnb93SNrLU1NRoz4WFhaiBbgWBdXyc/rpxg07KMvl4vSR5EZ1Mdvd5+E8D54DGnzqlWc4yPz+vAY+MjNDY2BhNTEyEgVdXV1NWVhapp0+Ts62NNqamtMC/pihHtwThPLuozKJnAmcLB9TweWNjI2VmZpLZbKaBgQHa3NykoqKigI6OjpLD4Qi4i/cyBovFn4VlfIJCs24Np6KtpER77+zs1KxnAkP6+vpocnIy8M3zFosl8M1753SCOP9QIROckPSc518jFZ1OJ9XV1VF/fz8NDQ1pYxUVFUHuyc/Pp97eXrLb7ZSSkkLmjIxAreiYbzJBcA7qFjQ0NASA2fdut5uKi4vDYtDc3ExVVVUager1hk4LTLCG3pLGlcnQu4uLlJCdHbQqNzdX83dXV1cYAbvQZrP5CxCnNunjst/QdSZ45CFKO6Ifyw2rQwkqKyspLy+PPB4P7ezsUH19vZaaLElJSZr1WlsZHjZcQx7/1jEm6EQ61RxDVXJvWenoIPu1a2HVy6nIwpnEUlBQEFbVLrSORJ0AmFqu8O8fHpNpmqswCenqmZ4m14MHEQuKK7i8vDwoswxxPXyo7eUaYCxgzjC20YtKcJSBDDQ6Dzc55P0ZFE382bPkcrmCrGc3GS4x5B+45umVK5S8u0vxOMGiv+GVoRcNaufIkeUhDNxZh1u4QLhxPYGb3Ajq2/ustVqtQeAqrF2+d08D5z289xkwgPUrg4e26wQ8/jyhKO8k6sc02nXqxYuUhCKKR54rSMXd5WUtoJpb9rXr5/D7uiA8Ac57INiJdOHkILkeo20nvuyFs4f5JVHkW+1dgM8cdGWeQzy60hEPkWIT7p4AV2HERwDvDqq00MWIRw98+P2aGCs8KhVrAf5DKHhEAl2+RgwebQrCoeDsd6x9jNfrkeYjIuAUfL1e/lsQtr0mU1RwnnsmCBzMy7D+RcwEOskMAta4dsApkDEc+OsAn4q25jAf/IxLfHQrAgmPoSiH8frjQQAHEuAUnJlfwFWKLyRrMMZu/BzWq/+bQCcZB2Dbxr5T8DvGWjD39LD9QoyZ+BWyZdunW//cH9hvYtkYEwEsXUW9/qL/B+X/o3d47JURGLcjLPey8nusm6RYF8LiFbSRDuP9lRPo8tNLrqf/BBgAMtRT4KIOceoAAAAASUVORK5CYII=",
+                    iconSize: [20, 32],
+                    iconAnchor: [10, 0],
+                });
+
+                this.canvas_markers = [];
+
+                for (var i = 0; i < 10000; i++) {
+                var marker = L.marker(
+                    [35.5578 + Math.random() * 1.8, 116.0087 + Math.random() * 3.6],
+                    { icon }
+                )
+                    .bindPopup("I Am " + i)
+                    .on({
+                    mouseover(e) {
+                        this.openPopup();
+                    },
+                    mouseout(e) {
+                        this.closePopup();
+                    },
+                    });
+
+                    this.canvas_markers.push(marker);
+                }
+
+                this.markersCanvas.addMarkers(this.canvas_markers);
+            }
         }
     }
 </script>
