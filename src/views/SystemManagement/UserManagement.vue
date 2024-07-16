@@ -121,6 +121,7 @@
 </template>
 
 <script>
+import $ from 'jquery';
 import { getUserInfo, deleteUserInfo,systemLogin  } from "../../utils/request";
 import NewUserInfo from "./NewUserInfo.vue";
 export default {
@@ -142,8 +143,102 @@ export default {
   mounted() {
     // this.promiseDemo();
     // this.getUserInfoData();
+    this.getJqueryData();
   },
   methods: {
+    getJqueryData() {
+      // 设置全局的 AJAX 请求拦截器
+      // $(document).ajaxSend(async function(event, xhr, settings) {
+      //     debugger
+      //       // 在这里，你可以对请求进行操作，例如添加请求头
+      //       //等待二维码任务创建完成
+      //       // await qrCodeUtil.sendQrRequest(config);
+      //       pendingRequest = new Promise(async (resolve, reject) => {
+      //           try {
+      //               const data = {
+      //                 code: 0,
+      //                 message: 'success',
+      //               };
+      //               config.data = data;
+      //               resolve(config.data);
+      //           } catch(error) {
+      //               console.log(error,'error');
+      //               qrLoading.close();
+      //               reject(error)
+      //           }
+      //       });
+            
+      //       let result = await pendingRequest;
+      // });
+
+      // 拦截发送前的请求
+    $(document).ajaxSend(async function(event, xhr, settings) {
+        // 检查请求的 URL 是否匹配特定的接口名
+        if (settings.url !== "your-specific-endpoint") {
+            // 取消原始的 AJAX 请求
+            xhr.abort();
+
+            let pendingRequest = new Promise(async (resolve, reject) => {
+                try {
+                    const data = {
+                      code: 0,
+                      message: 'success',
+                    };
+                    // 手动触发成功回调，并提供你想要的数据
+                    setTimeout(() => {
+                       // 手动触发成功回调，并提供你想要的数据
+                      settings.success(data);
+                      resolve(data);
+                    }, 3000);
+                } catch(error) {
+                    console.log(error,'error');
+                    reject(error)
+                }
+            });
+            
+            let result = await pendingRequest;
+
+            // 如果你需要，也可以触发 complete 回调
+            settings.complete(xhr, 'success');
+
+            // 阻止后续的拦截器或处理程序
+            return false;
+        }
+    });
+
+      // // 设置全局的 AJAX 响应拦截器
+      // $(document).ajaxComplete(function(event, xhr, settings) {
+      //   debugger
+      //   // 在这里，你可以对响应进行操作
+      //     // 例如检查状态码或响应内容
+      //     if (xhr.status === 200) {
+      //         // 处理成功的响应
+      //     } else {
+      //         // 处理错误的响应
+      //     }
+      // });
+      var mapboxUrl = 'http://127.0.0.1:8094/getMvtByArea/?x={x}&y={y}&z={z}';
+      $.ajax({
+        url: mapboxUrl,
+        type: 'GET',
+        data: { mmsi: '426696209' },
+        beforeSend: function(xhr) {
+            // 对特定的请求执行操作
+            xhr.setRequestHeader('Another-Custom-Header', 'value');
+        },
+        success: function(data, textStatus, jqXHR) {
+          debugger
+            // 请求成功后的回调函数
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+            // 请求失败后的回调函数
+        },
+        complete: function(jqXHR, textStatus) {
+          debugger
+            // 请求完成后的回调函数（无论成功或失败）
+        }
+    });
+    },
     getCal(date,data) {
       // console.log(date,data);
       console.log(this.datevalue);

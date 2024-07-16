@@ -18,6 +18,7 @@
     "core-js": "^3.6.5",
     "element-ui": "^2.15.6",
     "geojson-vt": "^3.2.1",
+    "jquery": "^3.7.1",
     "leaflet": "^1.9.4",
     "leaflet-geojson-vt": "^1.1.0",
     "leaflet-markers-canvas": "^0.2.2",
