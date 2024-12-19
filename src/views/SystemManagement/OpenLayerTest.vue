@@ -16,13 +16,14 @@
     import {Circle as CircleStyle, Fill, Stroke, Style} from 'ol/style.js';
     import {Draw, Modify, Snap} from 'ol/interaction.js';
     import {GeometryCollection, Point, Polygon} from 'ol/geom.js';
-    import {Vector as VectorSource} from 'ol/source.js';
-    import {Tile as TileLayer, Vector as VectorLayer} from 'ol/layer.js';
+    import {Vector as VectorSource, VectorTile as VectorTileSource} from 'ol/source.js';
+    import {Tile as TileLayer, Vector as VectorLayer, VectorTile as VectorTileLayer} from 'ol/layer.js';
     import {circular} from 'ol/geom/Polygon.js';
     import {getDistance} from 'ol/sphere.js';
     import {transform} from 'ol/proj.js';
     import OlFeature from 'ol/Feature';
     import OlCircle from 'ol/geom/Circle';
+    import MVT from 'ol/format/MVT'
     
     import {
         get as getProjection
@@ -89,7 +90,8 @@
                         experienceCircle: 1,
                         id: '123'
                     }
-                    this.drawEvent(data)
+                    // this.drawEvent(data);
+                    this.addMvtLayer();
             },
              setMapHeight() {
                 if (this.map && document.getElementById('map')) {
@@ -154,7 +156,7 @@
                     return geometry.getType() === 'GeometryCollection' ? geodesicStyle : style;
                 },
                 });
-
+                
                 this.map.addLayer(raster)
                 this.map.addLayer(vector)
                 const defaultStyle = new Modify({source: source})
@@ -304,6 +306,27 @@
                 });
                 return feature;
             },
+            addMvtLayer() {
+                let that = this;
+                const mvt_layer = new VectorTileLayer({
+                    source: new VectorTileSource({
+                        format: new MVT(),
+                        url: 'http://127.0.0.1:8999/getMvtByArea/?x={x}&y={y}&z={z}'
+                    }),
+                    style: function (feature) {
+                        return new Style({
+                            stroke: new Stroke({
+                                color: 'blue',
+                                width: 1
+                            }),
+                            fill: new Fill({
+                                color: 'rgba(255, 255, 255, 0.6)'
+                            })
+                        });
+                    }
+                })
+                that.map.addLayer(mvt_layer);
+            }
         },
         mounted() {
             this.init();
