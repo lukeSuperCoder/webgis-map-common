@@ -64,7 +64,13 @@ const routes = [
         name: "LeafletMap",
         meta: {},
         component: () => import("../views/SystemManagement/LeafletMap.vue"),
-      }
+      },
+      {
+        path: "/CesiumLiteTest",
+        name: "CesiumLiteTest",
+        meta: {},
+        component: () => import("../views/SystemManagement/CesiumLiteTest.vue"),
+      },
     ],
   },
   {

@@ -70,6 +70,15 @@
           "id": 2,
           "value": "/LeafletMap"
         }
+      },
+      {
+        "entity": {
+          "alias": "cesiumlite测试",
+          "name": "CesiumLiteTest",
+          "icon": "el-icon-user",
+          "id": 2,
+          "value": "/CesiumLiteTest"
+        }
       }
     ]
   }
